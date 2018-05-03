@@ -1,22 +1,30 @@
-#ifndef GUI_MAIN_WINDOW_HPP
-#define GUI_MAIN_WINDOW_HPP
+#ifndef GUI_MAIN_WINDOW_HPP_
+#define GUI_MAIN_WINDOW_HPP_
 
 #include <QMainWindow>
 
-namespace Ui {
-class GuiMainWindow;
-} /* namespace Ui */
+#include "gui_opengl_widget.hpp"
+#include "gui_project_runner.hpp"
+#include "project.hpp"
+
+namespace os2cx {
 
 class GuiMainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit GuiMainWindow(QWidget *parent = 0);
-    ~GuiMainWindow();
+    explicit GuiMainWindow(const std::string &scad_path);
+
+public slots:
+    void menu_file_open();
 
 private:
-    Ui::GuiMainWindow *ui;
+    std::unique_ptr<Project> project;
+    GuiProjectRunner *project_runner;
+    GuiOpenglWidget *opengl_widget;
 };
 
-#endif // GUI_MAIN_WINDOW_HPP
+} /* namespace os2cx */
+
+#endif /* GUI_MAIN_WINDOW_HPP_ */

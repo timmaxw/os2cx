@@ -117,11 +117,7 @@ Length approx_scale_of_project(const Project &project) {
     return scale;
 }
 
-void OpenglDrawSettings::setup(
-    int viewport_width,
-    int viewport_height,
-    Length approx_scale
-) const {
+void initialize_opengl() {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f); // Grey Background
     glClearDepth(1.0f); // Depth Buffer Setup
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -146,11 +142,16 @@ void OpenglDrawSettings::setup(
     GLfloat material_specular[4] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
 
+    /* TODO: Back-face culling */
+}
+
+static const float fov_slope_min = 0.5;
+
+void resize_opengl(int viewport_width, int viewport_height) {
     glViewport(0, 0, viewport_width, viewport_height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity(); 
     float ratio_w_h = viewport_width / static_cast<float>(viewport_height);
-    float fov_slope_min = 0.5;
     float fov_slope_y = (viewport_width > viewport_height)
         ? fov_slope_min
         : (fov_slope_min / ratio_w_h);
@@ -161,7 +162,9 @@ void OpenglDrawSettings::setup(
         0.1 /*clip close*/,
         200 /*clip far*/
     );
+}
 
+void OpenglDrawSettings::setup_for_draw(Length approx_scale) const {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -174,8 +177,6 @@ void OpenglDrawSettings::setup(
 
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);
     glRotatef(-yaw, 0.0f, 0.0f, 1.0f);
-
-    /* TODO: Back-face culling */
 }
 
 void OpenglDrawSettings::drag(float delta_x, float delta_y) {
@@ -188,12 +189,8 @@ void OpenglDrawSettings::drag(float delta_x, float delta_y) {
 
 class OpenglTriangleScene : public OpenglScene {
 public:
-    void setup_and_draw(
-        int viewport_width,
-        int viewport_height,
-        const OpenglDrawSettings &settings
-    ) {
-        settings.setup(viewport_width, viewport_height, approx_scale);
+    void draw(const OpenglDrawSettings &settings) {
+        settings.setup_for_draw(approx_scale);
 
         glColor3f(0.5, 0.5, 0.5);
         for (const OpenglTriangles &triangles : normal) {
@@ -292,7 +289,7 @@ void mesh_to_opengl_scene(
         }
         switch (scene_settings.focus.type) {
         case OpenglFocus::Type::Result: {
-            ContiguousMap<NodeId, PureVector> *result =
+            const ContiguousMap<NodeId, PureVector> *result =
                 &project.results->node_vectors.at(scene_settings.focus.target);
             scene->normal.push_back(
                 mesh_surface_to_opengl_triangles(*mesh, *mesh_index, result));

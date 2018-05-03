@@ -49,7 +49,9 @@ SOURCES += \
     region.cpp \
     region_map.cpp \
     region_map_index.cpp \
-    util.cpp
+    util.cpp \
+    gui_opengl_widget.cpp \
+    gui_project_runner.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -76,7 +78,8 @@ HEADERS += \
     region_map.internal.hpp \
     region_map_index.hpp \
     result.hpp \
-    util.hpp
+    util.hpp \
+    gui_opengl_widget.hpp \
+    gui_project_runner.hpp
 
-FORMS += \
-        gui_main_window.ui
+FORMS +=

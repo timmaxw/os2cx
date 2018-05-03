@@ -106,13 +106,15 @@ radius from the origin. The project must have `region_map_index` already
 calculated, or else the return value will be zero. */
 Length approx_scale_of_project(const Project &project);
 
+void initialize_opengl();
+void resize_opengl(int viewport_width, int viewport_height);
+
 class OpenglDrawSettings {
 public:
     OpenglDrawSettings() : yaw(40), pitch(20) { }
-    void setup(
-        int viewport_width,
-        int viewport_height,
-        Length approx_scale) const;
+
+    void setup_for_draw(Length approx_scale) const;
+
     void drag(float delta_x, float delta_y);
 
     float yaw, pitch; /* in degrees */
@@ -121,11 +123,7 @@ public:
 class OpenglScene {
 public:
     virtual ~OpenglScene() { }
-    virtual void setup_and_draw(
-        int viewport_width,
-        int viewport_height,
-        const OpenglDrawSettings &draw_settings
-        ) = 0;
+    virtual void draw(const OpenglDrawSettings &draw_settings) = 0;
 };
 
 class OpenglFocus {

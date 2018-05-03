@@ -1,11 +1,12 @@
-#include "gui_main_window.hpp"
 #include <QApplication>
+
+#include "gui_main_window.hpp"
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    GuiMainWindow w;
-    w.show();
+    QApplication application(argc, argv);
+    os2cx::GuiMainWindow main_window("example.scad");
+    main_window.show();
 
-    return a.exec();
+    return application.exec();
 }
