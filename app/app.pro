@@ -51,7 +51,8 @@ SOURCES += \
     region_map_index.cpp \
     util.cpp \
     gui_opengl_widget.cpp \
-    gui_project_runner.cpp
+    gui_project_runner.cpp \
+    gui_focus_combo_box.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -80,6 +81,7 @@ HEADERS += \
     result.hpp \
     util.hpp \
     gui_opengl_widget.hpp \
-    gui_project_runner.hpp
+    gui_project_runner.hpp \
+    gui_focus_combo_box.hpp
 
 FORMS +=

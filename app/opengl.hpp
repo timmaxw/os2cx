@@ -135,7 +135,15 @@ public:
         VolumeLoad, // target = volume load name
         Result, // target = dataset name
     };
+
     OpenglFocus() : type(Type::All) { }
+    bool operator==(const OpenglFocus &other) const {
+        return type == other.type && target == other.target;
+    }
+    bool operator!=(const OpenglFocus &other) const {
+        return !(*this == other);
+    }
+
     Type type;
     std::string target;
 };
