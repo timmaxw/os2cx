@@ -19,12 +19,14 @@ public:
 
 public slots:
     void menu_file_open();
+    void regenerate_scene();
 
 private:
     std::unique_ptr<Project> project;
     GuiProjectRunner *project_runner;
     GuiFocusComboBox *focus_combo_box;
     GuiOpenglWidget *opengl_widget;
+    QAction *action_show_elements;
 };
 
 } /* namespace os2cx */

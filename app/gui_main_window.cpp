@@ -28,19 +28,34 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
         project_runner, &GuiProjectRunner::project_updated,
         focus_combo_box, &GuiFocusComboBox::regenerate_options
     );
-    connect(focus_combo_box, &GuiFocusComboBox::focus_changed,
-        [this]() {
-            opengl_widget->scene_settings.focus = focus_combo_box->get_focus();
-            opengl_widget->regenerate_scene();
-        }
+    connect(
+        focus_combo_box, &GuiFocusComboBox::focus_changed,
+        this, &GuiMainWindow::regenerate_scene
     );
 
     QMenu *menu_file = menuBar()->addMenu(tr("File"));
-    menu_file->addAction(tr("Open"), this, &GuiMainWindow::menu_file_open);
+    menu_file->addAction(tr("Open"),
+        this, &GuiMainWindow::menu_file_open);
+
+    QMenu *menu_view = menuBar()->addMenu(tr("View"));
+    action_show_elements = menu_view->addAction(tr("Show elements"));
+    action_show_elements->setCheckable(true);
+    connect(
+        action_show_elements, &QAction::changed,
+        this, &GuiMainWindow::regenerate_scene
+    );
 }
 
 void GuiMainWindow::menu_file_open() {
     std::cout << "menu_file_open() not implemented yet" << std::endl;
+}
+
+void GuiMainWindow::regenerate_scene() {
+    opengl_widget->scene_settings.focus =
+        focus_combo_box->get_focus();
+    opengl_widget->scene_settings.show_elements =
+        action_show_elements->isChecked();
+    opengl_widget->regenerate_scene();
 }
 
 } /* namespace os2cx */
