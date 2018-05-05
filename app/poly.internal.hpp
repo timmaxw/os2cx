@@ -1,7 +1,7 @@
-#ifndef OS2CX_REGION_INTERNAL_HPP_
-#define OS2CX_REGION_INTERNAL_HPP_
+#ifndef OS2CX_POLY_INTERNAL_HPP_
+#define OS2CX_POLY_INTERNAL_HPP_
 
-#include "region.hpp"
+#include "poly.hpp"
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
@@ -24,10 +24,10 @@ what's in the interface between them, we use the following naming conventions:
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Polyhedron_3<K> CgalPolyhedron3;
 
-class Region3Internal {
+class Poly3Internal {
 public:
     template<typename... Args>
-    Region3Internal(Args&&... args) : p(args...) { }
+    Poly3Internal(Args&&... args) : p(args...) { }
     os2cx::CgalPolyhedron3 p;
 };
 

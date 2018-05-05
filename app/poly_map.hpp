@@ -1,5 +1,5 @@
-#ifndef OS2CX_REGION_MAP_HPP_
-#define OS2CX_REGION_MAP_HPP_
+#ifndef OS2CX_POLY_MAP_HPP_
+#define OS2CX_POLY_MAP_HPP_
 
 #include <deque>
 #include <iostream>
@@ -10,13 +10,13 @@
 #include <vector>
 
 #include "calc.hpp"
-#include "region.hpp"
+#include "poly.hpp"
 
 namespace os2cx {
 
-class RegionMap3Internal;
+class Poly3MapInternal;
 
-class RegionMap3 {
+class Poly3Map {
 public:
     typedef int VertexId;
     class Vertex {
@@ -29,7 +29,7 @@ public:
     class Volume {
     public:
         bool is_solid;
-        std::map<const Region3 *, bool> masks;
+        std::map<const Poly3 *, bool> masks;
     };
     std::vector<Volume> volumes;
     VolumeId volume_outside;
@@ -47,7 +47,7 @@ public:
         };
         std::vector<Triangle> triangles;
         VolumeId volumes[2];
-        // std::map<const Region3 *, bool> masks;
+        // std::map<const Poly3 *, bool> masks;
     };
     std::vector<Surface> surfaces;
 
@@ -60,20 +60,20 @@ public:
     std::vector<Border> borders;
     std::map<std::pair<VertexId, VertexId>, BorderId> borders_by_vertex;
 
-    RegionMap3();
-    ~RegionMap3();
+    Poly3Map();
+    ~Poly3Map();
 
     void debug(std::ostream &stream) const;
 
-    std::unique_ptr<RegionMap3Internal> i;
+    std::unique_ptr<Poly3MapInternal> i;
 };
 
-void region_map_create(
-    const Region3 &solid,
-    const std::vector<const Region3 *> &masks,
-    RegionMap3 *region_map_out);
+void poly3_map_create(
+    const Poly3 &solid,
+    const std::vector<const Poly3 *> &masks,
+    Poly3Map *poly3_map_out);
 
 } /* namespace os2cx */
 
-#endif /* OS2CX_REGION_MAP_HPP_ */
+#endif
 

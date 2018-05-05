@@ -1,12 +1,12 @@
-#include "region_map.internal.hpp"
+#include "poly_map.internal.hpp"
 
 #include <CGAL/Nef_nary_union_3.h>
 #include <CGAL/point_generators_3.h>
 
 namespace os2cx {
 
-RegionMap3::RegionMap3() { }
-RegionMap3::~RegionMap3() { }
+Poly3Map::Poly3Map() { }
+Poly3Map::~Poly3Map() { }
 
 DebugNef::DebugNef(const os2cx::CgalNef3 &n) :
     nef(n),
@@ -83,14 +83,14 @@ void DebugNef::dump(std::ostream &stream) const {
     }
 }
 
-void RegionMap3::debug(std::ostream &stream) const {
+void Poly3Map::debug(std::ostream &stream) const {
     stream << "VERTICES " << vertices.size() << std::endl;
-    for (RegionMap3::VertexId vid = 0;
+    for (Poly3Map::VertexId vid = 0;
             vid < static_cast<int>(vertices.size()); ++vid) {
         stream << "V" << vid << ' ' << vertices[vid].point << std::endl;
     }
     stream << "VOLUMES " << volumes.size() << std::endl;
-    for (RegionMap3::VolumeId vid = 0;
+    for (Poly3Map::VolumeId vid = 0;
             vid < static_cast<int>(volumes.size()); ++vid) {
         stream << "VO" << vid;
         if (vid == volume_outside) {
@@ -104,11 +104,11 @@ void RegionMap3::debug(std::ostream &stream) const {
         stream << std::endl;
     }
     stream << "SURFACES " << surfaces.size() << std::endl;
-    for (RegionMap3::SurfaceId sid = 0;
+    for (Poly3Map::SurfaceId sid = 0;
             sid < static_cast<int>(surfaces.size()); ++sid) {
         stream << "S" << sid << " VO" << surfaces[sid].volumes[0]
             << " VO" << surfaces[sid].volumes[1];
-        for (const RegionMap3::Surface::Triangle &triangle
+        for (const Poly3Map::Surface::Triangle &triangle
                 : surfaces[sid].triangles) {
             stream << " V" << triangle.vertices[0]
                 << "-V" << triangle.vertices[1]
@@ -117,22 +117,22 @@ void RegionMap3::debug(std::ostream &stream) const {
         stream << std::endl;
     }
     stream << "BORDERS " << borders.size() << std::endl;
-    for (RegionMap3::BorderId bid = 0;
+    for (Poly3Map::BorderId bid = 0;
             bid < static_cast<int>(borders.size()); ++bid) {
         stream << "B" << bid;
-        for (RegionMap3::VertexId vid : borders[bid].vertices) {
+        for (Poly3Map::VertexId vid : borders[bid].vertices) {
             stream << ' ' << vertices[vid].point;
         }
-        for (RegionMap3::SurfaceId sid : borders[bid].surfaces) {
+        for (Poly3Map::SurfaceId sid : borders[bid].surfaces) {
             stream << " S" << sid;
         }
         stream << std::endl;
     }
 }
 
-os2cx::CgalNef3 region_nef(const Region3 &region) {
+os2cx::CgalNef3 poly3_nef(const Poly3 &poly3) {
     CGAL::Polyhedron_3<KE> poly_exact;
-    convert_polyhedron(region.i->p, &poly_exact);
+    convert_polyhedron(poly3.i->p, &poly_exact);
     return os2cx::CgalNef3(poly_exact);
 }
 
@@ -162,36 +162,36 @@ bool is_border_halfedge(os2cx::CgalNef3::Halfedge_const_handle he) {
 class BorderTraversal {
 private:
     typedef std::set<std::pair<
-        RegionMap3::VertexId,
-        RegionMap3::VertexId
+        Poly3Map::VertexId,
+        Poly3Map::VertexId
         > > LinkSet;
 
 public:
-    BorderTraversal(RegionMap3 *rmo) :
-        region_map_out(rmo)
+    BorderTraversal(Poly3Map *pmo) :
+        poly3_map_out(pmo)
         { }
 
     void run() {
-        for (auto it = region_map_out->i->nef.halfedges_begin();
-                it != region_map_out->i->nef.halfedges_end(); ++it) {
+        for (auto it = poly3_map_out->i->nef.halfedges_begin();
+                it != poly3_map_out->i->nef.halfedges_end(); ++it) {
             if (!is_border_halfedge(it)) continue;
-            RegionMap3::VertexId source =
-                region_map_out->i->vertex_from_nef[it->source()];
-            RegionMap3::VertexId target =
-                region_map_out->i->vertex_from_nef[it->target()];
+            Poly3Map::VertexId source =
+                poly3_map_out->i->vertex_from_nef[it->source()];
+            Poly3Map::VertexId target =
+                poly3_map_out->i->vertex_from_nef[it->target()];
             links.insert(std::make_pair(source, target));
         }
 
         while (!links.empty()) {
-            RegionMap3::BorderId border_id =
-                region_map_out->borders.size();
-            region_map_out->borders.push_back(
-                RegionMap3::Border());
-            RegionMap3::Border *border =
-                &region_map_out->borders.back();
+            Poly3Map::BorderId border_id =
+                poly3_map_out->borders.size();
+            poly3_map_out->borders.push_back(
+                Poly3Map::Border());
+            Poly3Map::Border *border =
+                &poly3_map_out->borders.back();
 
-            RegionMap3::VertexId v1 = links.begin()->first;
-            RegionMap3::VertexId v2 = links.begin()->second;
+            Poly3Map::VertexId v1 = links.begin()->first;
+            Poly3Map::VertexId v2 = links.begin()->second;
             note_used_link(links.begin(), border_id);
 
             border->vertices.push_back(v1);
@@ -204,21 +204,21 @@ public:
 private:
     void note_used_link(
         LinkSet::iterator it,
-        RegionMap3::BorderId border_id
+        Poly3Map::BorderId border_id
     ) {
-        RegionMap3::VertexId v1 = it->first, v2 = it->second;
+        Poly3Map::VertexId v1 = it->first, v2 = it->second;
         links.erase(it);
         links.erase(std::make_pair(v2, v1));
-        region_map_out->borders_by_vertex.insert(std::make_pair(
+        poly3_map_out->borders_by_vertex.insert(std::make_pair(
             std::make_pair(std::min(v1, v2), std::max(v1, v2)),
             border_id));
     }
 
     void follow_chain(
-        RegionMap3::Border *border,
-        RegionMap3::BorderId border_id,
-        RegionMap3::VertexId previous,
-        RegionMap3::VertexId current,
+        Poly3Map::Border *border,
+        Poly3Map::BorderId border_id,
+        Poly3Map::VertexId previous,
+        Poly3Map::VertexId current,
         bool front
     ) {
         while (true) {
@@ -245,7 +245,7 @@ private:
         }
     }
 
-    RegionMap3 *region_map_out;
+    Poly3Map *poly3_map_out;
     LinkSet links;
 };
 
@@ -415,9 +415,9 @@ void triangulate_nef_facet(
 
 class SurfaceTraversal {
 public:
-    SurfaceTraversal(RegionMap3 *rmo) :
-        region_map_out(rmo),
-        nef(region_map_out->i->nef),
+    SurfaceTraversal(Poly3Map *rmo) :
+        poly3_map_out(rmo),
+        nef(poly3_map_out->i->nef),
         facet_ids(nef.halffacets_begin(), nef.halffacets_end()),
         facets_visited(nef.number_of_halffacets(), false)
         { }
@@ -429,23 +429,23 @@ public:
             seeded from an earlier halffacet, then don't process it again */
             if (facets_visited[facet_ids[seed]]) continue;
 
-            RegionMap3::VolumeId volume0 =
-                region_map_out->i->volume_from_nef[
+            Poly3Map::VolumeId volume0 =
+                poly3_map_out->i->volume_from_nef[
                     seed->incident_volume()];
-            RegionMap3::VolumeId volume1 =
-                region_map_out->i->volume_from_nef[
+            Poly3Map::VolumeId volume1 =
+                poly3_map_out->i->volume_from_nef[
                     seed->twin()->incident_volume()];
 
             /* For any given pair of halffacets, we only want to process one of
             them; so we skip the one incident on the larger-numbered volume. */
             if (volume0 > volume1) continue;
 
-            RegionMap3::SurfaceId surface_id =
-                region_map_out->surfaces.size();
-            region_map_out->surfaces.push_back(
-                RegionMap3::Surface());
-            RegionMap3::Surface *surface =
-                &region_map_out->surfaces.back();
+            Poly3Map::SurfaceId surface_id =
+                poly3_map_out->surfaces.size();
+            poly3_map_out->surfaces.push_back(
+                Poly3Map::Surface());
+            Poly3Map::Surface *surface =
+                &poly3_map_out->surfaces.back();
             surface->volumes[0] = volume0;
             surface->volumes[1] = volume1;
 
@@ -473,7 +473,7 @@ public:
 
     void triangulate(
         os2cx::CgalNef3::Halffacet_const_handle hf,
-        RegionMap3::Surface *surface
+        Poly3Map::Surface *surface
     ) {
         CGAL::Vector_3<K> normal = CGAL::Cartesian_converter<KE, K>()(
             hf->plane().orthogonal_vector());
@@ -488,11 +488,11 @@ public:
             os2cx::CgalNef3::Vertex_const_handle v2
         ) {
             surface->triangles.push_back(
-                RegionMap3::Surface::Triangle());
+                Poly3Map::Surface::Triangle());
             auto &triangle = surface->triangles.back();
-            triangle.vertices[0] = region_map_out->i->vertex_from_nef[v0];
-            triangle.vertices[1] = region_map_out->i->vertex_from_nef[v1];
-            triangle.vertices[2] = region_map_out->i->vertex_from_nef[v2];
+            triangle.vertices[0] = poly3_map_out->i->vertex_from_nef[v0];
+            triangle.vertices[1] = poly3_map_out->i->vertex_from_nef[v1];
+            triangle.vertices[2] = poly3_map_out->i->vertex_from_nef[v2];
             triangle.normal = PureVector(
                 PureScalar(normal.x()),
                 PureScalar(normal.y()),
@@ -503,7 +503,7 @@ public:
     void spread_to_neighbors(
         os2cx::CgalNef3::Halffacet_const_handle hf,
         std::deque<os2cx::CgalNef3::Halffacet_const_handle> *queue,
-        RegionMap3::SurfaceId surface_id
+        Poly3Map::SurfaceId surface_id
     ) {
         for (auto fc_it = hf->facet_cycles_begin();
                 fc_it != hf->facet_cycles_end(); ++fc_it) {
@@ -514,14 +514,14 @@ public:
                     sh = sh->next(), done = (sh == sh_start)) {
                 os2cx::CgalNef3::Halfedge_const_handle he = sh->target();
                 if (is_border_halfedge(he)) {
-                    RegionMap3::VertexId v1 =
-                        region_map_out->i->vertex_from_nef[he->source()];
-                    RegionMap3::VertexId v2 =
-                        region_map_out->i->vertex_from_nef[he->target()];
-                    RegionMap3::BorderId border_id =
-                        region_map_out->borders_by_vertex[
+                    Poly3Map::VertexId v1 =
+                        poly3_map_out->i->vertex_from_nef[he->source()];
+                    Poly3Map::VertexId v2 =
+                        poly3_map_out->i->vertex_from_nef[he->target()];
+                    Poly3Map::BorderId border_id =
+                        poly3_map_out->borders_by_vertex[
                             std::make_pair(std::min(v1, v2), std::max(v1, v2))];
-                    region_map_out->borders[border_id].surfaces.insert(
+                    poly3_map_out->borders[border_id].surfaces.insert(
                         surface_id);
                 } else {
                     os2cx::CgalNef3::Halffacet_const_handle other_hf =
@@ -539,7 +539,7 @@ public:
     }
 
 private:
-    RegionMap3 *region_map_out;
+    Poly3Map *poly3_map_out;
     const os2cx::CgalNef3 &nef;
     CGAL::Inverse_index<os2cx::CgalNef3::Halffacet_const_handle> facet_ids;
     std::vector<bool> facets_visited;
@@ -601,110 +601,110 @@ CGAL::Point_3<KE> calculate_interior_point(
 }
 
 void maybe_compute_volume_masks(
-    RegionMap3 *region_map_out,
-    const std::vector<const Region3 *> &masks,
+    Poly3Map *poly3_map_out,
+    const std::vector<const Poly3 *> &masks,
     const std::vector<os2cx::CgalNef3> &mask_nefs,
-    RegionMap3::VolumeId volume_id,
-    RegionMap3::VertexId p0,
-    RegionMap3::VertexId p1,
-    RegionMap3::VertexId p2
+    Poly3Map::VolumeId volume_id,
+    Poly3Map::VertexId p0,
+    Poly3Map::VertexId p1,
+    Poly3Map::VertexId p2
 ) {
-    RegionMap3::Volume *volume =
-        &region_map_out->volumes[volume_id];
+    Poly3Map::Volume *volume =
+        &poly3_map_out->volumes[volume_id];
     if (!volume->is_solid) return;   // no need to compute masks for this one
     if (masks.empty()) return;   // nothing to do
     if (!volume->masks.empty()) return;   // we already did this one
 
     CGAL::Point_3<KE> interior_point = calculate_interior_point(
-        region_map_out->i->nef,
-        region_map_out->i->volume_to_nef[volume_id],
-        region_map_out->i->vertex_to_nef[p0]->point(),
-        region_map_out->i->vertex_to_nef[p1]->point(),
-        region_map_out->i->vertex_to_nef[p2]->point());
+        poly3_map_out->i->nef,
+        poly3_map_out->i->volume_to_nef[volume_id],
+        poly3_map_out->i->vertex_to_nef[p0]->point(),
+        poly3_map_out->i->vertex_to_nef[p1]->point(),
+        poly3_map_out->i->vertex_to_nef[p2]->point());
 
     for (int i = 0; i < static_cast<int>(masks.size()); ++i) {
-        const Region3 *mask = masks[i];
+        const Poly3 *mask = masks[i];
         const os2cx::CgalNef3 &mask_nef = mask_nefs[i];
         volume->masks[mask] = nef_contains(mask_nef, interior_point);
     }
 }
 
-void region_map_create(
-    const Region3 &solid,
-    const std::vector<const Region3 *> &masks,
-    RegionMap3 *region_map_out
+void poly3_map_create(
+    const Poly3 &solid,
+    const std::vector<const Poly3 *> &masks,
+    Poly3Map *poly3_map_out
 ) {
     std::vector<os2cx::CgalNef3> mask_nefs;
-    for (const Region3 *mask : masks) {
-        mask_nefs.push_back(region_nef(*mask));
+    for (const Poly3 *mask : masks) {
+        mask_nefs.push_back(poly3_nef(*mask));
     }
 
-    region_map_out->i.reset(new RegionMap3Internal);
+    poly3_map_out->i.reset(new Poly3MapInternal);
     if (!masks.empty()) {
-        /* Set 'region_map_out->i->nef' to 'solid' minus the union of the mask
+        /* Set 'poly3_map_out->i->nef' to 'solid' minus the union of the mask
         boundaries. So each volume of 'nef' will belong to a different region of
-        the region map. */
+        the poly3 map. */
         CGAL::Nef_nary_union_3<os2cx::CgalNef3> mask_union;
         for (const os2cx::CgalNef3 &mask_nef : mask_nefs) {
             mask_union.add_polyhedron(mask_nef.boundary());
         }
-        region_map_out->i->nef =
-            region_nef(solid).difference(mask_union.get_union());
+        poly3_map_out->i->nef =
+            poly3_nef(solid).difference(mask_union.get_union());
     } else {
-        region_map_out->i->nef = region_nef(solid);
+        poly3_map_out->i->nef = poly3_nef(solid);
     }
 
-    const os2cx::CgalNef3 &nef = region_map_out->i->nef;
+    const os2cx::CgalNef3 &nef = poly3_map_out->i->nef;
 
     /* Populate 'vertices', 'vertex_from_nef', and 'vertex_to_nef' */
-    region_map_out->vertices.reserve(nef.number_of_vertices());
-    region_map_out->i->vertex_to_nef.reserve(nef.number_of_vertices());
+    poly3_map_out->vertices.reserve(nef.number_of_vertices());
+    poly3_map_out->i->vertex_to_nef.reserve(nef.number_of_vertices());
     for (auto it = nef.vertices_begin(); it != nef.vertices_end(); ++it) {
-        region_map_out->i->vertex_from_nef.push_back(it);
-        region_map_out->i->vertex_to_nef.push_back(it);
-        RegionMap3::Vertex v;
+        poly3_map_out->i->vertex_from_nef.push_back(it);
+        poly3_map_out->i->vertex_to_nef.push_back(it);
+        Poly3Map::Vertex v;
         v.point = Point::raw(
             CGAL::to_double(it->point().x()),
             CGAL::to_double(it->point().y()),
             CGAL::to_double(it->point().z()));
-        region_map_out->vertices.push_back(std::move(v));
+        poly3_map_out->vertices.push_back(std::move(v));
     }
 
     /* Populate 'volumes', 'volume_from_nef' and 'volume_to_nef', but don't
     fill 'Volume::masks' yet. */
-    region_map_out->volumes.reserve(nef.number_of_volumes());
-    region_map_out->volume_outside = -1;
+    poly3_map_out->volumes.reserve(nef.number_of_volumes());
+    poly3_map_out->volume_outside = -1;
     for (auto it = nef.volumes_begin(); it != nef.volumes_end(); ++it) {
-        region_map_out->i->volume_from_nef.push_back(it);
-        region_map_out->i->volume_to_nef.push_back(it);
+        poly3_map_out->i->volume_from_nef.push_back(it);
+        poly3_map_out->i->volume_to_nef.push_back(it);
         if (!it->mark()) {
-            assert(region_map_out->volume_outside == -1);
-            region_map_out->volume_outside =
-                region_map_out->volumes.size();
+            assert(poly3_map_out->volume_outside == -1);
+            poly3_map_out->volume_outside =
+                poly3_map_out->volumes.size();
         }
-        region_map_out->volumes.push_back(
-            RegionMap3::Volume());
-        region_map_out->volumes.back().is_solid = it->mark();
+        poly3_map_out->volumes.push_back(
+            Poly3Map::Volume());
+        poly3_map_out->volumes.back().is_solid = it->mark();
     }
 
     /* Populate 'volume_outside' */
-    region_map_out->volume_outside =
-        region_map_out->i->volume_from_nef[volume_outside(nef)];
+    poly3_map_out->volume_outside =
+        poly3_map_out->i->volume_from_nef[volume_outside(nef)];
 
     /* Populate 'borders' and 'borders_by_vertex', but don't fill
     'Border::surfaces' yet. */
-    BorderTraversal(region_map_out).run();
+    BorderTraversal(poly3_map_out).run();
 
     /* Populate 'surfaces' and fill 'Border::surfaces' */
-    SurfaceTraversal(region_map_out).run();
+    SurfaceTraversal(poly3_map_out).run();
 
     /* Fill 'Volume::masks' (we couldn't do this before surface traversal
     because we need triangulation data) */
     if (!masks.empty()) {
-        for (const RegionMap3::Surface &surface :
-                region_map_out->surfaces) {
+        for (const Poly3Map::Surface &surface :
+                poly3_map_out->surfaces) {
             maybe_compute_volume_masks(
-                region_map_out,
+                poly3_map_out,
                 masks,
                 mask_nefs,
                 surface.volumes[0],
@@ -712,7 +712,7 @@ void region_map_create(
                 surface.triangles[0].vertices[1],
                 surface.triangles[0].vertices[2]);
             maybe_compute_volume_masks(
-                region_map_out,
+                poly3_map_out,
                 masks,
                 mask_nefs,
                 surface.volumes[1],

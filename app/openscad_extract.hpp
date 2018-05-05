@@ -27,7 +27,7 @@ public:
 
 void openscad_extract_inventory(Project *project);
 
-std::unique_ptr<Region3> openscad_extract_region(
+std::unique_ptr<Poly3> openscad_extract_poly3(
     Project *project,
     const std::string &category,
     const std::string &name);

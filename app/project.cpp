@@ -10,8 +10,8 @@
 
 namespace os2cx {
 
-std::vector<const Region3 *> get_volume_masks(const Project *project) {
-    std::vector<const Region3 *> volume_masks;
+std::vector<const Poly3 *> get_volume_masks(const Project *project) {
+    std::vector<const Poly3 *> volume_masks;
     for (auto it = project->nset_directives.begin();
             it != project->nset_directives.end(); ++it) {
         volume_masks.push_back(it->second.mask.get());
@@ -29,32 +29,32 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->element_directives) {
-        pair.second.solid = openscad_extract_region(p, "element", pair.first);
+        pair.second.solid = openscad_extract_poly3(p, "element", pair.first);
         callbacks->project_run_checkpoint();
     }
     for (auto &pair : p->nset_directives) {
-        pair.second.mask = openscad_extract_region(p, "nset", pair.first);
+        pair.second.mask = openscad_extract_poly3(p, "nset", pair.first);
         callbacks->project_run_checkpoint();
     }
     for (auto &pair : p->volume_load_directives) {
-        pair.second.mask = openscad_extract_region(p, "volume_load", pair.first);
+        pair.second.mask = openscad_extract_poly3(p, "volume_load", pair.first);
         callbacks->project_run_checkpoint();
     }
 
     for (auto &pair : p->element_directives) {
-        std::shared_ptr<RegionMap3> region_map(new RegionMap3);
-        region_map_create(
+        std::shared_ptr<Poly3Map> poly3_map(new Poly3Map);
+        poly3_map_create(
             *pair.second.solid,
             get_volume_masks(p),
-            region_map.get()
+            poly3_map.get()
         );
-        pair.second.region_map = region_map;
-        pair.second.region_map_index.reset(new RegionMap3Index(*region_map));
+        pair.second.poly3_map = poly3_map;
+        pair.second.poly3_map_index.reset(new Poly3MapIndex(*poly3_map));
         callbacks->project_run_checkpoint();
     }
 
     for (auto &pair : p->element_directives) {
-        Mesh3 mesh = mesher_tetgen(*pair.second.region_map);
+        Mesh3 mesh = mesher_tetgen(*pair.second.poly3_map);
         pair.second.mesh.reset(new Mesh3(
             p->mesh_id_allocator.allocate(std::move(mesh))));
         pair.second.mesh_index.reset(new Mesh3Index(pair.second.mesh.get()));
@@ -66,8 +66,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         for (auto it = p->element_directives.begin();
                 it != p->element_directives.end(); ++it) {
             node_set_volume(
-                *it->second.region_map,
-                *it->second.region_map_index,
+                *it->second.poly3_map,
+                *it->second.poly3_map_index,
                 *it->second.mesh,
                 pair.second.mask.get(),
                 node_set.get());
@@ -82,8 +82,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             for (auto it = p->element_directives.begin();
                     it != p->element_directives.end(); ++it) {
                 load_volume(
-                    *it->second.region_map,
-                    *it->second.region_map_index,
+                    *it->second.poly3_map,
+                    *it->second.poly3_map_index,
                     *it->second.mesh,
                     pair.second.mask.get(),
                     pair.second.force_density,

@@ -1,8 +1,8 @@
-#include "region.internal.hpp"
+#include "poly.internal.hpp"
 
 namespace os2cx {
 
-Region3 Region3::box(
+Poly3 Poly3::box(
     double x1, double y1, double z1,
     double x2, double y2, double z2
 ) {
@@ -39,40 +39,37 @@ Region3 Region3::box(
     BoxMaker bm;
     bm.x1 = x1; bm.y1 = y1; bm.z1 = z1; bm.x2 = x2; bm.y2 = y2; bm.z2 = z2;
 
-    Region3 r;
-    r.i.reset(new Region3Internal);
+    Poly3 r;
+    r.i.reset(new Poly3Internal);
     r.i->p.delegate(bm);
     return r;
 }
 
-Region3::Region3() { }
-Region3::Region3(Region3 &&other) : i(std::move(other.i)) { }
-Region3::~Region3() { }
-Region3 &Region3::operator=(Region3 &&other) {
+Poly3::Poly3() { }
+Poly3::Poly3(Poly3 &&other) : i(std::move(other.i)) { }
+Poly3::~Poly3() { }
+Poly3 &Poly3::operator=(Poly3 &&other) {
     i = std::move(other.i);
     return *this;
 }
 
-Region3 read_region_off(std::istream &stream) {
-    Region3 region;
-    region.i.reset(new Region3Internal);
-    if (!(stream >> region.i->p)) {
-        throw Region_IOError("OFF file read failed");
+Poly3 read_poly3_off(std::istream &stream) {
+    Poly3 poly3;
+    poly3.i.reset(new Poly3Internal);
+    if (!(stream >> poly3.i->p)) {
+        throw PolyIoError("OFF file read failed");
     }
-    return std::move(region);
+    return std::move(poly3);
 }
 
-void write_region_off(std::ostream &stream, const Region3 &region) {
-    stream << region.i->p;
+void write_poly3_off(std::ostream &stream, const Poly3 &poly) {
+    stream << poly.i->p;
 }
 
-void write_region_stl_text(
-    std::ostream &stream,
-    const Region3 &r
-) {
+void write_poly3_stl_text(std::ostream &stream, const Poly3 &poly) {
     stream << "solid object\n";
-    for (auto it = r.i->p.facets_begin();
-              it != r.i->p.facets_end();
+    for (auto it = poly.i->p.facets_begin();
+              it != poly.i->p.facets_end();
               ++it) {
         os2cx::CgalPolyhedron3::Halfedge_around_facet_circulator jt =
             it->facet_begin();

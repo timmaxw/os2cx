@@ -1,4 +1,4 @@
-#include "region_map_index.hpp"
+#include "poly_map_index.hpp"
 
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_tree.h>
@@ -14,20 +14,20 @@ class CgalAabbPrimitive {
 public:
     typedef CGAL::Point_3<KS> Point;
     typedef CGAL::Triangle_3<KS> Datum;
-    typedef std::pair<RegionMap3::SurfaceId, int> Id;
-    typedef const RegionMap3 *Shared_data;
+    typedef std::pair<Poly3Map::SurfaceId, int> Id;
+    typedef const Poly3Map *Shared_data;
 
-    static Shared_data construct_shared_data(const RegionMap3 *rm) {
-        return rm;
+    static Shared_data construct_shared_data(const Poly3Map *pm) {
+        return pm;
     }
 
     CgalAabbPrimitive() { }
 
     template<class Iterator>
-    CgalAabbPrimitive(Iterator it, const RegionMap3 *) : i(*it) { }
+    CgalAabbPrimitive(Iterator it, const Poly3Map *) : i(*it) { }
 
-    Datum datum(const RegionMap3 *rm) const {
-        const RegionMap3::Surface::Triangle &tri =
+    Datum datum(const Poly3Map *rm) const {
+        const Poly3Map::Surface::Triangle &tri =
             rm->surfaces[i.first].triangles[i.second];
         return CGAL::Triangle_3<KS>(
             get_point(rm, tri.vertices[0]),
@@ -39,14 +39,14 @@ public:
         return i;
     }
 
-    Point reference_point(const RegionMap3 *rm) const {
-        const RegionMap3::Surface::Triangle &tri =
+    Point reference_point(const Poly3Map *rm) const {
+        const Poly3Map::Surface::Triangle &tri =
             rm->surfaces[i.first].triangles[i.second];
         return get_point(rm, tri.vertices[0]);
     }
 
 private:
-    Point get_point(const RegionMap3 *rm, RegionMap3::VertexId vid) const {
+    Point get_point(const Poly3Map *rm, Poly3Map::VertexId vid) const {
         return CGAL::Point_3<KS>(
             rm->vertices[vid].point.vector.x.val,
             rm->vertices[vid].point.vector.y.val,
@@ -59,13 +59,13 @@ private:
 class CgalAabbPrimitiveIterator {
 public:
     bool operator!=(const CgalAabbPrimitiveIterator &other) {
-        return rm != other.rm || pair != other.pair;
+        return pm != other.pm || pair != other.pair;
     }
     CgalAabbPrimitiveIterator &operator++() {
         pair.second += 1;
-        while (pair.first != static_cast<int>(rm->surfaces.size()) &&
+        while (pair.first != static_cast<int>(pm->surfaces.size()) &&
                 pair.second == static_cast<int>(
-                    rm->surfaces[pair.first].triangles.size())) {
+                    pm->surfaces[pair.first].triangles.size())) {
             ++pair.first;
             pair.second = 0;
         }
@@ -76,38 +76,38 @@ public:
         ++*this;
         return copy;
     }
-    const std::pair<RegionMap3::SurfaceId, int> &operator*() const {
+    const std::pair<Poly3Map::SurfaceId, int> &operator*() const {
         return pair;
     }
-    const std::pair<RegionMap3::SurfaceId, int> *operator->() const {
+    const std::pair<Poly3Map::SurfaceId, int> *operator->() const {
         return &pair;
     }
 
-    const RegionMap3 *rm;
-    std::pair<RegionMap3::SurfaceId, int> pair;
+    const Poly3Map *pm;
+    std::pair<Poly3Map::SurfaceId, int> pair;
 };
 
 typedef CGAL::AABB_traits<KS, os2cx::CgalAabbPrimitive> CgalAabbTraits;
 typedef CGAL::AABB_tree<os2cx::CgalAabbTraits> CgalAabbTree;
 
-class RegionMap3IndexInternal {
+class Poly3MapIndexInternal {
 public:
     CgalAabbTree tree;
 };
 
-RegionMap3Index::RegionMap3Index(const RegionMap3 &rm) :
-        region_map(&rm)
+Poly3MapIndex::Poly3MapIndex(const Poly3Map &pm) :
+        poly3_map(&pm)
 {
-    i.reset(new RegionMap3IndexInternal);
-    CgalAabbPrimitiveIterator begin {&rm, {0, 0}};
-    CgalAabbPrimitiveIterator end {&rm, {rm.surfaces.size(), 0}};
-    i->tree.rebuild(begin, end, &rm);
+    i.reset(new Poly3MapIndexInternal);
+    CgalAabbPrimitiveIterator begin {&pm, {0, 0}};
+    CgalAabbPrimitiveIterator end {&pm, {pm.surfaces.size(), 0}};
+    i->tree.rebuild(begin, end, &pm);
     i->tree.accelerate_distance_queries();
 }
 
-RegionMap3Index::~RegionMap3Index() { }
+Poly3MapIndex::~Poly3MapIndex() { }
 
-Length RegionMap3Index::approx_scale() const {
+Length Poly3MapIndex::approx_scale() const {
     double size = 0;
     size = std::max(size, i->tree.bbox().xmax());
     size = std::max(size, -i->tree.bbox().xmin());
@@ -118,7 +118,7 @@ Length RegionMap3Index::approx_scale() const {
     return Length(size);
 }
 
-RegionMap3::VolumeId RegionMap3Index::volume_containing_point(
+Poly3Map::VolumeId Poly3MapIndex::volume_containing_point(
     Point point
 ) const {
     CGAL::Random_points_on_sphere_3<CGAL::Point_3<KS> > random;
@@ -134,8 +134,8 @@ RegionMap3::VolumeId RegionMap3Index::volume_containing_point(
         i->tree.first_intersected_primitive(ray);
     if (!hit) return 0;
 
-    const RegionMap3::Surface &surface = region_map->surfaces[hit->first];
-    const RegionMap3::Surface::Triangle &tri = surface.triangles[hit->second];
+    const Poly3Map::Surface &surface = poly3_map->surfaces[hit->first];
+    const Poly3Map::Surface::Triangle &tri = surface.triangles[hit->second];
 
     double dot =
         direction.x() * tri.normal.x.val +
@@ -145,7 +145,7 @@ RegionMap3::VolumeId RegionMap3Index::volume_containing_point(
     return surface.volumes[(dot > 0) ? 1 : 0];
 }
 
-RegionMap3::SurfaceId RegionMap3Index::surface_closest_to_point(
+Poly3Map::SurfaceId Poly3MapIndex::surface_closest_to_point(
     Point point
 ) const {
     CGAL::Point_3<KS> point2(

@@ -1,5 +1,5 @@
-#ifndef GUI_OPENGL_WIDGET_HPP
-#define GUI_OPENGL_WIDGET_HPP
+#ifndef OS2CX_GUI_OPENGL_WIDGET_HPP_
+#define OS2CX_GUI_OPENGL_WIDGET_HPP_
 
 #include <QOpenGLWidget>
 
@@ -38,4 +38,4 @@ private:
 
 } /* namespace os2cx */
 
-#endif // GUI_OPENGL_WIDGET_HPP
+#endif

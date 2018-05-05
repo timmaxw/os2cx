@@ -1,21 +1,21 @@
 #include "opengl.hpp"
 
-#include "region.internal.hpp"
+#include "poly.internal.hpp"
 
 namespace os2cx {
 
-OpenglTriangles region_map_surface_to_opengl_triangles(
-    const RegionMap3 &region_map,
-    RegionMap3::SurfaceId sid,
+OpenglTriangles poly3_map_surface_to_opengl_triangles(
+    const Poly3Map &poly3_map,
+    Poly3Map::SurfaceId sid,
     int outside_volume_index
 ) {
-    const RegionMap3::Surface &surf = region_map.surfaces[sid];
+    const Poly3Map::Surface &surf = poly3_map.surfaces[sid];
     OpenglTriangles triangles;
     triangles.reserve(surf.triangles.size());
-    for (const RegionMap3::Surface::Triangle &tri : surf.triangles) {
+    for (const Poly3Map::Surface::Triangle &tri : surf.triangles) {
         Point ps[3];
         for (int i = 0; i < 3; ++i) {
-            ps[i] = region_map.vertices[tri.vertices[i]].point;
+            ps[i] = poly3_map.vertices[tri.vertices[i]].point;
         }
         if (outside_volume_index == 0) {
             triangles.add_triangle(ps[0], ps[1], ps[2], tri.normal);
@@ -26,8 +26,8 @@ OpenglTriangles region_map_surface_to_opengl_triangles(
     return triangles;
 }
 
-OpenglTriangles region_to_opengl_triangles(const Region3 *region) {
-    const os2cx::CgalPolyhedron3 &p = region->i->p;
+OpenglTriangles poly3_to_opengl_triangles(const Poly3 *poly3) {
+    const os2cx::CgalPolyhedron3 &p = poly3->i->p;
     assert(p.is_pure_triangle());
     OpenglTriangles triangles;
     triangles.reserve(p.size_of_facets());
@@ -109,10 +109,10 @@ OpenglLines mesh_surface_to_opengl_lines(
 Length approx_scale_of_project(const Project &project) {
     Length scale(0);
     for (const auto &pair : project.element_directives) {
-        if (!pair.second.region_map_index) {
+        if (!pair.second.poly3_map_index) {
             return Length(0);
         }
-        Length subscale = pair.second.region_map_index->approx_scale();
+        Length subscale = pair.second.poly3_map_index->approx_scale();
         if (subscale > scale) scale = subscale;
     }
     return scale;
@@ -217,33 +217,33 @@ public:
     std::vector<OpenglLines> lines;
 };
 
-void region_map_to_opengl_scene(
+void poly3_map_to_opengl_scene(
     const Project &project,
     const OpenglSceneSettings &scene_settings,
     OpenglTriangleScene *scene
 ) {
     for (const auto &pair : project.element_directives) {
-        const RegionMap3 *region_map = pair.second.region_map.get();
-        if (region_map == nullptr) {
+        const Poly3Map *poly3_map = pair.second.poly3_map.get();
+        if (poly3_map == nullptr) {
             continue;
         }
-        for (RegionMap3::SurfaceId sid = 0;
-                sid < static_cast<int>(region_map->surfaces.size()); ++sid) {
-            const RegionMap3::Surface &surface = region_map->surfaces[sid];
+        for (Poly3Map::SurfaceId sid = 0;
+                sid < static_cast<int>(poly3_map->surfaces.size()); ++sid) {
+            const Poly3Map::Surface &surface = poly3_map->surfaces[sid];
 
             int outside_volume_index;
-            if (surface.volumes[0] == region_map->volume_outside) {
+            if (surface.volumes[0] == poly3_map->volume_outside) {
                 outside_volume_index = 0;
-            } else if (surface.volumes[1] == region_map->volume_outside) {
+            } else if (surface.volumes[1] == poly3_map->volume_outside) {
                 outside_volume_index = 1;
             } else {
                 continue;
             }
-            OpenglTriangles triangles = region_map_surface_to_opengl_triangles(
-                *region_map, sid, outside_volume_index);
+            OpenglTriangles triangles = poly3_map_surface_to_opengl_triangles(
+                *poly3_map, sid, outside_volume_index);
 
-            const RegionMap3::Volume &inside_volume =
-                region_map->volumes[surface.volumes[1 - outside_volume_index]];
+            const Poly3Map::Volume &inside_volume =
+                poly3_map->volumes[surface.volumes[1 - outside_volume_index]];
 
             bool focused;
             switch (scene_settings.focus.type) {
@@ -257,13 +257,13 @@ void region_map_to_opengl_scene(
                 focused = (pair.first == scene_settings.focus.target);
                 break;
             case OpenglFocus::Type::NSet: {
-                const Region3 *mask = project.nset_directives.
+                const Poly3 *mask = project.nset_directives.
                     find(scene_settings.focus.target)->second.mask.get();
                 focused = inside_volume.masks.find(mask)->second == true;
                 break;
             }
             case OpenglFocus::Type::VolumeLoad: {
-                const Region3 *mask = project.volume_load_directives.
+                const Poly3 *mask = project.volume_load_directives.
                     find(scene_settings.focus.target)->second.mask.get();
                 focused = inside_volume.masks.find(mask)->second == true;
                 break;
@@ -321,7 +321,7 @@ std::unique_ptr<OpenglScene> project_to_opengl_scene(
     if (scene_settings.show_elements) {
         mesh_to_opengl_scene(project, scene_settings, scene.get());
     } else {
-        region_map_to_opengl_scene(project, scene_settings, scene.get());
+        poly3_map_to_opengl_scene(project, scene_settings, scene.get());
     }
 
     return scene;

@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "openscad_value.hpp"
-#include "region.hpp"
+#include "poly.hpp"
 #include "util.hpp"
 
 namespace TinyProcessLib {
@@ -37,7 +37,7 @@ public:
     std::vector<std::string> warnings, errors;
 
     std::string geometry_path;
-    std::unique_ptr<Region3> geometry;
+    std::unique_ptr<Poly3> geometry;
 
 private:
     void handle_output_chunk(const char *bytes, size_t n);

@@ -1,5 +1,5 @@
-#ifndef GUI_MAIN_WINDOW_HPP_
-#define GUI_MAIN_WINDOW_HPP_
+#ifndef OS2CX_GUI_MAIN_WINDOW_HPP_
+#define OX2CX_GUI_MAIN_WINDOW_HPP_
 
 #include <QMainWindow>
 
@@ -31,4 +31,4 @@ private:
 
 } /* namespace os2cx */
 
-#endif /* GUI_MAIN_WINDOW_HPP_ */
+#endif

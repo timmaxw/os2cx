@@ -10,7 +10,7 @@
 namespace os2cx {
 
 Mesh3 mesher_netgen(
-    const Region3 &region,
+    const Poly3 &poly3,
     const FilePath &temp_dir,
     const std::string &name
 ) {
@@ -18,7 +18,7 @@ Mesh3 mesher_netgen(
 
     {
         std::ofstream stl_stream(stl_path);
-        write_region_stl_text(stl_stream, region);
+        write_poly3_stl_text(stl_stream, poly3);
     }
 
     std::string mesh_path = temp_dir + "/" + name + "_netgen.msh";

@@ -6,18 +6,18 @@
 namespace os2cx {
 
 TEST(AttrsTest, LoadVolume) {
-    Region3 solid = Region3::box(0, 0, 0, 1, 1, 2);
-    Region3 mask = Region3::box(0, 0, 1, 1, 1, 3);
-    RegionMap3 region_map;
-    region_map_create(solid, {&mask}, &region_map);
-    RegionMap3Index region_map_index(region_map);
-    Mesh3 mesh = mesher_tetgen(region_map);
+    Poly3 solid = Poly3::box(0, 0, 0, 1, 1, 2);
+    Poly3 mask = Poly3::box(0, 0, 1, 1, 1, 3);
+    Poly3Map poly3_map;
+    poly3_map_create(solid, {&mask}, &poly3_map);
+    Poly3MapIndex poly3_map_index(poly3_map);
+    Mesh3 mesh = mesher_tetgen(poly3_map);
 
     ConcentratedLoad load;
     ForceDensityVector force_density =
         ForceDensityVector::raw(1.234, 0, 0);
     load_volume(
-        region_map, region_map_index, mesh,
+        poly3_map, poly3_map_index, mesh,
         &mask, force_density, &load);
 
     ForceVector total_force = ForceVector::zero();

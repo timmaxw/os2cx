@@ -7,9 +7,9 @@
 #include "attrs.hpp"
 #include "mesh.hpp"
 #include "mesh_index.hpp"
-#include "region.hpp"
-#include "region_map.hpp"
-#include "region_map_index.hpp"
+#include "poly.hpp"
+#include "poly_map.hpp"
+#include "poly_map_index.hpp"
 #include "result.hpp"
 
 namespace os2cx {
@@ -30,9 +30,9 @@ public:
 
     class ElementDirective {
     public:
-        std::shared_ptr<const Region3> solid;
-        std::shared_ptr<const RegionMap3> region_map;
-        std::shared_ptr<const RegionMap3Index> region_map_index;
+        std::shared_ptr<const Poly3> solid;
+        std::shared_ptr<const Poly3Map> poly3_map;
+        std::shared_ptr<const Poly3MapIndex> poly3_map_index;
         std::shared_ptr<const Mesh3> mesh;
         std::shared_ptr<const Mesh3Index> mesh_index;
     };
@@ -40,14 +40,14 @@ public:
 
     class NSetDirective {
     public:
-        std::shared_ptr<const Region3> mask;
+        std::shared_ptr<const Poly3> mask;
         std::shared_ptr<const NodeSet> node_set;
     };
     std::map<std::string, NSetDirective> nset_directives;
 
     class VolumeLoadDirective {
     public:
-        std::shared_ptr<const Region3> mask;
+        std::shared_ptr<const Poly3> mask;
         ForceDensityVector force_density;
     };
     std::map<std::string, VolumeLoadDirective> volume_load_directives;

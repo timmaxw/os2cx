@@ -57,7 +57,7 @@ void OpenscadRun::wait() {
 
     if (has_geometry) {
         std::ifstream stream(geometry_path);
-        geometry.reset(new Region3(read_region_off(stream)));
+        geometry.reset(new Poly3(read_poly3_off(stream)));
     }
 }
 

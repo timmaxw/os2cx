@@ -5,7 +5,7 @@
 #include <string>
 
 #include "mesh.hpp"
-#include "region.hpp"
+#include "poly.hpp"
 #include "util.hpp"
 
 namespace os2cx {
@@ -16,7 +16,7 @@ public:
 };
 
 Mesh3 mesher_netgen(
-    const Region3 &region,
+    const Poly3 &poly3,
     const FilePath &temp_dir,
     const std::string &name);
 

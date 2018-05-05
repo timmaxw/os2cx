@@ -45,14 +45,14 @@ SOURCES += \
     openscad_run.cpp \
     openscad_value.cpp \
     project.cpp \
-    region.cpp \
-    region_map.cpp \
-    region_map_index.cpp \
     util.cpp \
     gui_opengl_widget.cpp \
     gui_project_runner.cpp \
     gui_focus_combo_box.cpp \
-    polynomial.cpp
+    polynomial.cpp \
+    poly.cpp \
+    poly_map.cpp \
+    poly_map_index.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -72,16 +72,16 @@ HEADERS += \
     openscad_run.hpp \
     openscad_value.hpp \
     project.hpp \
-    region.hpp \
-    region.internal.hpp \
-    region_map.hpp \
-    region_map.internal.hpp \
-    region_map_index.hpp \
     result.hpp \
     util.hpp \
     gui_opengl_widget.hpp \
     gui_project_runner.hpp \
     gui_focus_combo_box.hpp \
-    polynomial.hpp
+    polynomial.hpp \
+    poly.hpp \
+    poly.internal.hpp \
+    poly_map.hpp \
+    poly_map.internal.hpp \
+    poly_map_index.hpp
 
 FORMS +=

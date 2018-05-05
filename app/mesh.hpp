@@ -83,6 +83,14 @@ public:
     int face;
 };
 
+/* Mesh3 is a collection of 3D nodes and elements suitable for use in a
+simulation.
+
+Not to be confused with Poly3; a Poly3 only defines a surface, and uses
+triangles of whatever size is most convenient, whereas a Mesh3 fills a volume
+with tetrahedra or other elements, and subdivides them to a size that's good for
+simulation. */
+
 class Mesh3 {
 public:
     Mesh3() :

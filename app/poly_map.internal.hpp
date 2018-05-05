@@ -1,12 +1,12 @@
-#ifndef OS2CX_REGION_MAP_INTERNAL_HPP_
-#define OS2CX_REGION_MAP_INTERNAL_HPP_
+#ifndef OS2CX_POLY_MAP_INTERNAL_HPP_
+#define OS2CX_POLY_MAP_INTERNAL_HPP_
 
-#include "region_map.hpp"
+#include "poly_map.hpp"
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Nef_polyhedron_3.h>
 
-#include "region.internal.hpp"
+#include "poly.internal.hpp"
 
 namespace os2cx {
 
@@ -30,7 +30,7 @@ public:
         volume_index;
 };
 
-class RegionMap3Internal {
+class Poly3MapInternal {
 public:
     os2cx::CgalNef3 nef;
     CGAL::Inverse_index<os2cx::CgalNef3::Vertex_const_handle> vertex_from_nef;

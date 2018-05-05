@@ -58,16 +58,15 @@ private:
     std::vector<GLfloat> vertices, normals;
 };
 
-OpenglTriangles region_map_surface_to_opengl_triangles(
-    const RegionMap3 &region_map,
-    RegionMap3::SurfaceId surface,
+OpenglTriangles poly3_map_surface_to_opengl_triangles(
+    const Poly3Map &poly3_map,
+    Poly3Map::SurfaceId surface,
     /* outside_volume_index should be 0 or 1, indicating which of the volumes
     adjacent to the surface is considered the "outside" for rendering
     purposes */
     int outside_volume_index);
 
-OpenglTriangles region_to_opengl_triangles(
-    const Region3 *region);
+OpenglTriangles poly3_to_opengl_triangles(const Poly3 *poly3);
 
 OpenglTriangles mesh_surface_to_opengl_triangles(
     const Mesh3 &mesh,
@@ -102,7 +101,7 @@ OpenglLines mesh_surface_to_opengl_lines(
     const Mesh3Index &mesh_index);
 
 /* Returns the approximate physical size scale of the project, expressed as a
-radius from the origin. The project must have `region_map_index` already
+radius from the origin. The project must have `poly3_map_index` already
 calculated, or else the return value will be zero. */
 Length approx_scale_of_project(const Project &project);
 

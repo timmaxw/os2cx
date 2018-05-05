@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "region.internal.hpp"
+#include "poly.internal.hpp"
 
 namespace os2cx {
 
@@ -32,16 +32,16 @@ const char *cube_off_text =
     "3  7 2 3\n"
     "3  3 2 6\n";
 
-TEST(RegionTest, ReadWriteRegionOff) {
+TEST(PolyTest, ReadWritePoly3Off) {
     std::istringstream stream1(cube_off_text);
-    Region3 r = read_region_off(stream1);
+    Poly3 r = read_poly3_off(stream1);
     EXPECT_EQ(8, r.i->p.size_of_vertices());
     EXPECT_EQ(12, r.i->p.size_of_facets());
 
     std::ostringstream stream2;
-    write_region_off(stream2, r);
+    write_poly3_off(stream2, r);
     std::istringstream stream3(stream2.str());
-    Region3 r_copy = read_region_off(stream3);
+    Poly3 r_copy = read_poly3_off(stream3);
     EXPECT_EQ(8, r_copy.i->p.size_of_vertices());
     EXPECT_EQ(12, r_copy.i->p.size_of_facets());
 }

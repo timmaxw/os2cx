@@ -4,10 +4,10 @@ namespace os2cx {
 
 template<class Callable>
 void for_element_in_mask(
-    const RegionMap3 &region_map,
-    const RegionMap3Index &region_map_index,
+    const Poly3Map &poly3_map,
+    const Poly3MapIndex &poly3_map_index,
     const Mesh3 &mesh,
-    const Region3 *mask,
+    const Poly3 *mask,
     const Callable &callable
 ) {
     for (const Element3 &element : mesh.elements) {
@@ -17,8 +17,8 @@ void for_element_in_mask(
             c += mesh.nodes[element.nodes[i]].point.vector;
         }
         c /= num_nodes;
-        const RegionMap3::Volume &volume = region_map.volumes[
-            region_map_index.volume_containing_point(Point(c))];
+        const Poly3Map::Volume &volume = poly3_map.volumes[
+            poly3_map_index.volume_containing_point(Point(c))];
         assert(volume.is_solid);
         if (volume.masks.find(mask)->second) {
             callable(element);
@@ -27,13 +27,13 @@ void for_element_in_mask(
 }
 
 void node_set_volume(
-    const RegionMap3 &region_map,
-    const RegionMap3Index &region_map_index,
+    const Poly3Map &poly3_map,
+    const Poly3MapIndex &poly3_map_index,
     const Mesh3 &mesh,
-    const Region3 *mask,
+    const Poly3 *mask,
     NodeSet *nset_out
 ) {
-    for_element_in_mask(region_map, region_map_index, mesh, mask,
+    for_element_in_mask(poly3_map, poly3_map_index, mesh, mask,
     [&](const Element3 &element) {
         int num_nodes = element.num_nodes();
         for (int i = 0; i < num_nodes; ++i) {
@@ -43,14 +43,14 @@ void node_set_volume(
 }
 
 void load_volume(
-    const RegionMap3 &region_map,
-    const RegionMap3Index &region_map_index,
+    const Poly3Map &poly3_map,
+    const Poly3MapIndex &poly3_map_index,
     const Mesh3 &mesh,
-    const Region3 *mask,
+    const Poly3 *mask,
     ForceDensityVector force,
     ConcentratedLoad *load_out
 ) {
-    for_element_in_mask(region_map, region_map_index, mesh, mask,
+    for_element_in_mask(poly3_map, poly3_map_index, mesh, mask,
     [&](const Element3 &element) {
         int num_nodes = element.num_nodes();
         for (int i = 0; i < num_nodes; ++i) {

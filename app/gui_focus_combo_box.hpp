@@ -1,5 +1,5 @@
-#ifndef GUI_FOCUS_COMBO_BOX_HPP_
-#define GUI_FOCUS_COMBO_BOX_HPP_
+#ifndef OS2CX_GUI_FOCUS_COMBO_BOX_HPP_
+#define OS2CX_GUI_FOCUS_COMBO_BOX_HPP_
 
 #include <QComboBox>
 
@@ -33,4 +33,4 @@ private:
 
 } /* namespace os2cx */
 
-#endif /* GUI_FOCUS_COMBO_BOX_HPP_ */
+#endif

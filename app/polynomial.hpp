@@ -1,5 +1,5 @@
-#ifndef POLYNOMIAL_HPP_
-#define POLYNOMIAL_HPP_
+#ifndef OS2CX_POLYNOMIAL_HPP_
+#define OS2CX_POLYNOMIAL_HPP_
 
 #include <iostream>
 #include <map>
@@ -91,4 +91,4 @@ std::ostream &operator<<(std::ostream &stream, const os2cx::Polynomial &poly);
 
 } /* namespace os2cx */
 
-#endif /* POLYNOMIAL_HPP_ */
+#endif

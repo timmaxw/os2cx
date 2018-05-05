@@ -1,5 +1,5 @@
-#ifndef GUI_PROJECT_RUNNER_HPP
-#define GUI_PROJECT_RUNNER_HPP
+#ifndef OS2CX_GUI_PROJECT_RUNNER_HPP_
+#define OS2CX_GUI_PROJECT_RUNNER_HPP_
 
 #include <QMutex>
 #include <QObject>
@@ -72,4 +72,4 @@ private slots:
 
 } /* namespace os2cx */
 
-#endif // GUI_PROJECT_RUNNER_HPP
+#endif
