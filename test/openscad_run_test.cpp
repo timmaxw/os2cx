@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include <fstream>
 
 #include <gtest/gtest.h>
@@ -26,14 +24,14 @@ TEST(OpenscadRunTest, OpenscadRun) {
     OpenscadRun run(scad_path, geometry_path, defines);
     run.wait();
 
-    assert(run.echos.size() == 2);
-    assert(run.echos[0].size() == 2);
-    assert(run.echos[0][0] == OpenscadValue(123));
-    assert(run.echos[0][1] == OpenscadValue(456));
-    assert(run.echos[1].size() == 2);
-    assert(run.echos[1][0] == OpenscadValue("foo"));
-    assert(run.echos[1][1] == OpenscadValue("bar"));
-    assert(run.geometry == nullptr);
+    ASSERT_EQ(2, run.echos.size());
+    ASSERT_EQ(2, run.echos[0].size());
+    EXPECT_EQ(OpenscadValue(123), run.echos[0][0]);
+    EXPECT_EQ(OpenscadValue(456), run.echos[0][1]);
+    ASSERT_EQ(2, run.echos[1].size());
+    EXPECT_EQ(OpenscadValue("foo"), run.echos[1][0]);
+    EXPECT_EQ(OpenscadValue("bar"), run.echos[1][1]);
+    EXPECT_EQ(nullptr, run.geometry);
 }
 
 } /* namespace os2cx */

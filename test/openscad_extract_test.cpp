@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include <fstream>
 
 #include <gtest/gtest.h>
@@ -24,9 +22,9 @@ TEST(OpenscadExtractTest, OpenscadExtractInventory) {
     Project project(scad_path, temp_dir.path());
     openscad_extract_inventory(&project);
 
-    assert(project.directives.size() == 2);
-    assert(project.directives[0] == "a");
-    assert(project.directives[1] == "b");
+    EXPECT_EQ(2, project.directives.size());
+    EXPECT_EQ("a", project.directives[0]);
+    EXPECT_EQ("b", project.directives[1]);
 }
 
 } /* namespace os2cx */

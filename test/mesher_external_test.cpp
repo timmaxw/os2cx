@@ -14,8 +14,8 @@ TEST(MesherExternalTest, MesherNetgen) {
         TempDir::AutoCleanup::Yes);
     Mesh3 mesh = mesher_netgen(region, temp_dir.path(), "cube_test");
 
-    assert(mesh.nodes.size() == 9);
-    assert(mesh.elements.size() == 12);
+    EXPECT_EQ(9, mesh.nodes.size());
+    EXPECT_EQ(12, mesh.elements.size());
 }
 
 } /* namespace os2cx */

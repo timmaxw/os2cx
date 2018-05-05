@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <math.h>
 
 #include <sstream>
@@ -13,43 +12,41 @@ TEST(OpenscadValueTest, ParseOne) {
     OpenscadValue v;
 
     v = OpenscadValue::parse_one("true");
-    assert(v == OpenscadValue::make_bool(true));
+    EXPECT_EQ(OpenscadValue::make_bool(true), v);
 
     v = OpenscadValue::parse_one("false");
-    assert(v == OpenscadValue::make_bool(false));
+    EXPECT_EQ(OpenscadValue::make_bool(false), v);
 
     v = OpenscadValue::parse_one("123");
-    assert(v == OpenscadValue(123.0));
+    EXPECT_EQ(OpenscadValue(123.0), v);
 
     v = OpenscadValue::parse_one("-123");
-    assert(v == OpenscadValue(-123.0));
+    EXPECT_EQ(OpenscadValue(-123.0), v);
 
     v = OpenscadValue::parse_one("123.456");
-    assert(v.type == OpenscadValue::Type::Number);
-    assert(fabs(v.number_value - 123.456) < 1e-10);
+    EXPECT_EQ(OpenscadValue::Type::Number, v.type);
+    EXPECT_FLOAT_EQ(123.456, v.number_value);
 
     v = OpenscadValue::parse_one("inf");
-    assert(v == OpenscadValue(INFINITY));
+    EXPECT_EQ(OpenscadValue(INFINITY), v);
 
     v = OpenscadValue::parse_one("[0:1:10]");
-    assert(v.type == OpenscadValue::Type::Range);
-    assert(v.range_value.start == 0);
-    assert(v.range_value.step == 1);
-    assert(v.range_value.end == 10);
+    OpenscadValue expected_range(OpenscadValue::Range { 0, 1, 10 });
+    EXPECT_EQ(expected_range, v);
 
     v = OpenscadValue::parse_one("\"abc def\"");
-    assert(v == OpenscadValue("abc def"));
+    EXPECT_EQ(OpenscadValue("abc def"), v);
 
     v = OpenscadValue::parse_one("undef");
-    assert(v == OpenscadValue());
+    EXPECT_EQ(OpenscadValue(), v);
 
     v = OpenscadValue::parse_one("[1,2,3]");
-    OpenscadValue expect(std::vector<OpenscadValue>({
+    OpenscadValue expected_array(std::vector<OpenscadValue>({
         OpenscadValue(1.0),
         OpenscadValue(2.0),
         OpenscadValue(3.0)
     }));
-    assert(v == expect);
+    EXPECT_EQ(expected_array, v);
 }
 
 TEST(OpenscadValueTest, ToString) {
@@ -65,7 +62,7 @@ TEST(OpenscadValueTest, ToString) {
     stream << v;
     std::string str = stream.str();
 
-    assert(str == "[true,123,[0:1:10],\"abc def\",undef]");
+    EXPECT_EQ("[true,123,[0:1:10],\"abc def\",undef]", str);
 }
 
 } /* namespace os2cx */

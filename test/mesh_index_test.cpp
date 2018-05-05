@@ -29,10 +29,10 @@ TEST(MeshIndexTest, Mesh3Index) {
         for (int face = 0; face < 4; ++face) {
             auto match = index.matching_face(FaceId { eid, face });
             if (face == 0) {
-                assert(match.element_id == other_eid);
-                assert(match.face == 0);
+                EXPECT_EQ(other_eid, match.element_id);
+                EXPECT_EQ(0, match.face);
             } else {
-                assert(match == FaceId::invalid());
+                EXPECT_EQ(FaceId::invalid(), match);
             }
         }
     }

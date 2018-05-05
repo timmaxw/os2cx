@@ -24,30 +24,30 @@ TEST(CalculixReadTest, ReadCalculixNodesAndElements) {
     std::istringstream input(ss.str());
     read_calculix_nodes_and_elements(input, &mesh);
 
-    assert(mesh.nodes.size() == 4);
+    ASSERT_EQ(4, mesh.nodes.size());
 
     const Node3 &n1 = mesh.nodes[NodeId::from_int(1)];
-    assert(n1.point.vector.x.val == 0);
-    assert(n1.point.vector.y.val == 0);
-    assert(fabs(n1.point.vector.z.val - 0.1) < 1e-10);
+    EXPECT_EQ(0, n1.point.vector.x.val);
+    EXPECT_EQ(0, n1.point.vector.y.val);
+    EXPECT_FLOAT_EQ(0.1, n1.point.vector.z.val);
 
     const Node3 &n2 = mesh.nodes[NodeId::from_int(2)];
-    assert(n2.point.vector.x.val == -1);
-    assert(n2.point.vector.y.val == 0);
-    assert(fabs(n2.point.vector.z.val - 0.2) < 1e-10);
+    EXPECT_EQ(-1, n2.point.vector.x.val);
+    EXPECT_EQ(0, n2.point.vector.y.val);
+    EXPECT_FLOAT_EQ(n2.point.vector.z.val, 0.2);
 
     const Node3 &n3 = mesh.nodes[NodeId::from_int(3)];
-    assert(n3.point.vector.x.val == 0);
-    assert(n3.point.vector.y.val == 1);
-    assert(fabs(n3.point.vector.z.val - (-0.3)) < 1e-10);
+    EXPECT_EQ(0, n3.point.vector.x.val);
+    EXPECT_EQ(1, n3.point.vector.y.val);
+    EXPECT_FLOAT_EQ(-0.3, n3.point.vector.z.val);
 
-    assert(mesh.elements.size() == 1);
+    ASSERT_EQ(1, mesh.elements.size());
     const Element3 &e = mesh.elements[ElementId::from_int(1)];
-    assert(e.type == ElementType::C3D4);
-    assert(e.nodes[0].to_int() == 1);
-    assert(e.nodes[1].to_int() == 2);
-    assert(e.nodes[2].to_int() == 3);
-    assert(e.nodes[3].to_int() == 4);
+    EXPECT_EQ(ElementType::C3D4, e.type);
+    EXPECT_EQ(1, e.nodes[0].to_int());
+    EXPECT_EQ(2, e.nodes[1].to_int());
+    EXPECT_EQ(3, e.nodes[2].to_int());
+    EXPECT_EQ(4, e.nodes[3].to_int());
 }
 
 } /* namespace os2cx */
