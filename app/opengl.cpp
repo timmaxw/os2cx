@@ -60,7 +60,8 @@ OpenglTriangles mesh_surface_to_opengl_triangles(
         const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
         Point ps[3];
         for (int i = 0; i < 3; ++i) {
-            NodeId node_id = element.nodes[type.shape->faces[fi.face][i]];
+            int vertex = type.shape->faces[fi.face].vertices[i];
+            NodeId node_id = element.nodes[vertex];
             ps[i] = mesh.nodes[node_id].point;
             if (disps != nullptr) {
                 PureVector disp = (*disps)[node_id];
@@ -87,7 +88,7 @@ OpenglLines mesh_surface_to_opengl_lines(
         const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
         NodeId node_ids[3];
         for (int i = 0; i < 3; ++i) {
-            node_ids[i] = element.nodes[type.shape->faces[fi.face][i]];
+            node_ids[i] = element.nodes[type.shape->faces[fi.face].vertices[i]];
         }
         for (int i = 0; i < 3; ++i) {
             int j = (i + 1) % 3;

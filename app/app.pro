@@ -39,7 +39,6 @@ SOURCES += \
     mesher_external.cpp \
     mesher_tetgen.cpp \
     mesh_index.cpp \
-    mesh_shape_info.cpp \
     mesh_type_info.cpp \
     opengl.cpp \
     openscad_extract.cpp \
@@ -52,7 +51,8 @@ SOURCES += \
     util.cpp \
     gui_opengl_widget.cpp \
     gui_project_runner.cpp \
-    gui_focus_combo_box.cpp
+    gui_focus_combo_box.cpp \
+    polynomial.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -66,7 +66,6 @@ HEADERS += \
     mesher_external.hpp \
     mesher_tetgen.hpp \
     mesh_index.hpp \
-    mesh_shape_info.hpp \
     mesh_type_info.hpp \
     opengl.hpp \
     openscad_extract.hpp \
@@ -82,6 +81,7 @@ HEADERS += \
     util.hpp \
     gui_opengl_widget.hpp \
     gui_project_runner.hpp \
-    gui_focus_combo_box.hpp
+    gui_focus_combo_box.hpp \
+    polynomial.hpp
 
 FORMS +=

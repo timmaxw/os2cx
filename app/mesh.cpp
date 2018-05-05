@@ -5,21 +5,35 @@ namespace os2cx {
 Volume Mesh3::volume(const Element3 &element) const {
     const ElementShapeInfo &shape =
         *ElementTypeInfo::get(element.type).shape;
-    Point points[20];
-    for (size_t i = 0; i < shape.nodes.size(); ++i) {
-        points[i] = nodes[element.nodes[i]].point;
-    }
-    return shape.volume(points);
+    double vol = evaluate_polynomial(element, shape.volume_function);
+    return Volume(vol);
 }
 
 Volume Mesh3::volume_for_node(const Element3 &element, int which) const {
     const ElementShapeInfo &shape =
         *ElementTypeInfo::get(element.type).shape;
-    Point points[20];
-    for (size_t i = 0; i < shape.nodes.size(); ++i) {
-        points[i] = nodes[element.nodes[i]].point;
-    }
-    return shape.volume_for_node(which, points);
+    double vol = evaluate_polynomial(
+        element,
+        shape.vertices[which].volume_function);
+    return Volume(vol);
+}
+
+double Mesh3::evaluate_polynomial(
+    const Element3 &element,
+    const Polynomial &poly
+) const {
+    return poly.evaluate(
+        [&](Polynomial::Variable var) {
+            int vertex = shape_function_variables::coord_to_vertex(var);
+            Point point = nodes[element.nodes[vertex]].point;
+            switch (shape_function_variables::coord_to_dimension(var)) {
+            case 0: return point.vector.x.val;
+            case 1: return point.vector.y.val;
+            case 2: return point.vector.z.val;
+            default: assert(false);
+            }
+        }
+    );
 }
 
 Mesh3 MeshIdAllocator::allocate(Mesh3 &&mesh) {

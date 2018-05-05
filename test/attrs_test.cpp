@@ -25,9 +25,11 @@ TEST(AttrsTest, LoadVolume) {
         total_force += pair.second.force;
     }
 
+    std::cout << element_shape_tetrahedron4().volume_function << std::endl;
+
     Force expected_force = force_density.x * Volume(1);
     Force actual_force = total_force.x;
-    assert(abs(expected_force.val - actual_force.val) < 1e-6);
+    EXPECT_NEAR(expected_force.val, actual_force.val, 1e-6);
 }
 
 } /* namespace os2cx */

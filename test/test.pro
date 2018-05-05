@@ -9,7 +9,8 @@ defineReplace(app_path) {
     return ($$new)
 }
 HEADERS = $$app_path($$HEADERS)
-SOURCES = $$app_path($$SOURCES)
+SOURCES = $$app_path($$SOURCES) \
+    polynomial_test.cpp
 FORMS = $$app_path($$FORMS)
 
 SOURCES -= ../app/main.cpp

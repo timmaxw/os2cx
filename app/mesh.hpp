@@ -34,7 +34,7 @@ private:
 class Element3 {
 public:
     int num_nodes() const {
-        return ElementTypeInfo::get(type).shape->nodes.size();
+        return ElementTypeInfo::get(type).shape->vertices.size();
     }
 
     ElementType type;
@@ -95,6 +95,14 @@ public:
 
     ContiguousMap<NodeId, Node3> nodes;
     ContiguousMap<ElementId, Element3> elements;
+
+private:
+    /* Plugs the coordinates of the element's vertices into the given
+    polynomial, whose variables are all of the form
+    shape_function_variables::coord. */
+    double evaluate_polynomial(
+        const Element3 &element,
+        const Polynomial &poly) const;
 };
 
 class MeshIdAllocator {

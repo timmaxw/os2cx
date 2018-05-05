@@ -33,7 +33,7 @@ void write_calculix_nodes_and_elements(
             const Element3 *element = &mesh.elements[eid];
             if (element->type != type) continue;
             stream << eid.to_int();
-            for (size_t i = 0; i < type_info.shape->nodes.size(); ++i) {
+            for (size_t i = 0; i < type_info.shape->vertices.size(); ++i) {
                 stream << ", " << element->nodes[i].to_int();
             }
             stream << '\n';

@@ -93,7 +93,8 @@ public:
         if (!found_type) {
             fail("Element group has no type specified");
         }
-        int type_cardinality = ElementTypeInfo::get(type).shape->nodes.size();
+        int type_cardinality =
+            ElementTypeInfo::get(type).shape->vertices.size();
 
         while (true) {
             next_line();

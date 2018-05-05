@@ -12,13 +12,13 @@ public:
         const ElementShapeInfo &esi =
             *ElementTypeInfo::get(element.type).shape;
         assert(face < static_cast<int>(esi.faces.size()));
-        out.num_nodes = esi.faces[face].size();
+        out.num_nodes = esi.faces[face].vertices.size();
 
         /* Find the index of the node on the face with the largest node ID */
         int largest_node_id = -1;
         int largest_index = -1;
         for (int i = 0; i < out.num_nodes; ++i) {
-            int node_id = element.nodes[esi.faces[face][i]].to_int();
+            int node_id = element.nodes[esi.faces[face].vertices[i]].to_int();
             if (node_id > largest_node_id) {
                 largest_node_id = node_id;
                 largest_index = i;
@@ -31,7 +31,7 @@ public:
         this one, it will start from the same point (except reversed). */
         for (int i = 0; i < out.num_nodes; ++i) {
             int j = (largest_index + i) % out.num_nodes;
-            out.nodes[i] = element.nodes[esi.faces[face][j]];
+            out.nodes[i] = element.nodes[esi.faces[face].vertices[j]];
         }
 
         return out;
@@ -58,7 +58,7 @@ public:
     }
 
     int num_nodes;
-    NodeId nodes[ElementShapeInfo::max_nodes_per_face];
+    NodeId nodes[ElementShapeInfo::max_vertices_per_face];
 };
 
 Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {

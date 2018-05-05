@@ -222,7 +222,7 @@ void read_element_definition_block(CalculixFrdReader &r) {
                 r.read_eol();
 
                 int num_nodes =
-                    ElementTypeInfo::get(type).shape->nodes.size();
+                    ElementTypeInfo::get(type).shape->vertices.size();
                 while (num_nodes > 0) {
                     r.read_indent(1);
                     code = r.read_text_int<2>();
@@ -258,7 +258,7 @@ void read_element_definition_block(CalculixFrdReader &r) {
             ElementType type = static_cast<ElementType>(r.read_bin_int());
             r.read_bin_int();
             r.read_bin_int();
-            int num_nodes = ElementTypeInfo::get(type).shape->nodes.size();
+            int num_nodes = ElementTypeInfo::get(type).shape->vertices.size();
             for (int i = 0; i < num_nodes; ++i) {
                 r.read_bin_int();
             }
