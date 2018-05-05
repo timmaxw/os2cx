@@ -28,8 +28,12 @@ private:
     void resizeGL(int w, int h);
     void paintGL();
 
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+
     const Project *project;
     std::unique_ptr<OpenglScene> scene;
+    int mouse_last_x, mouse_last_y;
 };
 
 } /* namespace os2cx */

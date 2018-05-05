@@ -44,6 +44,8 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
         action_show_elements, &QAction::changed,
         this, &GuiMainWindow::regenerate_scene
     );
+
+    resize(QSize(800, 600));
 }
 
 void GuiMainWindow::menu_file_open() {

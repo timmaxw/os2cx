@@ -180,9 +180,12 @@ void OpenglDrawSettings::setup_for_draw(Length approx_scale) const {
 }
 
 void OpenglDrawSettings::drag(float delta_x, float delta_y) {
-    yaw += delta_x * 90;
+    /* This scaling factor is chosen such that dragging from the left side of
+    the view to the right side will rotate the model 180 degrees */
+    yaw += delta_x * 180;
+    pitch += delta_y * 180;
+
     yaw -= 360 * floor(yaw / 360);
-    pitch += delta_y * 90;
     if (pitch > 90) pitch = 90;
     if (pitch < -90) pitch = -90;
 }

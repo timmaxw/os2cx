@@ -115,6 +115,10 @@ public:
 
     void setup_for_draw(Length approx_scale) const;
 
+    /* Updates the draw settings in response to a mouse drag. delta_x is the
+    relative mouse movement as a fraction of the view width. delta_y is the
+    relative mouse movement at the same scale as delta_x (regardless of the view
+    height). */
     void drag(float delta_x, float delta_y);
 
     float yaw, pitch; /* in degrees */
