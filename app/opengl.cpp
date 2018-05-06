@@ -4,6 +4,42 @@
 
 namespace os2cx {
 
+void OpenglTriangles::reserve(int n) {
+    vertices.reserve(n * 9);
+    normals.reserve(n * 9);
+}
+
+void OpenglTriangles::add_triangle(
+    const Point &p1, const Point &p2, const Point &p3,
+    const PureVector &normal
+) {
+    ++num_triangles;
+    vertices.push_back(p1.vector.x.val);
+    vertices.push_back(p1.vector.y.val);
+    vertices.push_back(p1.vector.z.val);
+    vertices.push_back(p2.vector.x.val);
+    vertices.push_back(p2.vector.y.val);
+    vertices.push_back(p2.vector.z.val);
+    vertices.push_back(p3.vector.x.val);
+    vertices.push_back(p3.vector.y.val);
+    vertices.push_back(p3.vector.z.val);
+    for (int i = 0; i < 3; ++i) {
+        normals.push_back(normal.x.val);
+        normals.push_back(normal.y.val);
+        normals.push_back(normal.z.val);
+    }
+}
+
+void OpenglTriangles::draw() const {
+    glEnable(GL_VERTEX_ARRAY);
+    glEnable(GL_NORMAL_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, vertices.data());
+    glNormalPointer(GL_FLOAT, 0, normals.data());
+    glDrawArrays(GL_TRIANGLES, 0, 3 * num_triangles);
+    glDisable(GL_NORMAL_ARRAY);
+    glDisable(GL_VERTEX_ARRAY);
+}
+
 OpenglTriangles poly3_map_surface_to_opengl_triangles(
     const Poly3Map &poly3_map,
     Poly3Map::SurfaceId sid,
@@ -76,12 +112,28 @@ OpenglTriangles mesh_surface_to_opengl_triangles(
     return triangles;
 }
 
+void OpenglLines::add_line(const Point &p1, const Point &p2) {
+    ++num_lines;
+    vertices.push_back(p1.vector.x.val);
+    vertices.push_back(p1.vector.y.val);
+    vertices.push_back(p1.vector.z.val);
+    vertices.push_back(p2.vector.x.val);
+    vertices.push_back(p2.vector.y.val);
+    vertices.push_back(p2.vector.z.val);
+}
+
+void OpenglLines::draw() const {
+    glEnable(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, vertices.data());
+    glDrawArrays(GL_LINES, 0, 2 * num_lines);
+    glDisable(GL_VERTEX_ARRAY);
+}
+
 OpenglLines mesh_surface_to_opengl_lines(
     const Mesh3 &mesh,
     const Mesh3Index &mesh_index,
     const ContiguousMap<NodeId, PureVector> *disps
 ) {
-    (void)disps;
     OpenglLines lines;
     for (const FaceId &fi : mesh_index.unmatched_faces) {
         const Element3 &element = mesh.elements[fi.element_id];
@@ -98,13 +150,24 @@ OpenglLines mesh_surface_to_opengl_lines(
                 directions so that we don't draw each line twice. */
                 continue;
             }
-            lines.add_line(
-                mesh.nodes[node_ids[i]].point,
-                mesh.nodes[node_ids[j]].point);
+            Point pi = mesh.nodes[node_ids[i]].point;
+            Point pj = mesh.nodes[node_ids[j]].point;
+            if (disps != nullptr) {
+                PureVector dispi = (*disps)[node_ids[i]];
+                if (dispi == dispi) {   // filter out NaN
+                    pi += dispi * Length(1.0);
+                }
+                PureVector dispj = (*disps)[node_ids[j]];
+                if (dispj == dispj) {   // filter out NaN
+                    pj += dispj * Length(1.0);
+                }
+            }
+            lines.add_line(pi, pj);
         }
     }
     return lines;
 }
+
 
 Length approx_scale_of_project(const Project &project) {
     Length scale(0);
@@ -297,15 +360,19 @@ void mesh_to_opengl_scene(
                 &project.results->node_vectors.at(scene_settings.focus.target);
             scene->normal.push_back(
                 mesh_surface_to_opengl_triangles(*mesh, *mesh_index, result));
-            scene->lines.push_back(
-                mesh_surface_to_opengl_lines(*mesh, *mesh_index, result));
+            if (scene_settings.show_elements) {
+                scene->lines.push_back(
+                    mesh_surface_to_opengl_lines(*mesh, *mesh_index, result));
+            }
             break;
         }
         default:
             scene->normal.push_back(
                 mesh_surface_to_opengl_triangles(*mesh, *mesh_index, nullptr));
-            scene->lines.push_back(
-                mesh_surface_to_opengl_lines(*mesh, *mesh_index, nullptr));
+            if (scene_settings.show_elements) {
+                scene->lines.push_back(
+                    mesh_surface_to_opengl_lines(*mesh, *mesh_index, nullptr));
+            }
             break;
         }
     }
@@ -318,7 +385,8 @@ std::unique_ptr<OpenglScene> project_to_opengl_scene(
     std::unique_ptr<OpenglTriangleScene> scene(new OpenglTriangleScene);
     scene->approx_scale = approx_scale_of_project(project);
 
-    if (scene_settings.show_elements) {
+    if (scene_settings.show_elements ||
+            scene_settings.focus.type == OpenglFocus::Type::Result) {
         mesh_to_opengl_scene(project, scene_settings, scene.get());
     } else {
         poly3_map_to_opengl_scene(project, scene_settings, scene.get());
@@ -328,4 +396,3 @@ std::unique_ptr<OpenglScene> project_to_opengl_scene(
 }
 
 } /* namespace os2cx */
-

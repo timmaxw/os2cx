@@ -19,39 +19,12 @@ be applied to an existing OpenglScene. */
 class OpenglTriangles {
 public:
     OpenglTriangles() : num_triangles(0) { }
-    void reserve(int n) {
-        vertices.reserve(n * 9);
-        normals.reserve(n * 9);
-    }
+    void reserve(int n);
     void add_triangle(
         const Point &p1, const Point &p2, const Point &p3,
         const PureVector &normal
-    ) {
-        ++num_triangles;
-        vertices.push_back(p1.vector.x.val);
-        vertices.push_back(p1.vector.y.val);
-        vertices.push_back(p1.vector.z.val);
-        vertices.push_back(p2.vector.x.val);
-        vertices.push_back(p2.vector.y.val);
-        vertices.push_back(p2.vector.z.val);
-        vertices.push_back(p3.vector.x.val);
-        vertices.push_back(p3.vector.y.val);
-        vertices.push_back(p3.vector.z.val);
-        for (int i = 0; i < 3; ++i) {
-            normals.push_back(normal.x.val);
-            normals.push_back(normal.y.val);
-            normals.push_back(normal.z.val);
-        }
-    }
-    void draw() const {
-        glEnable(GL_VERTEX_ARRAY);
-        glEnable(GL_NORMAL_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        glNormalPointer(GL_FLOAT, 0, normals.data());
-        glDrawArrays(GL_TRIANGLES, 0, 3 * num_triangles);
-        glDisable(GL_NORMAL_ARRAY);
-        glDisable(GL_VERTEX_ARRAY);
-    }
+    );
+    void draw() const;
 
 private:
     int num_triangles;
@@ -75,21 +48,8 @@ OpenglTriangles mesh_surface_to_opengl_triangles(
 class OpenglLines {
 public:
     OpenglLines() : num_lines(0) { }
-    void add_line(const Point &p1, const Point &p2) {
-        ++num_lines;
-        vertices.push_back(p1.vector.x.val);
-        vertices.push_back(p1.vector.y.val);
-        vertices.push_back(p1.vector.z.val);
-        vertices.push_back(p2.vector.x.val);
-        vertices.push_back(p2.vector.y.val);
-        vertices.push_back(p2.vector.z.val);
-    }
-    void draw() const {
-        glEnable(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        glDrawArrays(GL_LINES, 0, 2 * num_lines);
-        glDisable(GL_VERTEX_ARRAY);
-    }
+    void add_line(const Point &p1, const Point &p2);
+    void draw() const;
 
 private:
     int num_lines;
