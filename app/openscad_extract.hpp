@@ -29,7 +29,7 @@ void openscad_extract_inventory(Project *project);
 
 std::unique_ptr<Poly3> openscad_extract_poly3(
     Project *project,
-    const std::string &category,
+    const std::string &object_type,
     const std::string &name);
 
 } /* namespace os2cx */

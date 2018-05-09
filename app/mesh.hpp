@@ -98,6 +98,13 @@ public:
         elements(ElementId::from_int(1))
         { }
 
+    void append_mesh(
+        const Mesh3 &other,
+        NodeId *new_node_begin_out,
+        NodeId *new_node_end_out,
+        ElementId *new_element_begin_out,
+        ElementId *new_element_end_out);
+
     Volume volume(const Element3 &element) const;
     Volume volume_for_node(const Element3 &element, int which) const;
 
@@ -111,18 +118,6 @@ private:
     double evaluate_polynomial(
         const Element3 &element,
         const Polynomial &poly) const;
-};
-
-class MeshIdAllocator {
-public:
-    MeshIdAllocator() :
-        next_node_id(NodeId::from_int(1)),
-        next_element_id(ElementId::from_int(1))
-        { }
-    Mesh3 allocate(Mesh3 &&mesh);
-
-    NodeId next_node_id;
-    ElementId next_element_id;
 };
 
 } /* namespace os2cx */

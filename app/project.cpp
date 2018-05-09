@@ -12,12 +12,8 @@ namespace os2cx {
 
 std::vector<const Poly3 *> get_volume_masks(const Project *project) {
     std::vector<const Poly3 *> volume_masks;
-    for (auto it = project->nset_directives.begin();
-            it != project->nset_directives.end(); ++it) {
-        volume_masks.push_back(it->second.mask.get());
-    }
-    for (auto it = project->volume_load_directives.begin();
-            it != project->volume_load_directives.end(); ++it) {
+    for (auto it = project->select_volume_objects.begin();
+            it != project->select_volume_objects.end(); ++it) {
         volume_masks.push_back(it->second.mask.get());
     }
     return volume_masks;
@@ -28,20 +24,18 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     openscad_extract_inventory(p);
     callbacks->project_run_checkpoint();
 
-    for (auto &pair : p->element_directives) {
-        pair.second.solid = openscad_extract_poly3(p, "element", pair.first);
+    for (auto &pair : p->mesh_objects) {
+        pair.second.solid = openscad_extract_poly3(
+            p, "mesh", pair.first);
         callbacks->project_run_checkpoint();
     }
-    for (auto &pair : p->nset_directives) {
-        pair.second.mask = openscad_extract_poly3(p, "nset", pair.first);
-        callbacks->project_run_checkpoint();
-    }
-    for (auto &pair : p->volume_load_directives) {
-        pair.second.mask = openscad_extract_poly3(p, "volume_load", pair.first);
+    for (auto &pair : p->select_volume_objects) {
+        pair.second.mask = openscad_extract_poly3(
+            p, "select_volume", pair.first);
         callbacks->project_run_checkpoint();
     }
 
-    for (auto &pair : p->element_directives) {
+    for (auto &pair : p->mesh_objects) {
         std::shared_ptr<Poly3Map> poly3_map(new Poly3Map);
         poly3_map_create(
             *pair.second.solid,
@@ -53,56 +47,85 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_checkpoint();
     }
 
-    for (auto &pair : p->element_directives) {
-        Mesh3 mesh = mesher_tetgen(*pair.second.poly3_map);
-        pair.second.mesh.reset(new Mesh3(
-            p->mesh_id_allocator.allocate(std::move(mesh))));
-        pair.second.mesh_index.reset(new Mesh3Index(pair.second.mesh.get()));
+    for (auto &pair : p->mesh_objects) {
+        Mesh3 partial_mesh = mesher_tetgen(*pair.second.poly3_map);
+        pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
         callbacks->project_run_checkpoint();
     }
 
-    for (auto &pair : p->nset_directives) {
-        std::shared_ptr<NodeSet> node_set(new NodeSet);
-        for (auto it = p->element_directives.begin();
-                it != p->element_directives.end(); ++it) {
-            node_set_volume(
-                *it->second.poly3_map,
-                *it->second.poly3_map_index,
-                *it->second.mesh,
-                pair.second.mask.get(),
-                node_set.get());
+    {
+        Mesh3 combined_mesh;
+        for (auto &pair : p->mesh_objects) {
+            combined_mesh.append_mesh(
+                *pair.second.partial_mesh,
+                &pair.second.node_begin,
+                &pair.second.node_end,
+                &pair.second.element_begin,
+                &pair.second.element_end);
+            pair.second.partial_mesh = nullptr;
+
+            Project::VolumeObject *volume_object = &p->volume_objects[pair.first];
+            volume_object->element_set.reset(new ElementSet(
+                compute_element_set_from_range(
+                    pair.second.element_begin, pair.second.element_end)
+            ));
+            volume_object->node_set.reset(new NodeSet(
+                compute_node_set_from_range(
+                    pair.second.node_begin, pair.second.node_end)
+            ));
         }
-        pair.second.node_set = node_set;
+        p->mesh.reset(new Mesh3(std::move(combined_mesh)));
+        p->mesh_index.reset(new Mesh3Index(p->mesh.get()));
         callbacks->project_run_checkpoint();
     }
 
-    if (!p->volume_load_directives.empty()) {
-        std::shared_ptr<ConcentratedLoad> total_cload(new ConcentratedLoad);
-        for (const auto &pair : p->volume_load_directives) {
-            for (auto it = p->element_directives.begin();
-                    it != p->element_directives.end(); ++it) {
-                load_volume(
-                    *it->second.poly3_map,
-                    *it->second.poly3_map_index,
-                    *it->second.mesh,
-                    pair.second.mask.get(),
-                    pair.second.force_density,
-                    total_cload.get());
-            }
-            break;
+    for (auto &pair : p->select_volume_objects) {
+        ElementSet element_set;
+        for (auto &mesh_pair : p->mesh_objects) {
+            ElementSet partial_element_set = compute_element_set_from_mask(
+                *mesh_pair.second.poly3_map,
+                *mesh_pair.second.poly3_map_index,
+                *p->mesh,
+                mesh_pair.second.element_begin,
+                mesh_pair.second.element_end,
+                pair.second.mask.get());
+            element_set.elements.insert(
+                partial_element_set.elements.begin(),
+                partial_element_set.elements.end());
         }
-        p->total_cload = total_cload;
+
+        NodeSet node_set =
+            compute_node_set_from_element_set(*p->mesh, element_set);
+
+        Project::VolumeObject *vol = &p->volume_objects[pair.first];
+        vol->element_set.reset(new ElementSet(std::move(element_set)));
+        vol->node_set.reset(new NodeSet(std::move(node_set)));
+
+        callbacks->project_run_checkpoint();
+    }
+
+    for (auto &pair : p->load_objects) {
+        const ElementSet &element_set =
+            *p->volume_objects[pair.second.volume].element_set;
+        pair.second.load.reset(new ConcentratedLoad(
+            compute_load_from_element_set(
+                *p->mesh,
+                element_set,
+                pair.second.force_density)
+        ));
         callbacks->project_run_checkpoint();
     }
 
     write_calculix_job(p->temp_dir, "main", *p);
+    callbacks->project_run_checkpoint();
+
     run_calculix(p->temp_dir, "main");
     Results results;
     std::ifstream frd_stream(p->temp_dir + "/main.frd");
     read_calculix_frd(
         frd_stream,
-        NodeId::from_int(1),
-        p->mesh_id_allocator.next_node_id,
+        p->mesh->nodes.key_begin(),
+        p->mesh->nodes.key_end(),
         &results);
     p->results.reset(new Results(std::move(results)));
     callbacks->project_run_checkpoint();

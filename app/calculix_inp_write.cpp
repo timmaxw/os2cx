@@ -7,11 +7,14 @@ namespace os2cx {
 void write_calculix_nodes_and_elements(
     std::ostream &stream,
     const std::string &name,
-    const Mesh3 &mesh
+    const Mesh3 &mesh,
+    NodeId node_begin,
+    NodeId node_end,
+    ElementId element_begin,
+    ElementId element_end
 ) {
     stream << "*NODE, NSET=N" << name << '\n';
-    for (NodeId nid = mesh.nodes.key_begin();
-            nid != mesh.nodes.key_end(); ++nid) {
+    for (NodeId nid = node_begin; nid != node_end; ++nid) {
         const Node3 &node = mesh.nodes[nid];
         stream << nid.to_int()
             << ", " << node.point.vector.x.val
@@ -20,16 +23,15 @@ void write_calculix_nodes_and_elements(
     }
 
     std::set<ElementType> types_present;
-    for (const Element3 &element : mesh.elements) {
-        types_present.insert(element.type);
+    for (ElementId eid = element_begin; eid != element_end; ++eid) {
+        types_present.insert(mesh.elements[eid].type);
     }
 
     for (ElementType type : types_present) {
         const ElementTypeInfo &type_info = ElementTypeInfo::get(type);
         stream << "*ELEMENT, TYPE=" << type_info.name
             << ", ELSET=E" << name << '\n';
-        for (ElementId eid = mesh.elements.key_begin();
-                eid != mesh.elements.key_end(); ++eid) {
+        for (ElementId eid = element_begin; eid != element_end; ++eid) {
             const Element3 *element = &mesh.elements[eid];
             if (element->type != type) continue;
             stream << eid.to_int();
@@ -49,6 +51,17 @@ void write_calculix_nset(
     stream << "*NSET, NSET=N" << name << '\n';
     for (NodeId node_id : node_set.nodes) {
         stream << node_id.to_int() << "\n";
+    }
+}
+
+void write_calculix_elset(
+    std::ostream &stream,
+    const std::string &name,
+    const ElementSet &element_set
+) {
+    stream << "*ELSET, ELSET=E" << name << '\n';
+    for (ElementId element_id : element_set.elements) {
+        stream << element_id.to_int() << "\n";
     }
 }
 
@@ -75,36 +88,34 @@ void write_calculix_job(
     const std::string &main_file_name,
     const Project &project
 ) {
-    FilePath main_file_path = dir_path + "/" + main_file_name + ".inp";
-    std::ofstream main_stream(main_file_path);
-
-    for (auto it = project.element_directives.begin();
-            it != project.element_directives.end(); ++it) {
-        FilePath mesh_file_path = dir_path + "/" + it->first + ".msh";
+    for (const auto &pair : project.mesh_objects) {
+        FilePath mesh_file_path = dir_path + "/" + pair.first + ".msh";
         std::ofstream mesh_stream(mesh_file_path);
         write_calculix_nodes_and_elements(
-            mesh_stream, it->first, *it->second.mesh);
-        main_stream << "*INCLUDE, INPUT=" << it->first << ".msh\n";
+            mesh_stream, pair.first, *project.mesh,
+            pair.second.node_begin, pair.second.node_end,
+            pair.second.element_begin, pair.second.element_end);
     }
 
-    for (auto it = project.nset_directives.begin();
-            it != project.nset_directives.end(); ++it) {
-        FilePath nset_file_path = dir_path + "/" + it->first + ".nam";
-        std::ofstream nset_stream(nset_file_path);
-        write_calculix_nset(
-            nset_stream, it->first, *it->second.node_set);
-        main_stream << "*INCLUDE, INPUT=" << it->first << ".nam\n";
+    for (const auto &pair : project.select_volume_objects) {
+        FilePath select_file_path = dir_path + "/" + pair.first + ".nam";
+        std::ofstream select_stream(select_file_path);
+        const Project::VolumeObject &volume =
+            project.volume_objects.at(pair.first);
+        write_calculix_nset(select_stream, pair.first, *volume.node_set);
+        write_calculix_elset(select_stream, pair.first, *volume.element_set);
     }
 
-    if (project.total_cload) {
-        FilePath cload_file_path = dir_path + "/load.clo";
-        std::ofstream cload_stream(cload_file_path);
-        write_calculix_cload(
-            cload_stream, *project.total_cload);
+    for (const auto &pair : project.load_objects) {
+        FilePath load_file_path = dir_path + "/" + pair.first + ".clo";
+        std::ofstream load_stream(load_file_path);
+        write_calculix_cload(load_stream, *pair.second.load);
     }
 
-    for (const std::string &directive : project.directives) {
-        main_stream << directive << '\n';
+    FilePath main_file_path = dir_path + "/" + main_file_name + ".inp";
+    std::ofstream main_stream(main_file_path);
+    for (const std::string &line : project.calculix_deck) {
+        main_stream << line << '\n';
     }
 }
 

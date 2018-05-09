@@ -2,6 +2,36 @@
 
 namespace os2cx {
 
+void Mesh3::append_mesh(
+    const Mesh3 &other,
+    NodeId *new_node_begin_out,
+    NodeId *new_node_end_out,
+    ElementId *new_element_begin_out,
+    ElementId *new_element_end_out
+) {
+    int node_id_offset = nodes.key_end().to_int()
+        - other.nodes.key_begin().to_int();
+
+    nodes.reserve(nodes.size() + other.nodes.size());
+    *new_node_begin_out = nodes.key_end();
+    for (const Node3 &node : other.nodes) {
+        nodes.push_back(node);
+    }
+    *new_node_end_out = nodes.key_end();
+
+    elements.reserve(elements.size() + other.elements.size());
+    *new_element_begin_out = elements.key_end();
+    for (const Element3 &element : other.elements) {
+        Element3 copy = element;
+        for (int i = 0; i < copy.num_nodes(); ++i) {
+            copy.nodes[i] = NodeId::from_int(
+                copy.nodes[i].to_int() + node_id_offset);
+        }
+        elements.push_back(copy);
+    }
+    *new_element_end_out = elements.key_end();
+}
+
 Volume Mesh3::volume(const Element3 &element) const {
     const ElementShapeInfo &shape =
         *ElementTypeInfo::get(element.type).shape;
@@ -34,25 +64,6 @@ double Mesh3::evaluate_polynomial(
             }
         }
     );
-}
-
-Mesh3 MeshIdAllocator::allocate(Mesh3 &&mesh) {
-    for (Element3 &element : mesh.elements) {
-        size_t num_nodes = element.num_nodes();
-        for (size_t i = 0; i < num_nodes; ++i) {
-            element.nodes[i] = NodeId::from_int(
-                element.nodes[i].to_int() +
-                (next_node_id.to_int() - mesh.nodes.key_begin().to_int()));
-        }
-    }
-
-    mesh.nodes.shift_keys(next_node_id);
-    next_node_id = mesh.nodes.key_end();
-
-    mesh.elements.shift_keys(next_element_id);
-    next_element_id = mesh.elements.key_end();
-
-    return std::move(mesh);
 }
 
 } /* namespace os2cx */

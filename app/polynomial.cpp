@@ -101,7 +101,6 @@ Polynomial Polynomial::integrate(
     Polynomial antiderivative = antidifferentiate(var);
     Polynomial res = antiderivative.evaluate_partial(var, to_value) -
         antiderivative.evaluate_partial(var, from_value);
-    std::cout << "integration produces: " << res << std::endl;
     return res;
 }
 

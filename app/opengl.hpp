@@ -93,9 +93,9 @@ class OpenglFocus {
 public:
     enum class Type {
         All, // no target
-        Element, // target = element name
-        NSet, // target = nset name
-        VolumeLoad, // target = volume load name
+        Mesh, // target = mesh name
+        SelectVolume, // target = select volume name
+        Load, // target = load name
         Result, // target = dataset name
     };
 

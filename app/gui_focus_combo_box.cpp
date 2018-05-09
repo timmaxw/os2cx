@@ -33,26 +33,26 @@ void GuiFocusComboBox::regenerate_options() {
 
     push_option(tr("Overview"), OpenglFocus::Type::All, "");
 
-    for (const auto &pair : project->element_directives) {
+    for (const auto &pair : project->mesh_objects) {
         push_option(
-            tr("Element ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::Element,
+            tr("Mesh ") + QString(pair.first.c_str()),
+            OpenglFocus::Type::Mesh,
             pair.first
         );
     }
 
-    for (const auto &pair : project->nset_directives) {
+    for (const auto &pair : project->select_volume_objects) {
         push_option(
-            tr("Node Set ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::NSet,
+            tr("Volume ") + QString(pair.first.c_str()),
+            OpenglFocus::Type::SelectVolume,
             pair.first
         );
     }
 
-    for (const auto &pair : project->volume_load_directives) {
+    for (const auto &pair : project->load_objects) {
         push_option(
-            tr("Volume Load ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::VolumeLoad,
+            tr("Load ") + QString(pair.first.c_str()),
+            OpenglFocus::Type::Load,
             pair.first
         );
     }

@@ -24,35 +24,56 @@ public:
 
     std::vector<std::string> inventory_errors;
 
-    std::vector<std::string> directives;
+    std::vector<std::string> calculix_deck;
 
-    MeshIdAllocator mesh_id_allocator;
-
-    class ElementDirective {
+    class MeshObject {
     public:
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Poly3Map> poly3_map;
         std::shared_ptr<const Poly3MapIndex> poly3_map_index;
-        std::shared_ptr<const Mesh3> mesh;
-        std::shared_ptr<const Mesh3Index> mesh_index;
-    };
-    std::map<std::string, ElementDirective> element_directives;
 
-    class NSetDirective {
+        /* The partial_meshes of all the individual MeshObjects will be combined
+        to form the overall project mesh. The nodes and elements will be
+        assigned new IDs when this happens, so partial_mesh shouldn't be used
+        for anything on its own. In addition, it will be nulled after it's been
+        combined into the overall project mesh. */
+        std::shared_ptr<const Mesh3> partial_mesh;
+
+        /* Once the partial meshes have been combined, we record here the ranges
+        of node and element IDs in the combined mesh that corresponded to this
+        mesh object. */
+        NodeId node_begin, node_end;
+        ElementId element_begin, element_end;
+    };
+    std::map<std::string, MeshObject> mesh_objects;
+
+    class SelectVolumeObject {
     public:
         std::shared_ptr<const Poly3> mask;
+    };
+    std::map<std::string, SelectVolumeObject> select_volume_objects;
+
+    /* This mesh is formed by combining the meshes of all the individual mesh
+    objects. */
+    std::shared_ptr<const Mesh3> mesh;
+    std::shared_ptr<const Mesh3Index> mesh_index;
+
+    /* Every MeshObject and SelectVolumeObject has an associated VolumeObject
+    with the same name. */
+    class VolumeObject {
+    public:
+        std::shared_ptr<const ElementSet> element_set;
         std::shared_ptr<const NodeSet> node_set;
     };
-    std::map<std::string, NSetDirective> nset_directives;
+    std::map<std::string, VolumeObject> volume_objects;
 
-    class VolumeLoadDirective {
+    class LoadObject {
     public:
-        std::shared_ptr<const Poly3> mask;
+        std::string volume;
         ForceDensityVector force_density;
+        std::shared_ptr<const ConcentratedLoad> load;
     };
-    std::map<std::string, VolumeLoadDirective> volume_load_directives;
-
-    std::shared_ptr<const ConcentratedLoad> total_cload;
+    std::map<std::string, LoadObject> load_objects;
 
     std::shared_ptr<const Results> results;
 };

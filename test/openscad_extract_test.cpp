@@ -15,16 +15,15 @@ TEST(OpenscadExtractTest, OpenscadExtractInventory) {
     FilePath scad_path = temp_dir.path() + "/test.scad";
     std::ofstream stream(scad_path);
     stream << "use <../openscad2calculix.scad>;" << std::endl;
-    stream << "os2cx(\"a\");" << std::endl;
-    stream << "os2cx(\"b\");" << std::endl;
+    stream << "os2cx_analysis_custom([\"a\",\"b\"]);" << std::endl;
     stream.close();
 
     Project project(scad_path, temp_dir.path());
     openscad_extract_inventory(&project);
 
-    EXPECT_EQ(2, project.directives.size());
-    EXPECT_EQ("a", project.directives[0]);
-    EXPECT_EQ("b", project.directives[1]);
+    EXPECT_EQ(2, project.calculix_deck.size());
+    EXPECT_EQ("a", project.calculix_deck[0]);
+    EXPECT_EQ("b", project.calculix_deck[1]);
 }
 
 } /* namespace os2cx */

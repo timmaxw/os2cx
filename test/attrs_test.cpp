@@ -12,13 +12,14 @@ TEST(AttrsTest, LoadVolume) {
     poly3_map_create(solid, {&mask}, &poly3_map);
     Poly3MapIndex poly3_map_index(poly3_map);
     Mesh3 mesh = mesher_tetgen(poly3_map);
+    ElementSet element_set = compute_element_set_from_mask(
+        poly3_map, poly3_map_index, mesh,
+        mesh.elements.key_begin(), mesh.elements.key_end(), &mask);
 
-    ConcentratedLoad load;
     ForceDensityVector force_density =
         ForceDensityVector::raw(1.234, 0, 0);
-    load_volume(
-        poly3_map, poly3_map_index, mesh,
-        &mask, force_density, &load);
+    ConcentratedLoad load = compute_load_from_element_set(
+        mesh, element_set, force_density);
 
     ForceVector total_force = ForceVector::zero();
     for (const auto &pair : load.loads) {

@@ -171,7 +171,7 @@ OpenglLines mesh_surface_to_opengl_lines(
 
 Length approx_scale_of_project(const Project &project) {
     Length scale(0);
-    for (const auto &pair : project.element_directives) {
+    for (const auto &pair : project.mesh_objects) {
         if (!pair.second.poly3_map_index) {
             return Length(0);
         }
@@ -285,7 +285,7 @@ void poly3_map_to_opengl_scene(
     const OpenglSceneSettings &scene_settings,
     OpenglTriangleScene *scene
 ) {
-    for (const auto &pair : project.element_directives) {
+    for (const auto &pair : project.mesh_objects) {
         const Poly3Map *poly3_map = pair.second.poly3_map.get();
         if (poly3_map == nullptr) {
             continue;
@@ -316,19 +316,18 @@ void poly3_map_to_opengl_scene(
             case OpenglFocus::Type::Result:
                 focused = false;
                 break;
-            case OpenglFocus::Type::Element:
+            case OpenglFocus::Type::Mesh:
                 focused = (pair.first == scene_settings.focus.target);
                 break;
-            case OpenglFocus::Type::NSet: {
-                const Poly3 *mask = project.nset_directives.
+            case OpenglFocus::Type::SelectVolume: {
+                const Poly3 *mask = project.select_volume_objects.
                     find(scene_settings.focus.target)->second.mask.get();
                 focused = inside_volume.masks.find(mask)->second == true;
                 break;
             }
-            case OpenglFocus::Type::VolumeLoad: {
-                const Poly3 *mask = project.volume_load_directives.
-                    find(scene_settings.focus.target)->second.mask.get();
-                focused = inside_volume.masks.find(mask)->second == true;
+            case OpenglFocus::Type::Load: {
+                // TODO
+                focused = false;
                 break;
             }
             }
@@ -347,34 +346,32 @@ void mesh_to_opengl_scene(
     const OpenglSceneSettings &scene_settings,
     OpenglTriangleScene *scene
 ) {
-    (void)scene_settings; /* TODO */
-    for (const auto &pair : project.element_directives) {
-        const Mesh3 *mesh = pair.second.mesh.get();
-        const Mesh3Index *mesh_index = pair.second.mesh_index.get();
-        if (mesh == nullptr || mesh_index == nullptr) {
-            continue;
+    const Mesh3 *mesh = project.mesh.get();
+    const Mesh3Index *mesh_index = project.mesh_index.get();
+    if (mesh == nullptr || mesh_index == nullptr) {
+        return;
+    }
+    switch (scene_settings.focus.type) {
+    case OpenglFocus::Type::Result: {
+        const ContiguousMap<NodeId, PureVector> *result =
+            &project.results->node_vectors.at(scene_settings.focus.target);
+        scene->normal.push_back(
+            mesh_surface_to_opengl_triangles(*mesh, *mesh_index, result));
+        if (scene_settings.show_elements) {
+            scene->lines.push_back(
+                mesh_surface_to_opengl_lines(*mesh, *mesh_index, result));
         }
-        switch (scene_settings.focus.type) {
-        case OpenglFocus::Type::Result: {
-            const ContiguousMap<NodeId, PureVector> *result =
-                &project.results->node_vectors.at(scene_settings.focus.target);
-            scene->normal.push_back(
-                mesh_surface_to_opengl_triangles(*mesh, *mesh_index, result));
-            if (scene_settings.show_elements) {
-                scene->lines.push_back(
-                    mesh_surface_to_opengl_lines(*mesh, *mesh_index, result));
-            }
-            break;
+        break;
+    }
+    // TODO: Allow focus on non-results too
+    default:
+        scene->normal.push_back(
+            mesh_surface_to_opengl_triangles(*mesh, *mesh_index, nullptr));
+        if (scene_settings.show_elements) {
+            scene->lines.push_back(
+                mesh_surface_to_opengl_lines(*mesh, *mesh_index, nullptr));
         }
-        default:
-            scene->normal.push_back(
-                mesh_surface_to_opengl_triangles(*mesh, *mesh_index, nullptr));
-            if (scene_settings.show_elements) {
-                scene->lines.push_back(
-                    mesh_surface_to_opengl_lines(*mesh, *mesh_index, nullptr));
-            }
-            break;
-        }
+        break;
     }
 }
 

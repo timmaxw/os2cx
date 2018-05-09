@@ -8,17 +8,31 @@
 
 namespace os2cx {
 
+class ElementSet {
+public:
+    std::set<ElementId> elements;
+};
+
+ElementSet compute_element_set_from_range(ElementId begin, ElementId end);
+
+ElementSet compute_element_set_from_mask(
+    const Poly3Map &poly3_map,
+    const Poly3MapIndex &poly3_map_index,
+    const Mesh3 &mesh,
+    ElementId element_begin,
+    ElementId element_end,
+    const Poly3 *mask);
+
 class NodeSet {
 public:
     std::set<NodeId> nodes;
 };
 
-void node_set_volume(
-    const Poly3Map &poly3_map,
-    const Poly3MapIndex &poly3_map_index,
+NodeSet compute_node_set_from_range(NodeId begin, NodeId end);
+
+NodeSet compute_node_set_from_element_set(
     const Mesh3 &mesh,
-    const Poly3 *mask,
-    NodeSet *nset_out);
+    const ElementSet &element_set);
 
 class ConcentratedLoad {
 public:
@@ -30,13 +44,10 @@ public:
     std::map<NodeId, Load> loads;
 };
 
-void load_volume(
-    const Poly3Map &poly3_map,
-    const Poly3MapIndex &poly3_map_index,
+ConcentratedLoad compute_load_from_element_set(
     const Mesh3 &mesh,
-    const Poly3 *mask,
-    ForceDensityVector force,
-    ConcentratedLoad *load_out);
+    const ElementSet &element_set,
+    ForceDensityVector force);
 
 } /* namespace os2cx */
 

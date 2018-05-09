@@ -5,56 +5,63 @@ __openscad2calculix_mode = ["preview"];
 
 function __os2cx_is_string(arg) = (str(arg) == arg);
 function __os2cx_is_number(arg) = (arg != undef) && (arg + 0 == arg);
+function __os2cx_is_array_strings(arg) =
+    all([for (item = arg) __os2cx_is_string(item)]);
 
-module os2cx(directive) {
+module os2cx_analysis_custom(lines) {
     if (__openscad2calculix_mode == ["preview"]) {
-        if (!__os2cx_is_string(directive)) {
-            echo("ERROR: os2cx() parameter must be a string");
+        if (!__os2cx_is_array_strings(lines)) {
+            echo("ERROR: os2cx_analysis_custom() parameter must be an " +
+                "array of strings");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "directive", directive);
+        echo("__openscad2calculix", "analysis_directive", lines);
     }
 }
 
-module os2cx_element(name) {
+module os2cx_mesh(name) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_element() parameter must be a string");
+            echo("ERROR: os2cx_mesh() parameter must be a string");
         }
         children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "element_directive", name);
-    } else if (__openscad2calculix_mode == ["element", name]) {
+        echo("__openscad2calculix", "mesh_directive", name);
+    } else if (__openscad2calculix_mode == ["mesh", name]) {
         children();
     }
 }
 
-module os2cx_nset(name) {
+module os2cx_select_volume(name) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_nset() parameter must be a string");
+            echo("ERROR: os2cx_select_volume() parameter must be a string");
         }
         # children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "nset_directive", name);
-    } else if (__openscad2calculix_mode == ["nset", name]) {
+        echo("__openscad2calculix", "select_volume_directive", name);
+    } else if (__openscad2calculix_mode == ["select_volume", name]) {
         children();
     }
 }
 
-module os2cx_volume_load(name, magnitude) {
+module os2cx_load_volume(name, volume, magnitude) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_volume_load() first parameter must be a string");
+            echo("ERROR: os2cx_load_volume() first parameter must be a string");
+        }
+        if (!__os2cx_is_string(volume)) {
+            echo("ERROR: os2cx_load_volume() second parameter must be a string");
         }
         if (!__os2cx_is_number(magnitude)) {
-            echo("ERROR: os2cx_volume_load() second parameter must be a " +
+            echo("ERROR: os2cx_load_volume() third parameter must be a " +
                 "number");
         }
-        # children();
+        if (num_children() != 0) {
+            echo("ERROR: os2cx_load_volume() shouldn't have any children");
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "volume_load_directive", name, magnitude);
-    } else if (__openscad2calculix_mode == ["volume_load", name]) {
-        children();
+        echo("__openscad2calculix", "load_volume_directive",
+            name, volume, magnitude);
     }
 }

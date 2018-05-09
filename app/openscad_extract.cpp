@@ -25,101 +25,118 @@ std::unique_ptr<OpenscadRun> call_openscad(
     return std::move(run);
 }
 
-void do_directive(
+void check_name(
+    Project *project,
+    const std::string &new_object_type,
+    const std::string &new_name
+) {
+    // TODO: Check character set
+
+    std::string existing_object_type;
+    if (project->mesh_objects.count(new_name)) {
+        existing_object_type = "mesh";
+    } else if (project->select_volume_objects.count(new_name)) {
+        existing_object_type = "volume";
+    } else if (project->load_objects.count(new_name)) {
+        existing_object_type = "load";
+    }
+    if (!existing_object_type.empty()) {
+        throw UsageError("Can't declare a new " + new_object_type + " named '" +
+            new_name + "' because there already exists a " +
+            existing_object_type + " named '" + new_name + "'.");
+    }
+}
+
+void do_analysis_directive(
     Project *project,
     const std::vector<OpenscadValue> &echo
 ) {
     if (echo.size() != 3 ||
-            echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed directive command");
+            echo[2].type != OpenscadValue::Type::Vector) {
+        throw BadEchoError("malformed analysis_directive");
     }
-    project->directives.push_back(echo[2].string_value);
+    if (!project->calculix_deck.empty()) {
+        throw UsageError("Can't have multiple os2cx_analysis_...() directives "
+            "in the same file.");
+    }
+    for (const auto &subvalue : echo[2].vector_value) {
+        if (subvalue.type != OpenscadValue::Type::String) {
+            throw BadEchoError("malformed analysis_directive");
+        }
+        project->calculix_deck.push_back(subvalue.string_value);
+    }
+    if (project->calculix_deck.empty()) {
+        throw BadEchoError("empty analysis_directive");
+    }
 }
 
-void do_element_directive(
+void do_mesh_directive(
     Project *project,
     const std::vector<OpenscadValue> &echo
 ) {
     if (echo.size() != 3 ||
         echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed element_directive command");
+        throw BadEchoError("malformed mesh_directive");
     }
 
-    // TODO: Check character set
     std::string name = echo[2].string_value;
+    check_name(project, "mesh", name);
 
-    if (project->element_directives.find(name) !=
-            project->element_directives.end()) {
-        /* The first time we encountered an element directive with this
-        name, we already captured all of the geometry associated with all of
-        the element directives with this name, so we're already done. */
-        return;
-    }
-
-    if (project->nset_directives.find(name) !=
-            project->nset_directives.end()) {
-        throw UsageError("Can't have both an element set and a node set "
-            "named " + name);
-    }
-
-    project->element_directives.insert(std::make_pair(
+    project->mesh_objects.insert(std::make_pair(
         name,
-        Project::ElementDirective()
+        Project::MeshObject()
+    ));
+    project->volume_objects.insert(std::make_pair(
+        name,
+        Project::VolumeObject()
     ));
 }
 
-void do_nset_directive(
+void do_select_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &echo
 ) {
     if (echo.size() != 3 ||
         echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed nset_directive command");
+        throw BadEchoError("malformed select_volume_directive");
     }
 
-    // TODO: Check character set
     std::string name = echo[2].string_value;
+    check_name(project, "volume", name);
 
-    if (project->nset_directives.find(name) !=
-            project->nset_directives.end()) {
-        /* The first time we encountered an nset directive with this name,
-        we already captured all of the geometry associated with all of the
-        nset directives with this name, so we're already done. */
-        return;
-    }
-
-    if (project->element_directives.find(name) !=
-            project->element_directives.end()) {
-        throw UsageError("Can't have both an element set and a node set "
-            "named " + name);
-    }
-
-    project->nset_directives.insert(std::make_pair(
+    project->select_volume_objects.insert(std::make_pair(
         name,
-        Project::NSetDirective()
+        Project::SelectVolumeObject()
+    ));
+    project->volume_objects.insert(std::make_pair(
+        name,
+        Project::VolumeObject()
     ));
 }
 
-void do_volume_load_directive(
+void do_load_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &echo
 ) {
-    if (echo.size() != 4 ||
+    if (echo.size() != 5 ||
         echo[2].type != OpenscadValue::Type::String ||
-        echo[3].type != OpenscadValue::Type::Number) {
-        throw BadEchoError("malformed volume_load_directive command");
+        echo[3].type != OpenscadValue::Type::String ||
+        echo[4].type != OpenscadValue::Type::Number) {
+        throw BadEchoError("malformed load_directive");
     }
 
-    // TODO: Check character set
     std::string name = echo[2].string_value;
+    check_name(project, "load", name);
 
-    if (project->volume_load_directives.find(name) !=
-            project->volume_load_directives.end()) {
-        throw BadEchoError("can't have multiple loads with same name");
+    std::string volume = echo[3].string_value;
+    if (!project->volume_objects.count(volume)) {
+        throw UsageError("Load '" + name + "' refers to volume '" + volume +
+            "', which does not exist (yet).");
     }
+    project->load_objects[name].volume = volume;
 
-    project->volume_load_directives[name].force_density =
-        ForceDensityVector::raw(0, 0, echo[3].number_value);
+    auto force_density = ForceDensityVector::raw(0, 0, echo[4].number_value);
+    project->load_objects[name].force_density = force_density;
 }
 
 void openscad_extract_inventory(Project *project) {
@@ -133,10 +150,10 @@ void openscad_extract_inventory(Project *project) {
     }
 
     if (run->geometry != nullptr) {
-        throw UsageError("All toplevel geometry must be wrapped in a command "
-            "such as 'calculix_solid()'; for example, 'calculix_solid() "
-            "cube()' instead of 'cube(...)'. Your file has some toplevel "
-            "geometry that isn't properly wrapped.");
+        throw UsageError("All toplevel geometry must be wrapped in a directive "
+            "such as 'os2cx_mesh()'; for example, 'os2cx_mesh() cube(...)' "
+            "instead of 'cube(...)'. Your file has some toplevel geometry that "
+            "isn't properly wrapped.");
     }
 
     for (const std::vector<OpenscadValue> &echo : run->echos) {
@@ -146,36 +163,38 @@ void openscad_extract_inventory(Project *project) {
         }
         if (echo.size() == 1 ||
                 echo[1].type != OpenscadValue::Type::String) {
-            throw BadEchoError("missing or malformed subcommand");
+            throw BadEchoError("missing or malformed subdirective");
         }
-        if (echo[1].string_value == "directive") {
-            do_directive(project, echo);
-        } else if (echo[1].string_value == "element_directive") {
-            do_element_directive(project, echo);
-        } else if (echo[1].string_value == "nset_directive") {
-            do_nset_directive(project, echo);
-        } else if (echo[1].string_value == "volume_load_directive") {
-            do_volume_load_directive(project, echo);
+        if (echo[1].string_value == "analysis_directive") {
+            do_analysis_directive(project, echo);
+        } else if (echo[1].string_value == "mesh_directive") {
+            do_mesh_directive(project, echo);
+        } else if (echo[1].string_value == "select_volume_directive") {
+            do_select_volume_directive(project, echo);
+        } else if (echo[1].string_value == "load_volume_directive") {
+            do_load_volume_directive(project, echo);
         } else {
             throw BadEchoError(
-                "unknown command: " + echo[1].string_value);
+                "unknown directive: " + echo[1].string_value);
         }
+    }
+
+    if (project->calculix_deck.empty()) {
+        throw UsageError("Please specify an os2cx_analysis_...() directive.");
     }
 }
 
 std::unique_ptr<Poly3> openscad_extract_poly3(
     Project *project,
-    const std::string &category,
+    const std::string &object_type,
     const std::string &name
 ) {
-    assert(category == "element" || category == "nset" ||
-        category == "volume_load");
     std::unique_ptr<OpenscadRun> run = call_openscad(
         project,
         name,
-        { OpenscadValue(category), OpenscadValue(name) });
+        { OpenscadValue(object_type), OpenscadValue(name) });
     if (!run->geometry) {
-        throw UsageError(category + " " + name + " is empty.");
+        throw UsageError("Empty " + object_type + " '" + name + "'.");
     }
     return std::move(run->geometry);
 }
