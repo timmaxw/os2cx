@@ -10,11 +10,10 @@ namespace os2cx {
 TEST(PolyMapTest, Poly3MapCreate) {
     Poly3 solid = Poly3::box(0, 0, 0, 1, 1, 3);
     Poly3 mask = Poly3::box(-1, -1, 1, 2, 2, 2);
-    std::vector<const Poly3 *> masks;
-    masks.push_back(&mask);
+    std::set<Poly3Map::VolumeId> mask_volumes;
 
     Poly3Map pm;
-    poly3_map_create(solid, masks, &pm);
+    poly3_map_create(solid, {&mask}, &pm, {&mask_volumes});
 
     if (false) {
         pm.debug(std::cout);
@@ -41,9 +40,10 @@ TEST(PolyMapTest, Poly3MapCreate) {
     EXPECT_EQ(pm.volume_outside, out);
     EXPECT_NE(box1, box3);
     EXPECT_FALSE(pm.volumes[out].is_solid);
-    EXPECT_FALSE(pm.volumes[box1].masks[&mask]);
-    EXPECT_TRUE(pm.volumes[box2].masks[&mask]);
-    EXPECT_FALSE(pm.volumes[box3].masks[&mask]);
+    EXPECT_FALSE(mask_volumes.count(out));
+    EXPECT_FALSE(mask_volumes.count(box1));
+    EXPECT_TRUE(mask_volumes.count(box2));
+    EXPECT_FALSE(mask_volumes.count(box3));
 
     Poly3Map::SurfaceId box1_out =
         ind.surface_closest_to_point(Point::raw(0, 0, 0.5));

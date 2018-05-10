@@ -20,7 +20,6 @@ void ElementShapeInfo::precompute_functions() {
                 vertices[vertex].shape_function;
         }
     }
-    std::cout << "xyz[0] = " << xyz[0] << std::endl;
 
     /* jac is the Jacobian matrix for the transformation from (u, v, w)
     coordinates to (x, y, z) coordinates. Each element is a polynomial in (u, v,
@@ -34,14 +33,12 @@ void ElementShapeInfo::precompute_functions() {
     infinitesimal volume element dx*dy*dz and the infinitesimal volume element
     du*dv*dw. */
     Polynomial jac_det = determinant(&jac);
-    std::cout << "jac_det = " << jac_det << std::endl;
 
     /* Integrating the determinant of the Jacobian over the (u, v, w) space
     spanned by the element, gives the volume of the element in (x, y, z)
     coordinates. This is a polynomial in the coordinates of the vertices and not
     in (u, v, w). */
     volume_function = integrate_uvw(jac_det);
-    std::cout << "volume_function = " << volume_function << std::endl;
 
     /* Integrating (jac_det * shape_function) over the (u, v, w) space gives the
     weighted volume of the part of the element influenced by that vertex. */

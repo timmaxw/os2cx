@@ -11,12 +11,11 @@ ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {
 }
 
 ElementSet compute_element_set_from_mask(
-    const Poly3Map &poly3_map,
     const Poly3MapIndex &poly3_map_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
-    const Poly3 *mask
+    const std::set<Poly3Map::VolumeId> &poly3_map_volumes
 ) {
     ElementSet set;
     for (ElementId eid = element_begin; eid != element_end; ++eid) {
@@ -27,10 +26,9 @@ ElementSet compute_element_set_from_mask(
             c += mesh.nodes[element.nodes[i]].point.vector;
         }
         c /= num_nodes;
-        const Poly3Map::Volume &volume = poly3_map.volumes[
-            poly3_map_index.volume_containing_point(Point(c))];
-        assert(volume.is_solid);
-        if (volume.masks.find(mask)->second) {
+        Poly3Map::VolumeId volume_id =
+            poly3_map_index.volume_containing_point(Point(c));
+        if (poly3_map_volumes.count(volume_id)) {
             set.elements.insert(eid);
         }
     }

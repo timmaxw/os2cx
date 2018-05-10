@@ -305,8 +305,8 @@ void poly3_map_to_opengl_scene(
             OpenglTriangles triangles = poly3_map_surface_to_opengl_triangles(
                 *poly3_map, sid, outside_volume_index);
 
-            const Poly3Map::Volume &inside_volume =
-                poly3_map->volumes[surface.volumes[1 - outside_volume_index]];
+            Poly3Map::VolumeId inside_volume_id =
+                surface.volumes[1 - outside_volume_index];
 
             bool focused;
             switch (scene_settings.focus.type) {
@@ -320,14 +320,21 @@ void poly3_map_to_opengl_scene(
                 focused = (pair.first == scene_settings.focus.target);
                 break;
             case OpenglFocus::Type::SelectVolume: {
-                const Poly3 *mask = project.select_volume_objects.
-                    find(scene_settings.focus.target)->second.mask.get();
-                focused = inside_volume.masks.find(mask)->second == true;
+                focused = project
+                    .volume_objects
+                    .at(scene_settings.focus.target)
+                    .poly3_map_volumes.at(pair.first)
+                    .count(inside_volume_id);
                 break;
             }
             case OpenglFocus::Type::Load: {
-                // TODO
-                focused = false;
+                std::string load_volume =
+                    project.load_objects.at(scene_settings.focus.target).volume;
+                focused = project
+                    .volume_objects
+                    .at(load_volume)
+                    .poly3_map_volumes.at(pair.first)
+                    .count(inside_volume_id);
                 break;
             }
             }

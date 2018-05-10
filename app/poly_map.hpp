@@ -29,7 +29,6 @@ public:
     class Volume {
     public:
         bool is_solid;
-        std::map<const Poly3 *, bool> masks;
     };
     std::vector<Volume> volumes;
     VolumeId volume_outside;
@@ -47,7 +46,6 @@ public:
         };
         std::vector<Triangle> triangles;
         VolumeId volumes[2];
-        // std::map<const Poly3 *, bool> masks;
     };
     std::vector<Surface> surfaces;
 
@@ -71,7 +69,8 @@ public:
 void poly3_map_create(
     const Poly3 &solid,
     const std::vector<const Poly3 *> &masks,
-    Poly3Map *poly3_map_out);
+    Poly3Map *poly3_map_out,
+    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out);
 
 } /* namespace os2cx */
 

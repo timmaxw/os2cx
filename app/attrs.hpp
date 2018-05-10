@@ -16,12 +16,11 @@ public:
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end);
 
 ElementSet compute_element_set_from_mask(
-    const Poly3Map &poly3_map,
     const Poly3MapIndex &poly3_map_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
-    const Poly3 *mask);
+    const std::set<Poly3Map::VolumeId> &poly3_map_volumes);
 
 class NodeSet {
 public:

@@ -62,6 +62,7 @@ public:
     with the same name. */
     class VolumeObject {
     public:
+        std::map<std::string, std::set<Poly3Map::VolumeId> > poly3_map_volumes;
         std::shared_ptr<const ElementSet> element_set;
         std::shared_ptr<const NodeSet> node_set;
     };

@@ -96,11 +96,6 @@ void Poly3Map::debug(std::ostream &stream) const {
         if (vid == volume_outside) {
             stream << " outside";
         }
-        for (const auto &pair : volumes[vid].masks) {
-            stream << " " << pair.first << "=";
-            if (pair.second) stream << "Y";
-            else stream << "N";
-        }
         stream << std::endl;
     }
     stream << "SURFACES " << surfaces.size() << std::endl;
@@ -601,38 +596,40 @@ CGAL::Point_3<KE> calculate_interior_point(
 }
 
 void maybe_compute_volume_masks(
-    Poly3Map *poly3_map_out,
+    const Poly3Map &poly3_map,
     const std::vector<const Poly3 *> &masks,
     const std::vector<os2cx::CgalNef3> &mask_nefs,
     Poly3Map::VolumeId volume_id,
     Poly3Map::VertexId p0,
     Poly3Map::VertexId p1,
-    Poly3Map::VertexId p2
+    Poly3Map::VertexId p2,
+    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out
 ) {
-    Poly3Map::Volume *volume =
-        &poly3_map_out->volumes[volume_id];
-    if (!volume->is_solid) return;   // no need to compute masks for this one
-    if (masks.empty()) return;   // nothing to do
-    if (!volume->masks.empty()) return;   // we already did this one
+    if (!poly3_map.volumes[volume_id].is_solid) {
+        // no need to compute masks for this one
+        return;
+    }
 
     CGAL::Point_3<KE> interior_point = calculate_interior_point(
-        poly3_map_out->i->nef,
-        poly3_map_out->i->volume_to_nef[volume_id],
-        poly3_map_out->i->vertex_to_nef[p0]->point(),
-        poly3_map_out->i->vertex_to_nef[p1]->point(),
-        poly3_map_out->i->vertex_to_nef[p2]->point());
+        poly3_map.i->nef,
+        poly3_map.i->volume_to_nef[volume_id],
+        poly3_map.i->vertex_to_nef[p0]->point(),
+        poly3_map.i->vertex_to_nef[p1]->point(),
+        poly3_map.i->vertex_to_nef[p2]->point());
 
     for (int i = 0; i < static_cast<int>(masks.size()); ++i) {
-        const Poly3 *mask = masks[i];
         const os2cx::CgalNef3 &mask_nef = mask_nefs[i];
-        volume->masks[mask] = nef_contains(mask_nef, interior_point);
+        if (nef_contains(mask_nef, interior_point)) {
+            mask_volumes_out.at(i)->insert(volume_id);
+        }
     }
 }
 
 void poly3_map_create(
     const Poly3 &solid,
     const std::vector<const Poly3 *> &masks,
-    Poly3Map *poly3_map_out
+    Poly3Map *poly3_map_out,
+    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out
 ) {
     std::vector<os2cx::CgalNef3> mask_nefs;
     for (const Poly3 *mask : masks) {
@@ -698,28 +695,28 @@ void poly3_map_create(
     /* Populate 'surfaces' and fill 'Border::surfaces' */
     SurfaceTraversal(poly3_map_out).run();
 
-    /* Fill 'Volume::masks' (we couldn't do this before surface traversal
+    /* Fill 'mask_volumes_out' (we couldn't do this before surface traversal
     because we need triangulation data) */
-    if (!masks.empty()) {
-        for (const Poly3Map::Surface &surface :
-                poly3_map_out->surfaces) {
-            maybe_compute_volume_masks(
-                poly3_map_out,
-                masks,
-                mask_nefs,
-                surface.volumes[0],
-                surface.triangles[0].vertices[0],
-                surface.triangles[0].vertices[1],
-                surface.triangles[0].vertices[2]);
-            maybe_compute_volume_masks(
-                poly3_map_out,
-                masks,
-                mask_nefs,
-                surface.volumes[1],
-                surface.triangles[0].vertices[0],
-                surface.triangles[0].vertices[2],
-                surface.triangles[0].vertices[1]);
-        }
+    assert(masks.size() == mask_volumes_out.size());
+    for (const Poly3Map::Surface &surface : poly3_map_out->surfaces) {
+        maybe_compute_volume_masks(
+            *poly3_map_out,
+            masks,
+            mask_nefs,
+            surface.volumes[0],
+            surface.triangles[0].vertices[0],
+            surface.triangles[0].vertices[1],
+            surface.triangles[0].vertices[2],
+            mask_volumes_out);
+        maybe_compute_volume_masks(
+            *poly3_map_out,
+            masks,
+            mask_nefs,
+            surface.volumes[1],
+            surface.triangles[0].vertices[0],
+            surface.triangles[0].vertices[2],
+            surface.triangles[0].vertices[1],
+            mask_volumes_out);
     }
 }
 
