@@ -26,7 +26,20 @@ public:
 
     std::vector<std::string> calculix_deck;
 
-    class MeshObject {
+    typedef std::string VolumeObjectName;
+    typedef std::string MeshObjectName;
+    typedef std::string SelectVolumeObjectName;
+    typedef std::string LoadObjectName;
+
+    class VolumeObject {
+    public:
+        std::map<MeshObjectName, std::set<Poly3Map::VolumeId> >
+            poly3_map_volumes;
+        std::shared_ptr<const ElementSet> element_set;
+        std::shared_ptr<const NodeSet> node_set;
+    };
+
+    class MeshObject : public VolumeObject {
     public:
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Poly3Map> poly3_map;
@@ -45,36 +58,41 @@ public:
         NodeId node_begin, node_end;
         ElementId element_begin, element_end;
     };
-    std::map<std::string, MeshObject> mesh_objects;
 
-    class SelectVolumeObject {
+    std::map<MeshObjectName, MeshObject> mesh_objects;
+
+    class SelectVolumeObject : public VolumeObject {
     public:
         std::shared_ptr<const Poly3> mask;
     };
-    std::map<std::string, SelectVolumeObject> select_volume_objects;
+
+    std::map<SelectVolumeObjectName, SelectVolumeObject> select_volume_objects;
+
+    const VolumeObject *find_volume_object(const VolumeObjectName &name) const {
+        auto it = mesh_objects.find(name);
+        if (it != mesh_objects.end()) {
+            return &it->second;
+        }
+        auto jt = select_volume_objects.find(name);
+        if (jt != select_volume_objects.end()) {
+            return &jt->second;
+        }
+        return nullptr;
+    }
 
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
     std::shared_ptr<const Mesh3> mesh;
     std::shared_ptr<const Mesh3Index> mesh_index;
 
-    /* Every MeshObject and SelectVolumeObject has an associated VolumeObject
-    with the same name. */
-    class VolumeObject {
-    public:
-        std::map<std::string, std::set<Poly3Map::VolumeId> > poly3_map_volumes;
-        std::shared_ptr<const ElementSet> element_set;
-        std::shared_ptr<const NodeSet> node_set;
-    };
-    std::map<std::string, VolumeObject> volume_objects;
-
     class LoadObject {
     public:
-        std::string volume;
+        VolumeObjectName volume;
         ForceDensityVector force_density;
         std::shared_ptr<const ConcentratedLoad> load;
     };
-    std::map<std::string, LoadObject> load_objects;
+
+    std::map<LoadObjectName, LoadObject> load_objects;
 
     std::shared_ptr<const Results> results;
 };

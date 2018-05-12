@@ -10,15 +10,6 @@
 
 namespace os2cx {
 
-std::vector<const Poly3 *> get_volume_masks(const Project *project) {
-    std::vector<const Poly3 *> volume_masks;
-    for (auto it = project->select_volume_objects.begin();
-            it != project->select_volume_objects.end(); ++it) {
-        volume_masks.push_back(it->second.mask.get());
-    }
-    return volume_masks;
-}
-
 void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     maybe_create_directory(p->temp_dir);
     openscad_extract_inventory(p);
@@ -42,11 +33,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         which ultimately points to VolumeObject::poly3_map_volumes. */
         std::vector<const Poly3 *> volume_masks;
         std::vector<std::set<Poly3Map::VolumeId> *> volume_mask_volumes;
-        for (const auto &select_volume_pair : p->select_volume_objects) {
-            volume_masks.push_back(select_volume_pair.second.mask.get());
-            auto *volume_object = &p->volume_objects[select_volume_pair.first];
+        for (auto &select_volume_pair : p->select_volume_objects) {
+            volume_masks.push_back(
+                select_volume_pair.second.mask.get());
             volume_mask_volumes.push_back(
-                &volume_object->poly3_map_volumes[pair.first]);
+                &select_volume_pair.second.poly3_map_volumes[pair.first]);
         }
 
         std::shared_ptr<Poly3Map> poly3_map(new Poly3Map);
@@ -60,24 +51,25 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
 
         pair.second.poly3_map_index.reset(new Poly3MapIndex(*poly3_map));
 
-        /* Fill in VolumeObject::poly3_map_volumes for volume objects that came
-        from MeshObjects rather than from SelectVolumeObjects */
-        for (auto &volume_pair : p->volume_objects) {
-            if (!p->mesh_objects.count(volume_pair.first)) {
-                continue;
-            }
-            std::set<Poly3Map::VolumeId> poly3_map_volumes;
-            if (volume_pair.first == pair.first) {
-                /* The MeshObject's own VolumeObject contains all of the mesh's
-                Poly3Map volumes */
+        for (auto &mesh_pair : p->mesh_objects) {
+            if (mesh_pair.first == pair.first) {
+                /* This is the same MeshObject that we just constructed the
+                poly3_map for; obviously it contains all its own Poly3Map
+                volumes */
+                std::set<Poly3Map::VolumeId> poly3_map_volumes;
                 for (Poly3Map::VolumeId volume_id = 0;
                         volume_id < static_cast<int>(poly3_map->volumes.size());
                         ++volume_id) {
                     poly3_map_volumes.insert(volume_id);
                 }
+                mesh_pair.second.poly3_map_volumes[pair.first] =
+                    poly3_map_volumes;
+            } else {
+                /* Other MeshObjects don't contain any volumes from this
+                MeshObject's Poly3Map. */
+                mesh_pair.second.poly3_map_volumes[pair.first] =
+                    std::set<Poly3Map::VolumeId>();
             }
-            volume_pair.second.poly3_map_volumes[pair.first] =
-                poly3_map_volumes;
         }
 
         callbacks->project_run_checkpoint();
@@ -100,12 +92,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 &pair.second.element_end);
             pair.second.partial_mesh = nullptr;
 
-            Project::VolumeObject *volume_object = &p->volume_objects[pair.first];
-            volume_object->element_set.reset(new ElementSet(
+            pair.second.element_set.reset(new ElementSet(
                 compute_element_set_from_range(
                     pair.second.element_begin, pair.second.element_end)
             ));
-            volume_object->node_set.reset(new NodeSet(
+            pair.second.node_set.reset(new NodeSet(
                 compute_node_set_from_range(
                     pair.second.node_begin, pair.second.node_end)
             ));
@@ -116,8 +107,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->select_volume_objects) {
-        Project::VolumeObject *vol = &p->volume_objects[pair.first];
-
         ElementSet element_set;
         for (auto &mesh_pair : p->mesh_objects) {
             ElementSet partial_element_set = compute_element_set_from_mask(
@@ -125,7 +114,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 *p->mesh,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,
-                vol->poly3_map_volumes.at(mesh_pair.first));
+                pair.second.poly3_map_volumes.at(mesh_pair.first));
             element_set.elements.insert(
                 partial_element_set.elements.begin(),
                 partial_element_set.elements.end());
@@ -134,15 +123,15 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         NodeSet node_set =
             compute_node_set_from_element_set(*p->mesh, element_set);
 
-        vol->element_set.reset(new ElementSet(std::move(element_set)));
-        vol->node_set.reset(new NodeSet(std::move(node_set)));
+        pair.second.element_set.reset(new ElementSet(std::move(element_set)));
+        pair.second.node_set.reset(new NodeSet(std::move(node_set)));
 
         callbacks->project_run_checkpoint();
     }
 
     for (auto &pair : p->load_objects) {
         const ElementSet &element_set =
-            *p->volume_objects[pair.second.volume].element_set;
+            *p->find_volume_object(pair.second.volume)->element_set;
         pair.second.load.reset(new ConcentratedLoad(
             compute_load_from_element_set(
                 *p->mesh,

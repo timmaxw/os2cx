@@ -79,16 +79,12 @@ void do_mesh_directive(
         throw BadEchoError("malformed mesh_directive");
     }
 
-    std::string name = echo[2].string_value;
+    Project::MeshObjectName name = echo[2].string_value;
     check_name(project, "mesh", name);
 
     project->mesh_objects.insert(std::make_pair(
         name,
         Project::MeshObject()
-    ));
-    project->volume_objects.insert(std::make_pair(
-        name,
-        Project::VolumeObject()
     ));
 }
 
@@ -101,16 +97,12 @@ void do_select_volume_directive(
         throw BadEchoError("malformed select_volume_directive");
     }
 
-    std::string name = echo[2].string_value;
+    Project::SelectVolumeObjectName name = echo[2].string_value;
     check_name(project, "volume", name);
 
     project->select_volume_objects.insert(std::make_pair(
         name,
         Project::SelectVolumeObject()
-    ));
-    project->volume_objects.insert(std::make_pair(
-        name,
-        Project::VolumeObject()
     ));
 }
 
@@ -125,11 +117,11 @@ void do_load_volume_directive(
         throw BadEchoError("malformed load_directive");
     }
 
-    std::string name = echo[2].string_value;
+    Project::LoadObjectName name = echo[2].string_value;
     check_name(project, "load", name);
 
-    std::string volume = echo[3].string_value;
-    if (!project->volume_objects.count(volume)) {
+    Project::VolumeObjectName volume = echo[3].string_value;
+    if (project->find_volume_object(volume) == nullptr) {
         throw UsageError("Load '" + name + "' refers to volume '" + volume +
             "', which does not exist (yet).");
     }

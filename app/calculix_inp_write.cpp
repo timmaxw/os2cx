@@ -100,10 +100,10 @@ void write_calculix_job(
     for (const auto &pair : project.select_volume_objects) {
         FilePath select_file_path = dir_path + "/" + pair.first + ".nam";
         std::ofstream select_stream(select_file_path);
-        const Project::VolumeObject &volume =
-            project.volume_objects.at(pair.first);
-        write_calculix_nset(select_stream, pair.first, *volume.node_set);
-        write_calculix_elset(select_stream, pair.first, *volume.element_set);
+        write_calculix_nset(
+            select_stream, pair.first, *pair.second.node_set);
+        write_calculix_elset(
+            select_stream, pair.first, *pair.second.element_set);
     }
 
     for (const auto &pair : project.load_objects) {

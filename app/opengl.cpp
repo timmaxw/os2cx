@@ -321,19 +321,18 @@ void poly3_map_to_opengl_scene(
                 break;
             case OpenglFocus::Type::SelectVolume: {
                 focused = project
-                    .volume_objects
-                    .at(scene_settings.focus.target)
-                    .poly3_map_volumes.at(pair.first)
+                    .find_volume_object(scene_settings.focus.target)
+                    ->poly3_map_volumes
+                    .at(pair.first)
                     .count(inside_volume_id);
                 break;
             }
             case OpenglFocus::Type::Load: {
-                std::string load_volume =
+                Project::VolumeObjectName load_volume =
                     project.load_objects.at(scene_settings.focus.target).volume;
                 focused = project
-                    .volume_objects
-                    .at(load_volume)
-                    .poly3_map_volumes.at(pair.first)
+                    .find_volume_object(load_volume)
+                    ->poly3_map_volumes.at(pair.first)
                     .count(inside_volume_id);
                 break;
             }
