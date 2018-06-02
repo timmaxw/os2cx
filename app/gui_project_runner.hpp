@@ -51,7 +51,7 @@ public:
     GuiProjectRunner(QObject *parent, const std::string &scad_path);
 
     const Project *get_project() const {
-        return project_on_application_thread.get();
+        return &project_on_application_thread;
     }
 
 signals:
@@ -62,7 +62,7 @@ public slots:
 private:
     /* project_on_application_thread is only ever accessed from the application
     thread. */
-    std::unique_ptr<Project> project_on_application_thread;
+    Project project_on_application_thread;
 
     std::unique_ptr<GuiProjectRunnerWorkerThread> worker_thread;
 

@@ -76,6 +76,13 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->mesh_objects) {
+        p->approx_scale = std::max(
+            p->approx_scale,
+            pair.second.poly3_map_index->approx_scale());
+    }
+    callbacks->project_run_checkpoint();
+
+    for (auto &pair : p->mesh_objects) {
         Mesh3 partial_mesh = mesher_tetgen(*pair.second.poly3_map);
         pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
         callbacks->project_run_checkpoint();

@@ -40,19 +40,20 @@ SOURCES += \
     mesher_tetgen.cpp \
     mesh_index.cpp \
     mesh_type_info.cpp \
-    opengl.cpp \
     openscad_extract.cpp \
     openscad_run.cpp \
     openscad_value.cpp \
     project.cpp \
     util.cpp \
-    gui_opengl_widget.cpp \
     gui_project_runner.cpp \
     gui_focus_combo_box.cpp \
     polynomial.cpp \
     poly.cpp \
     poly_map.cpp \
-    poly_map_index.cpp
+    poly_map_index.cpp \
+    gui_scene_abstract.cpp \
+    gui_scene_mesh.cpp \
+    gui_scene_poly3.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -67,14 +68,12 @@ HEADERS += \
     mesher_tetgen.hpp \
     mesh_index.hpp \
     mesh_type_info.hpp \
-    opengl.hpp \
     openscad_extract.hpp \
     openscad_run.hpp \
     openscad_value.hpp \
     project.hpp \
     result.hpp \
     util.hpp \
-    gui_opengl_widget.hpp \
     gui_project_runner.hpp \
     gui_focus_combo_box.hpp \
     polynomial.hpp \
@@ -82,6 +81,9 @@ HEADERS += \
     poly.internal.hpp \
     poly_map.hpp \
     poly_map.internal.hpp \
-    poly_map_index.hpp
+    poly_map_index.hpp \
+    gui_scene_abstract.hpp \
+    gui_scene_mesh.hpp \
+    gui_scene_poly3.hpp
 
 FORMS +=

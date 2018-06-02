@@ -16,27 +16,27 @@ GuiFocusComboBox::GuiFocusComboBox(QWidget *parent, const Project *p) :
     );
 }
 
-OpenglFocus GuiFocusComboBox::get_focus() {
+GuiFocus GuiFocusComboBox::get_focus() {
     int index = currentIndex();
     if (index == -1) {
-        return OpenglFocus();
+        return GuiFocus();
     } else {
         return focuses_by_index[index];
     }
 }
 
 void GuiFocusComboBox::regenerate_options() {
-    OpenglFocus old_focus = get_focus();
+    GuiFocus old_focus = get_focus();
 
     clear();
     focuses_by_index.clear();
 
-    push_option(tr("Overview"), OpenglFocus::Type::All, "");
+    push_option(tr("Overview"), GuiFocus::Type::All, "");
 
     for (const auto &pair : project->mesh_objects) {
         push_option(
             tr("Mesh ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::Mesh,
+            GuiFocus::Type::Mesh,
             pair.first
         );
     }
@@ -44,7 +44,7 @@ void GuiFocusComboBox::regenerate_options() {
     for (const auto &pair : project->select_volume_objects) {
         push_option(
             tr("Volume ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::SelectVolume,
+            GuiFocus::Type::SelectVolume,
             pair.first
         );
     }
@@ -52,7 +52,7 @@ void GuiFocusComboBox::regenerate_options() {
     for (const auto &pair : project->load_objects) {
         push_option(
             tr("Load ") + QString(pair.first.c_str()),
-            OpenglFocus::Type::Load,
+            GuiFocus::Type::Load,
             pair.first
         );
     }
@@ -61,7 +61,7 @@ void GuiFocusComboBox::regenerate_options() {
         for (const auto &pair : project->results->node_vectors) {
             push_option(
                 tr("Result ") + QString(pair.first.c_str()),
-                OpenglFocus::Type::Result,
+                GuiFocus::Type::Result,
                 pair.first
             );
         }
@@ -82,11 +82,11 @@ void GuiFocusComboBox::regenerate_options() {
 
 void GuiFocusComboBox::push_option(
     const QString &text,
-    OpenglFocus::Type type,
+    GuiFocus::Type type,
     const std::string &target
 ) {
     addItem(text);
-    OpenglFocus focus;
+    GuiFocus focus;
     focus.type = type;
     focus.target = target;
     focuses_by_index.push_back(focus);

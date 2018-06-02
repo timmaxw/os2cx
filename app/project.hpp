@@ -95,6 +95,10 @@ public:
     std::map<LoadObjectName, LoadObject> load_objects;
 
     std::shared_ptr<const Results> results;
+
+    /* A very rough/informal approximation of the project's typical length
+    scale. Will be zero until all the Poly3s have been loaded. */
+    Length approx_scale;
 };
 
 /* project_run() performs all of the computations for a project. It gets run in

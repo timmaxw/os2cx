@@ -6,19 +6,18 @@
 #include <QMenuBar>
 #include <QToolBar>
 
+#include "gui_scene_mesh.hpp"
+#include "gui_scene_poly3.hpp"
+
 namespace os2cx {
 
 GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
-    QMainWindow(nullptr)
+    QMainWindow(nullptr),
+    scene_settings(nullptr), /* will fill in project later */
+    scene(nullptr)
 {
     project_runner = new GuiProjectRunner(this, scad_path);
-
-    opengl_widget = new GuiOpenglWidget(this, project_runner->get_project());
-    setCentralWidget(opengl_widget);
-    connect(
-        project_runner, &GuiProjectRunner::project_updated,
-        opengl_widget, &GuiOpenglWidget::regenerate_scene
-    );
+    scene_settings.project = project_runner->get_project();
 
     QToolBar *tool_bar = addToolBar("toolbar");
 
@@ -46,6 +45,8 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     );
 
     resize(QSize(800, 600));
+
+    regenerate_scene();
 }
 
 void GuiMainWindow::menu_file_open() {
@@ -53,11 +54,39 @@ void GuiMainWindow::menu_file_open() {
 }
 
 void GuiMainWindow::regenerate_scene() {
-    opengl_widget->scene_settings.focus =
-        focus_combo_box->get_focus();
-    opengl_widget->scene_settings.show_elements =
-        action_show_elements->isChecked();
-    opengl_widget->regenerate_scene();
+    if (scene != nullptr) {
+        delete scene;
+        scene = nullptr;
+    }
+
+    GuiFocus focus = focus_combo_box->get_focus();
+    bool show_elements = action_show_elements->isChecked();
+
+    if (show_elements) {
+        if (focus.type == GuiFocus::Type::All) {
+            scene = new GuiSceneMesh(this, &scene_settings);
+        } else if (focus.type == GuiFocus::Type::Mesh ||
+                focus.type == GuiFocus::Type::SelectVolume) {
+            scene = new GuiSceneMeshVolume(this, &scene_settings, focus.target);
+        } else if (focus.type == GuiFocus::Type::Result) {
+            scene = new GuiSceneMeshResultDisplacement(
+                this, &scene_settings, focus.target);
+        } else {
+            /* TODO: loads */
+            scene = new GuiSceneMesh(this, &scene_settings);
+        }
+    } else {
+        if (focus.type == GuiFocus::Type::All) {
+            scene = new GuiScenePoly3(this, &scene_settings);
+        } else if (focus.type == GuiFocus::Type::Mesh ||
+                focus.type == GuiFocus::Type::SelectVolume) {
+            scene = new GuiScenePoly3Volume(this, &scene_settings, focus.target);
+        } else {
+            /* TODO: loads, results */
+            scene = new GuiScenePoly3(this, &scene_settings);
+        }
+    }
+    setCentralWidget(scene);
 }
 
 } /* namespace os2cx */

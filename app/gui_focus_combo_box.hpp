@@ -3,9 +3,31 @@
 
 #include <QComboBox>
 
-#include "opengl.hpp"
+#include "project.hpp"
 
 namespace os2cx {
+
+class GuiFocus {
+public:
+    enum class Type {
+        All, // no target
+        Mesh, // target = mesh name
+        SelectVolume, // target = select volume name
+        Load, // target = load name
+        Result, // target = dataset name
+    };
+
+    GuiFocus() : type(Type::All) { }
+    bool operator==(const GuiFocus &other) const {
+        return type == other.type && target == other.target;
+    }
+    bool operator!=(const GuiFocus &other) const {
+        return !(*this == other);
+    }
+
+    Type type;
+    std::string target;
+};
 
 class GuiFocusComboBox : public QComboBox
 {
@@ -13,7 +35,7 @@ class GuiFocusComboBox : public QComboBox
 public:
     GuiFocusComboBox(QWidget *parent, const Project *project);
 
-    OpenglFocus get_focus();
+    GuiFocus get_focus();
 
 signals:
     void focus_changed();
@@ -24,11 +46,11 @@ public slots:
 private:
     void push_option(
         const QString &text,
-        OpenglFocus::Type type,
+        GuiFocus::Type type,
         const std::string &target
     );
     const Project *project;
-    std::vector<OpenglFocus> focuses_by_index;
+    std::vector<GuiFocus> focuses_by_index;
 };
 
 } /* namespace os2cx */

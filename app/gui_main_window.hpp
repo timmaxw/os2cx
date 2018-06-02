@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "gui_focus_combo_box.hpp"
-#include "gui_opengl_widget.hpp"
+#include "gui_scene_abstract.hpp"
 #include "gui_project_runner.hpp"
 #include "project.hpp"
 
@@ -22,10 +22,10 @@ public slots:
     void regenerate_scene();
 
 private:
-    std::unique_ptr<Project> project;
     GuiProjectRunner *project_runner;
     GuiFocusComboBox *focus_combo_box;
-    GuiOpenglWidget *opengl_widget;
+    GuiSceneSettings scene_settings;
+    GuiSceneAbstract *scene;
     QAction *action_show_elements;
 };
 
