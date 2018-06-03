@@ -8,7 +8,7 @@ namespace os2cx {
 class GuiScenePoly3 : public GuiSceneAbstract
 {
 public:
-    GuiScenePoly3(QWidget *parent, GuiSceneSettings *scene_settings);
+    explicit GuiScenePoly3(const SceneParams &params);
 
 protected:
     virtual void initialize_scene();
@@ -22,8 +22,7 @@ class GuiScenePoly3Volume : public GuiScenePoly3
 {
 public:
     GuiScenePoly3Volume(
-        QWidget *parent,
-        GuiSceneSettings *scene_settings,
+        const SceneParams &params,
         const Project::VolumeObjectName &volume);
 
 protected:

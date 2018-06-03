@@ -8,11 +8,13 @@
 
 namespace os2cx {
 
-class GuiSceneSettings {
+/* GuiCameraSettings is the camera settings for the 3D scene. It's a separate
+object from the scene because we want to preserve it when we destroy the old
+scene and create a new one. */
+class GuiCameraSettings {
 public:
-    GuiSceneSettings(const Project *p) : project(p), yaw(40), pitch(20) { }
+    GuiCameraSettings() : yaw(40), pitch(20) { }
 
-    const Project *project;
     float yaw, pitch; /* in degrees */
 };
 
@@ -21,7 +23,16 @@ class GuiSceneAbstract :
 {
     Q_OBJECT
 public:
-    GuiSceneAbstract(QWidget *parent, GuiSceneSettings *settings);
+    /* GuiSceneAbstract has a lot of subclasses and sub-subclasses; to make
+    constructors less verbose, the constructor parameters are collected into the
+    SceneParams class. */
+    class SceneParams {
+    public:
+        QWidget *scene_parent;
+        const Project *project;
+        GuiCameraSettings *camera_settings;
+    };
+    GuiSceneAbstract(const SceneParams &params);
 
 signals:
 
@@ -33,7 +44,7 @@ protected:
 
     virtual void initialize_scene() = 0;
 
-    const Project *project() { return scene_settings->project; }
+    const Project *const project;
 
 private:
     void initializeGL();
@@ -43,7 +54,7 @@ private:
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 
-    GuiSceneSettings *scene_settings;
+    GuiCameraSettings *camera_settings;
     Length approx_scale;
     int mouse_last_x, mouse_last_y;
 

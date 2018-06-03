@@ -8,9 +8,7 @@ namespace os2cx {
 class GuiSceneMesh : public GuiSceneAbstract
 {
 public:
-    GuiSceneMesh(
-        QWidget *parent,
-        GuiSceneSettings *scene_settings);
+    explicit GuiSceneMesh(const SceneParams &params);
 
 protected:
     virtual void initialize_scene();
@@ -26,8 +24,7 @@ class GuiSceneMeshVolume : public GuiSceneMesh
 {
 public:
     GuiSceneMeshVolume(
-        QWidget *parent,
-        GuiSceneSettings *scene_settings,
+        const SceneParams &params,
         const Project::VolumeObjectName &volume);
 
 private:
@@ -43,8 +40,7 @@ class GuiSceneMeshResultDisplacement : public GuiSceneMesh
 {
 public:
     GuiSceneMeshResultDisplacement(
-        QWidget *parent,
-        GuiSceneSettings *scene_settings,
+        const SceneParams &params,
         const std::string &result_name);
 
 private:

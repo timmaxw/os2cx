@@ -24,7 +24,7 @@ public slots:
 private:
     GuiProjectRunner *project_runner;
     GuiFocusComboBox *focus_combo_box;
-    GuiSceneSettings scene_settings;
+    GuiCameraSettings camera_settings;
     GuiSceneAbstract *scene;
     QAction *action_show_elements;
 };

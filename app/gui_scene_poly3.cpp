@@ -2,15 +2,11 @@
 
 namespace os2cx {
 
-GuiScenePoly3::GuiScenePoly3(
-    QWidget *parent,
-    GuiSceneSettings *scene_settings
-) :
-    GuiSceneAbstract(parent, scene_settings)
-{ }
+GuiScenePoly3::GuiScenePoly3(const SceneParams &params) :
+    GuiSceneAbstract(params) { }
 
 void GuiScenePoly3::initialize_scene() {
-    for (const auto &pair : project()->mesh_objects) {
+    for (const auto &pair : project->mesh_objects) {
         const Poly3Map *poly3_map = pair.second.poly3_map.get();
         if (poly3_map == nullptr) {
             continue;
@@ -57,11 +53,10 @@ QColor GuiScenePoly3::surface_color(
 }
 
 GuiScenePoly3Volume::GuiScenePoly3Volume(
-    QWidget *parent,
-    GuiSceneSettings *scene_settings,
+    const SceneParams &params,
     const Project::VolumeObjectName &volume
 ) :
-    GuiScenePoly3(parent, scene_settings),
+    GuiScenePoly3(params),
     volume(volume)
 { }
 
@@ -70,7 +65,7 @@ QColor GuiScenePoly3Volume::surface_color(
     Poly3Map::VolumeId volume_id
 ) {
     const Project::VolumeObject *volume_obj =
-        project()->find_volume_object(volume);
+        project->find_volume_object(volume);
     if (volume_obj->poly3_map_volumes.at(mesh_object_name).count(volume_id)) {
         return QColor(0xFF, 0x00, 0x00);
     } else {

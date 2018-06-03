@@ -5,12 +5,10 @@
 
 namespace os2cx {
 
-GuiSceneAbstract::GuiSceneAbstract(
-    QWidget *parent,
-    GuiSceneSettings *ss
-) :
-    QOpenGLWidget(parent),
-    scene_settings(ss),
+GuiSceneAbstract::GuiSceneAbstract(const SceneParams &params) :
+    QOpenGLWidget(params.scene_parent),
+    project(params.project),
+    camera_settings(params.camera_settings),
     num_triangles(0),
     num_lines(0)
 { }
@@ -124,11 +122,11 @@ void GuiSceneAbstract::paintGL() {
 
     /* Position camera such that entire project is visible */
     float fov_slop_factor = 1.5;
-    float dist = project()->approx_scale.val / fov_slope_min * fov_slop_factor;
+    float dist = project->approx_scale.val / fov_slope_min * fov_slop_factor;
     glTranslatef(0, 0, -dist);
 
-    glRotatef(90 + scene_settings->pitch, 1.0f, 0.0f, 0.0f);
-    glRotatef(-scene_settings->yaw, 0.0f, 0.0f, 1.0f);
+    glRotatef(90 + camera_settings->pitch, 1.0f, 0.0f, 0.0f);
+    glRotatef(-camera_settings->yaw, 0.0f, 0.0f, 1.0f);
 
     if (num_triangles != 0) {
         glEnable(GL_VERTEX_ARRAY);
@@ -166,12 +164,12 @@ void GuiSceneAbstract::mouseMoveEvent(QMouseEvent *event) {
         /* This scaling factor is chosen such that dragging from the left side
         of the view to the right side will rotate the model 180 degrees. */
         double scale_factor = 180.0 / width();
-        scene_settings->yaw += (event->x() - mouse_last_x) * scale_factor;
-        scene_settings->pitch += (event->y() - mouse_last_y) * scale_factor;
+        camera_settings->yaw += (event->x() - mouse_last_x) * scale_factor;
+        camera_settings->pitch += (event->y() - mouse_last_y) * scale_factor;
 
-        scene_settings->yaw -= 360 * floor(scene_settings->yaw / 360);
-        if (scene_settings->pitch > 90) scene_settings->pitch = 90;
-        if (scene_settings->pitch < -90) scene_settings->pitch = -90;
+        camera_settings->yaw -= 360 * floor(camera_settings->yaw / 360);
+        if (camera_settings->pitch > 90) camera_settings->pitch = 90;
+        if (camera_settings->pitch < -90) camera_settings->pitch = -90;
 
         update();
 

@@ -13,11 +13,9 @@ namespace os2cx {
 
 GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     QMainWindow(nullptr),
-    scene_settings(nullptr), /* will fill in project later */
     scene(nullptr)
 {
     project_runner = new GuiProjectRunner(this, scad_path);
-    scene_settings.project = project_runner->get_project();
 
     QToolBar *tool_bar = addToolBar("toolbar");
 
@@ -62,28 +60,32 @@ void GuiMainWindow::regenerate_scene() {
     GuiFocus focus = focus_combo_box->get_focus();
     bool show_elements = action_show_elements->isChecked();
 
+    GuiSceneAbstract::SceneParams params;
+    params.scene_parent = this;
+    params.project = project_runner->get_project();
+    params.camera_settings = &camera_settings;
+
     if (show_elements) {
         if (focus.type == GuiFocus::Type::All) {
-            scene = new GuiSceneMesh(this, &scene_settings);
+            scene = new GuiSceneMesh(params);
         } else if (focus.type == GuiFocus::Type::Mesh ||
                 focus.type == GuiFocus::Type::SelectVolume) {
-            scene = new GuiSceneMeshVolume(this, &scene_settings, focus.target);
+            scene = new GuiSceneMeshVolume(params, focus.target);
         } else if (focus.type == GuiFocus::Type::Result) {
-            scene = new GuiSceneMeshResultDisplacement(
-                this, &scene_settings, focus.target);
+            scene = new GuiSceneMeshResultDisplacement(params, focus.target);
         } else {
             /* TODO: loads */
-            scene = new GuiSceneMesh(this, &scene_settings);
+            scene = new GuiSceneMesh(params);
         }
     } else {
         if (focus.type == GuiFocus::Type::All) {
-            scene = new GuiScenePoly3(this, &scene_settings);
+            scene = new GuiScenePoly3(params);
         } else if (focus.type == GuiFocus::Type::Mesh ||
                 focus.type == GuiFocus::Type::SelectVolume) {
-            scene = new GuiScenePoly3Volume(this, &scene_settings, focus.target);
+            scene = new GuiScenePoly3Volume(params, focus.target);
         } else {
             /* TODO: loads, results */
-            scene = new GuiScenePoly3(this, &scene_settings);
+            scene = new GuiScenePoly3(params);
         }
     }
     setCentralWidget(scene);
