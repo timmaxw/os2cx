@@ -8,6 +8,37 @@ function __os2cx_is_number(arg) = (arg != undef) && (arg + 0 == arg);
 function __os2cx_is_array_strings(arg) =
     all([for (item = arg) __os2cx_is_string(item)]);
 
+module __os2cx_beacon() {
+    origin_coords   = [0,   0,   0  ];
+    concave_coords  = [0.1, 0.2, 0.3];
+    corner_x_coords = [1,   0,   0  ];
+    corner_y_coords = [0,   1,   0  ];
+    corner_z_coords = [0,   0,   1  ];
+    origin_id   = 0;
+    concave_id  = 1;
+    corner_x_id = 2;
+    corner_y_id = 3;
+    corner_z_id = 4;
+    polyhedron(
+        points = [
+            origin_coords,
+            concave_coords,
+            corner_x_coords,
+            corner_y_coords,
+            corner_z_coords,
+        ],
+        faces = [
+            [origin_id, corner_x_id, corner_y_id],
+            [origin_id, corner_y_id, corner_z_id],
+            [origin_id, corner_z_id, corner_x_id],
+            [concave_id, corner_y_id, corner_x_id],
+            [concave_id, corner_z_id, corner_y_id],
+            [concave_id, corner_x_id, corner_z_id],
+        ],
+        convexity = 2
+    );
+}
+
 module os2cx_analysis_custom(lines) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_array_strings(lines)) {

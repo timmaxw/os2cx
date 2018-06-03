@@ -53,7 +53,8 @@ SOURCES += \
     poly_map_index.cpp \
     gui_scene_abstract.cpp \
     gui_scene_mesh.cpp \
-    gui_scene_poly3.cpp
+    gui_scene_poly3.cpp \
+    beacon.cpp
 
 HEADERS += \
         gui_main_window.hpp \
@@ -84,6 +85,7 @@ HEADERS += \
     poly_map_index.hpp \
     gui_scene_abstract.hpp \
     gui_scene_mesh.hpp \
-    gui_scene_poly3.hpp
+    gui_scene_poly3.hpp \
+    beacon.hpp
 
 FORMS +=

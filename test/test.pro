@@ -31,5 +31,6 @@ SOURCES = $$APP_SOURCES \
     openscad_value_test.cpp \
     polynomial_test.cpp \
     poly_map_test.cpp \
-    poly_test.cpp
+    poly_test.cpp \
+    beacon_test.cpp
 FORMS = $$APP_FORMS
