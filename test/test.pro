@@ -1,27 +1,14 @@
-include(../app/app.pro)
-
-INCLUDEPATH += ../app
+include(../core/core.pro)
+INCLUDEPATH += ../core
 
 TARGET = test
 CONFIG -= app_bundle
 CONFIG += console
 LIBS += -lgtest -lgtest_main
 
-defineReplace(app_path) {
-    old = $$1
-    new =
-    for (name, old) {
-        new += ../app/$${name}
-    }
-    return ($$new)
-}
-APP_HEADERS = $$app_path($$HEADERS)
-APP_SOURCES = $$app_path($$SOURCES)
-APP_FORMS = $$app_path($$FORMS)
-APP_SOURCES -= ../app/main.cpp
+HEADERS = $$CORE_HEADERS
 
-HEADERS = $$APP_HEADERS
-SOURCES = $$APP_SOURCES \
+SOURCES = $$CORE_SOURCES \
     attrs_test.cpp \
     calculix_read_test.cpp \
     mesh_index_test.cpp \
@@ -33,4 +20,4 @@ SOURCES = $$APP_SOURCES \
     poly_map_test.cpp \
     poly_test.cpp \
     beacon_test.cpp
-FORMS = $$APP_FORMS
+

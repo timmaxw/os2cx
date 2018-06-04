@@ -111,7 +111,7 @@ as shared_ptr<const Whatever>. */
 
 class ProjectRunCallbacks {
 public:
-    virtual void project_run_checkpoint() = 0;
+    virtual void project_run_checkpoint() { }
 };
 
 void project_run(Project *project, ProjectRunCallbacks *callbacks);

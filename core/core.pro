@@ -1,13 +1,7 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2018-04-17T21:17:44
-#
-#-------------------------------------------------
-
-QT += core gui widgets
-
-TARGET = app
-TEMPLATE = app
+TARGET = os2cx
+QT -= gui
+CONFIG += c++11 console
+CONFIG -= app_bundle
 
 LIBS += -lCGAL -lgmp -lmpfr
 LIBS += -lGLU
@@ -15,7 +9,7 @@ LIBS += -ltet
 LIBS += -ltiny-process-library
 
 # The following define makes your compiler emit warnings if you use
-# any feature of Qt which has been marked as deprecated (the exact warnings
+# any feature of Qt which as been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
@@ -25,10 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-
 SOURCES += \
-        main.cpp \
-        gui_main_window.cpp \
     attrs.cpp \
     calc.cpp \
     calculix_frd_read.cpp \
@@ -45,19 +36,14 @@ SOURCES += \
     openscad_value.cpp \
     project.cpp \
     util.cpp \
-    gui_project_runner.cpp \
-    gui_focus_combo_box.cpp \
     polynomial.cpp \
     poly.cpp \
     poly_map.cpp \
     poly_map_index.cpp \
-    gui_scene_abstract.cpp \
-    gui_scene_mesh.cpp \
-    gui_scene_poly3.cpp \
-    beacon.cpp
+    beacon.cpp \
+    main_backend.cpp
 
 HEADERS += \
-        gui_main_window.hpp \
     attrs.hpp \
     calc.hpp \
     calculix_frd_read.hpp \
@@ -75,17 +61,24 @@ HEADERS += \
     project.hpp \
     result.hpp \
     util.hpp \
-    gui_project_runner.hpp \
-    gui_focus_combo_box.hpp \
     polynomial.hpp \
     poly.hpp \
     poly.internal.hpp \
     poly_map.hpp \
     poly_map.internal.hpp \
     poly_map_index.hpp \
-    gui_scene_abstract.hpp \
-    gui_scene_mesh.hpp \
-    gui_scene_poly3.hpp \
     beacon.hpp
 
-FORMS +=
+# The "gui" and "test" projects include all the same headers and sources as
+# "core", minus "main.cpp". Prepare variables for them to use from this file.
+defineReplace(core_path) {
+    old = $$1
+    new =
+    for (name, old) {
+        new += ../core/$${name}
+    }
+    return ($$new)
+}
+CORE_HEADERS = $$core_path($$HEADERS)
+CORE_SOURCES = $$core_path($$SOURCES)
+CORE_SOURCES -= ../core/main_backend.cpp

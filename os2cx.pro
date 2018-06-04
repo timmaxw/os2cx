@@ -1,7 +1,8 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    app \
+    core \
+    gui \
     test
 
 DISTFILES += \
