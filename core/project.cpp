@@ -31,11 +31,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         poly3_map_create will slice the mesh solid by the masks and then write
         out which volumes correspond to which masks into volume_mask_volumes,
         which ultimately points to VolumeObject::poly3_map_volumes. */
-        std::vector<const Poly3 *> volume_masks;
+        std::vector<Poly3MapVolumeMask> volume_masks;
         std::vector<std::set<Poly3Map::VolumeId> *> volume_mask_volumes;
         for (auto &select_volume_pair : p->select_volume_objects) {
-            volume_masks.push_back(
-                select_volume_pair.second.mask.get());
+            Poly3MapVolumeMask volume_mask;
+            volume_mask.poly = select_volume_pair.second.mask.get();
+            volume_masks.push_back(volume_mask);
             volume_mask_volumes.push_back(
                 &select_volume_pair.second.poly3_map_volumes[pair.first]);
         }

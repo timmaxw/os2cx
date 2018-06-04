@@ -41,7 +41,9 @@ SOURCES += \
     poly_map.cpp \
     poly_map_index.cpp \
     beacon.cpp \
-    main_backend.cpp
+    main_backend.cpp \
+    poly_map_internal_traveral.cpp \
+    poly_map_internal_masks.cpp
 
 HEADERS += \
     attrs.hpp \
@@ -67,7 +69,9 @@ HEADERS += \
     poly_map.hpp \
     poly_map.internal.hpp \
     poly_map_index.hpp \
-    beacon.hpp
+    beacon.hpp \
+    poly_map_internal_traversal.hpp \
+    poly_map_internal_masks.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.

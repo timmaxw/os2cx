@@ -66,11 +66,17 @@ public:
     std::unique_ptr<Poly3MapInternal> i;
 };
 
+class Poly3MapVolumeMask {
+public:
+    const Poly3 *poly;
+};
+
 void poly3_map_create(
     const Poly3 &solid,
-    const std::vector<const Poly3 *> &masks,
+    const std::vector<Poly3MapVolumeMask> &volume_masks,
     Poly3Map *poly3_map_out,
-    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out);
+    const std::vector<std::set<Poly3Map::VolumeId> *>
+        &volume_mask_volumes_out);
 
 } /* namespace os2cx */
 

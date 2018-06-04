@@ -9,11 +9,13 @@ namespace os2cx {
 
 TEST(PolyMapTest, Poly3MapCreate) {
     Poly3 solid = Poly3::box(0, 0, 0, 1, 1, 3);
-    Poly3 mask = Poly3::box(-1, -1, 1, 2, 2, 2);
+    Poly3 mask_poly = Poly3::box(-1, -1, 1, 2, 2, 2);
+    Poly3MapVolumeMask mask;
+    mask.poly = &mask_poly;
     std::set<Poly3Map::VolumeId> mask_volumes;
 
     Poly3Map pm;
-    poly3_map_create(solid, {&mask}, &pm, {&mask_volumes});
+    poly3_map_create(solid, {mask}, &pm, {&mask_volumes});
 
     if (false) {
         pm.debug(std::cout);

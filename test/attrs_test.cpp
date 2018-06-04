@@ -7,10 +7,12 @@ namespace os2cx {
 
 TEST(AttrsTest, LoadVolume) {
     Poly3 solid = Poly3::box(0, 0, 0, 1, 1, 2);
-    Poly3 mask = Poly3::box(0, 0, 1, 1, 1, 3);
+    Poly3 mask_poly = Poly3::box(0, 0, 1, 1, 1, 3);
+    Poly3MapVolumeMask mask;
+    mask.poly = &mask_poly;
     std::set<Poly3Map::VolumeId> mask_volumes;
     Poly3Map poly3_map;
-    poly3_map_create(solid, {&mask}, &poly3_map, {&mask_volumes});
+    poly3_map_create(solid, {mask}, &poly3_map, {&mask_volumes});
     Poly3MapIndex poly3_map_index(poly3_map);
     Mesh3 mesh = mesher_tetgen(poly3_map);
     ElementSet element_set = compute_element_set_from_mask(
