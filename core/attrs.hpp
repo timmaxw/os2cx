@@ -22,6 +22,11 @@ ElementSet compute_element_set_from_mask(
     ElementId element_end,
     const std::set<Poly3Map::VolumeId> &poly3_map_volumes);
 
+class FaceSet {
+public:
+    std::set<FaceId> faces;
+};
+
 class NodeSet {
 public:
     std::set<NodeId> nodes;
@@ -32,6 +37,10 @@ NodeSet compute_node_set_from_range(NodeId begin, NodeId end);
 NodeSet compute_node_set_from_element_set(
     const Mesh3 &mesh,
     const ElementSet &element_set);
+
+NodeSet compute_node_set_from_face_set(
+    const Mesh3 &mesh,
+    const FaceSet &face_set);
 
 class ConcentratedLoad {
 public:

@@ -68,9 +68,13 @@ public:
 
 void poly3_map_create(
     const Poly3 &solid,
-    const std::vector<const Poly3 *> &masks,
+    const std::vector<const Poly3 *> &volume_masks,
+    const std::vector<const Poly3 *> &surface_masks,
     Poly3Map *poly3_map_out,
-    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out);
+    const std::vector<std::set<Poly3Map::VolumeId> *>
+        &volume_mask_volumes_out,
+    const std::vector<std::set<Poly3Map::SurfaceId> *>
+        &surface_mask_surfaces_out);
 
 } /* namespace os2cx */
 

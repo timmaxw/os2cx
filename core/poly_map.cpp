@@ -627,28 +627,42 @@ void maybe_compute_volume_masks(
 
 void poly3_map_create(
     const Poly3 &solid,
-    const std::vector<const Poly3 *> &masks,
+    const std::vector<const Poly3 *> &volume_masks,
+    const std::vector<const Poly3 *> &surface_masks,
     Poly3Map *poly3_map_out,
-    const std::vector<std::set<Poly3Map::VolumeId> *> &mask_volumes_out
+    const std::vector<std::set<Poly3Map::VolumeId> *>
+        &volume_mask_volumes_out,
+    const std::vector<std::set<Poly3Map::SurfaceId> *>
+        &surface_mask_surfaces_out
 ) {
-    std::vector<os2cx::CgalNef3> mask_nefs;
-    for (const Poly3 *mask : masks) {
-        mask_nefs.push_back(poly3_nef(*mask));
+    std::vector<os2cx::CgalNef3> volume_mask_nefs;
+    for (const Poly3 *mask : volume_masks) {
+        volume_mask_nefs.push_back(poly3_nef(*mask));
+    }
+
+    std::vector<os2cx::CgalNef3> surface_mask_nefs;
+    for (const Poly3 *mask : surface_masks) {
+        surface_mask_nefs.push_back(poly3_nef(*mask));
     }
 
     poly3_map_out->i.reset(new Poly3MapInternal);
-    if (!masks.empty()) {
-        /* Set 'poly3_map_out->i->nef' to 'solid' minus the union of the mask
-        boundaries. So each volume of 'nef' will belong to a different region of
-        the poly3 map. */
+    os2cx::CgalNef3 solid_nef = poly3_nef(solid);
+    poly3_map_out->i->nef = solid_nef;
+    if (!volume_masks.empty()) {
+        /* Take the union of the mask boundaries and subtract it from
+        'poly3_map_out->i->nef'. So each volume of 'nef' will belong to a
+        different region of the poly3 map. */
         CGAL::Nef_nary_union_3<os2cx::CgalNef3> mask_union;
         for (const os2cx::CgalNef3 &mask_nef : mask_nefs) {
             mask_union.add_polyhedron(mask_nef.boundary());
         }
         poly3_map_out->i->nef =
-            poly3_nef(solid).difference(mask_union.get_union());
-    } else {
-        poly3_map_out->i->nef = poly3_nef(solid);
+            poly3_map_out->i->nef.difference(mask_union.get_union());
+    }
+    if (!surface_masks.empty()) {
+        /* Take the union of the mask boundaries, subtract the interior of
+        'solid_nef', and then subtract the result from 'poly3_map_out->i->nef'.
+        This will
     }
 
     const os2cx::CgalNef3 &nef = poly3_map_out->i->nef;

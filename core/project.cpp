@@ -25,6 +25,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             p, "select_volume", pair.first);
         callbacks->project_run_checkpoint();
     }
+    for (auto &pair : p->select_surface_objects) {
+        pair.second.mask = openscad_extract_poly3(
+            p, "select_surface", pair.first);
+        callbacks->project_run_checkpoint();
+    }
 
     for (auto &pair : p->mesh_objects) {
         /* volume_mask and volume_mask_volumes are two parallel vectors.
@@ -40,12 +45,24 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 &select_volume_pair.second.poly3_map_volumes[pair.first]);
         }
 
+        /* Same with surface_mask and surface_mask_volumes. */
+        std::vector<const Poly3 *> surface_masks;
+        std::vector<std::set<Poly3Map::SurfaceId> *> surface_mask_surfaces;
+        for (auto &select_surface_pair : p->select_surface_objects) {
+            surface_masks.push_back(
+                select_surface_pair.second.mask.get());
+            surface_mask_volumes.push_back(
+                &select_surface_pair.second.poly3_map_surfaces[pair.first]);
+        }
+
         std::shared_ptr<Poly3Map> poly3_map(new Poly3Map);
         poly3_map_create(
             *pair.second.solid,
             volume_masks,
+            surface_masks,
             poly3_map.get(),
-            volume_mask_volumes
+            volume_mask_volumes,
+            surface_mask_surfaces
         );
         pair.second.poly3_map = poly3_map;
 

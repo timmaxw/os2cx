@@ -27,8 +27,10 @@ public:
     std::vector<std::string> calculix_deck;
 
     typedef std::string VolumeObjectName;
+    typedef std::string SurfaceObjectName;
     typedef std::string MeshObjectName;
     typedef std::string SelectVolumeObjectName;
+    typedef std::string SelectSurfaceObjectName;
     typedef std::string LoadObjectName;
 
     class VolumeObject {
@@ -38,6 +40,14 @@ public:
         std::shared_ptr<const ElementSet> element_set;
         std::shared_ptr<const NodeSet> node_set;
     };
+
+    class SurfaceObject {
+    public:
+        std::map<MeshObjectName, std::set<Poly3Map::SurfaceId> >
+            poly3_map_surfaces;
+        std::shared_ptr<const FaceSet> face_set;
+        std::shared_ptr<const NodeSet> node_set;
+    }
 
     class MeshObject : public VolumeObject {
     public:
@@ -68,6 +78,14 @@ public:
 
     std::map<SelectVolumeObjectName, SelectVolumeObject> select_volume_objects;
 
+    class SelectSurfaceObject : public SurfaceObject {
+    public:
+        std::shared_ptr<const Poly3> mask;
+    };
+
+    std::map<SelectSurfaceObjectName, SelectSurfaceObject>
+        select_surface_objects;
+
     const VolumeObject *find_volume_object(const VolumeObjectName &name) const {
         auto it = mesh_objects.find(name);
         if (it != mesh_objects.end()) {
@@ -75,6 +93,15 @@ public:
         }
         auto jt = select_volume_objects.find(name);
         if (jt != select_volume_objects.end()) {
+            return &jt->second;
+        }
+        return nullptr;
+    }
+
+    const SurfaceObject *find_surface_object(
+            const SurfaceObjectName &name) const {
+        auto jt = select_surface_objects.find(name);
+        if (jt != select_surface_objects.end()) {
             return &jt->second;
         }
         return nullptr;
