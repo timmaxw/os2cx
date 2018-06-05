@@ -4,7 +4,7 @@
 #include <CGAL/point_generators_3.h>
 
 #include "poly_map_internal_traversal.hpp"
-#include "poly_map_internal_masks.hpp"
+#include "poly_map_internal_select.hpp"
 
 namespace os2cx {
 
@@ -136,29 +136,59 @@ os2cx::CgalNef3 poly3_nef(const Poly3 &poly3) {
 
 void poly3_map_create(
     const Poly3 &solid,
-    const std::vector<Poly3MapVolumeMask> &volume_masks,
+    const std::vector<Poly3MapSelectVolume> &select_volumes,
+    const std::vector<Poly3MapSelectSurface> &select_surfaces,
     Poly3Map *poly3_map_out,
     const std::vector<std::set<Poly3Map::VolumeId> *>
-        &volume_mask_volumes_out
+        &selected_volumes_out,
+    const std::vector<std::set<Poly3Map::SurfaceId> *>
+        &selected_surfaces_out
 ) {
-    std::vector<os2cx::CgalNef3> volume_mask_nefs;
-    for (const Poly3MapVolumeMask &mask : volume_masks) {
-        volume_mask_nefs.push_back(poly3_nef(*mask.poly));
+    std::vector<os2cx::CgalNef3> select_volume_nefs;
+    for (const Poly3MapSelectVolume &sv : select_volumes) {
+        select_volume_nefs.push_back(poly3_nef(sv.poly));
+    }
+
+    std::vector<os2cx::CgalNef3> select_surface_nefs;
+    for (const Poly3MapSelectSurface &ss : select_surfaces) {
+        select_surface_nefs.push_back(poly3_nef(ss.poly));
     }
 
     poly3_map_out->i.reset(new Poly3MapInternal);
-    if (!volume_masks.empty()) {
-        /* Set 'poly3_map_out->i->nef' to 'solid' minus the union of the mask
-        boundaries. So each volume of 'nef' will belong to a different region of
-        the poly3 map. */
-        CGAL::Nef_nary_union_3<os2cx::CgalNef3> mask_union;
-        for (const os2cx::CgalNef3 &mask_nef : volume_mask_nefs) {
-            mask_union.add_polyhedron(mask_nef.boundary());
+    os2cx::CgalNef3 solid_nef = poly3_nef(solid);
+    poly3_map_out->i->nef = solid_nef;
+    if (!select_volumes.empty()) {
+        /* Compute the union of the select_volumes' boundaries and subtract that
+        from 'nef'. This means that any volume of the nef that lies partially
+        inside and partially outside of a select_volume will get cut into
+        multiple subvolumes, each of which is entirely inside or entirely
+        outside. */
+        CGAL::Nef_nary_union_3<os2cx::CgalNef3> sv_union;
+        for (const os2cx::CgalNef3 &sv_nef : select_volume_nefs) {
+            sv_union.add_polyhedron(sv_nef.boundary());
         }
         poly3_map_out->i->nef =
-            poly3_nef(solid).difference(mask_union.get_union());
-    } else {
-        poly3_map_out->i->nef = poly3_nef(solid);
+            poly3_map_out->i->nef.difference(sv_union.get_union());
+    }
+    if (!select_surfaces.empty()) {
+        os2cx::CgalNef3 solid_boundary_nef = solid_nef.boundary();
+        /* For each select_surface, we compute a 'cut', which is a loop of line
+        segments lying on the surface of solid. We compute the union of all the
+        cuts and subtract it from 'nef'. This ensures that any surface of the
+        nef that lies partially inside and partially outside of a select_surface
+        will get divided into multiple subsurfaces. The logic for surfaces is
+        more complicated than the logic for volumes because we have to consider
+        'select_surface.normal_*' in addition to 'select_surface.poly'. */
+        CGAL::Nef_nary_union_3<os2cx::CgalNef3> ss_union;
+        for (int i = 0; i < static_cast<int>(select_volumes.size()); ++i)
+            poly3_map_internal_compute_cut_for_select_surface(
+                solid_boundary_nef,
+                select_volumes[i],
+                select_volume_nefs[i],
+                &ss_union);
+        }
+        poly3_map_out->i->nef =
+            poly3_map_out->i->nef.difference(sv_union.get_union());
     }
 
     /* Fill publicly visible fields of Poly3Map */
@@ -167,10 +197,10 @@ void poly3_map_create(
     poly3_map_internal_traverse_borders(poly3_map_out);
     poly3_map_internal_traverse_surfaces(poly3_map_out);
 
-    /* Fill 'volume_mask_volumes_out' (we couldn't do this before surface
-    traversal because we need triangulation data) */
-    poly3_map_internal_compute_volume_mask_volumes(
-        *poly3_map_out, volume_mask_nefs, volume_mask_volumes_out);
+    /* Fill 'selected_volumes_out' (we couldn't do this before surface traversal
+    because we need triangulation data) */
+    poly3_map_internal_compute_selected_volumes(
+        *poly3_map_out, select_volumes, selected_volumes_out);
 }
 
 } /* namespace os2cx */

@@ -66,17 +66,33 @@ public:
     std::unique_ptr<Poly3MapInternal> i;
 };
 
-class Poly3MapVolumeMask {
+/* A Poly3MapSelectVolume selects the parts of the solid's interior volume that
+also fall within 'poly'. */
+class Poly3MapSelectVolume {
 public:
-    const Poly3 *poly;
+    Poly3 poly;
 };
+
+/* A Poly3MapSelectSurface selects the parts of the solid's surface that both:
+1) Fall within 'poly'
+2) Have a normal vector such that 'normal.dot(normal_ref) >= normal_thresh'
+*/
+class Poly3MapSelectSurface {
+public:
+    Poly3 poly;
+    PureVector normal_ref; /* need not be normalized */
+    double normal_thresh;
+}
 
 void poly3_map_create(
     const Poly3 &solid,
-    const std::vector<Poly3MapVolumeMask> &volume_masks,
+    const std::vector<Poly3MapSelectVolume> &select_volumes,
+    const std::vector<Poly3MapSelectSurface> &select_surfaces,
     Poly3Map *poly3_map_out,
     const std::vector<std::set<Poly3Map::VolumeId> *>
-        &volume_mask_volumes_out);
+        &selected_volumes_out,
+    const std::vector<std::set<Poly3Map::SurfaceId> *>
+        &selected_surfaces_out);
 
 } /* namespace os2cx */
 
