@@ -80,9 +80,10 @@ void GuiMainWindow::regenerate_scene() {
     } else {
         if (focus.type == GuiFocus::Type::All) {
             scene = new GuiScenePoly3(params);
-        } else if (focus.type == GuiFocus::Type::Mesh ||
-                focus.type == GuiFocus::Type::SelectVolume) {
-            scene = new GuiScenePoly3Volume(params, focus.target);
+        } else if (focus.type == GuiFocus::Type::Mesh) {
+            scene = new GuiScenePoly3Mesh(params, focus.target);
+        } else if (focus.type == GuiFocus::Type::SelectVolume) {
+            scene = new GuiScenePoly3SelectVolume(params, focus.target);
         } else {
             /* TODO: loads, results */
             scene = new GuiScenePoly3(params);

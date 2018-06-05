@@ -2,25 +2,25 @@
 
 #include "attrs.hpp"
 #include "mesher_tetgen.hpp"
+#include "plc_nef_to_plc.hpp"
 
 namespace os2cx {
 
 TEST(AttrsTest, LoadVolume) {
-    Poly3 solid = Poly3::box(0, 0, 0, 1, 1, 2);
-    Poly3 mask_poly = Poly3::box(0, 0, 1, 1, 1, 3);
-    Poly3MapVolumeMask mask;
-    mask.poly = &mask_poly;
-    std::set<Poly3Map::VolumeId> mask_volumes;
-    Poly3Map poly3_map;
-    poly3_map_create(solid, {mask}, &poly3_map, {&mask_volumes});
-    Poly3MapIndex poly3_map_index(poly3_map);
-    Mesh3 mesh = mesher_tetgen(poly3_map);
-    ElementSet element_set = compute_element_set_from_mask(
-        poly3_map_index,
+    PlcNef3 solid_nef =
+        compute_plc_nef_for_solid(Poly3::box(0, 0, 0, 1, 1, 2));
+    Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
+    compute_plc_nef_select_volume(
+        &solid_nef, Poly3::box(0, 0, 1, 1, 1, 3), bit_index_mask);
+    Plc3 plc = plc_nef_to_plc(solid_nef);
+    Plc3Index plc_index(&plc);
+    Mesh3 mesh = mesher_tetgen(plc);
+    ElementSet element_set = compute_element_set_from_plc_bit(
+        plc_index,
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
-        mask_volumes);
+        bit_index_mask);
 
     ForceDensityVector force_density =
         ForceDensityVector::raw(1.234, 0, 0);

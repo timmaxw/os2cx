@@ -2,11 +2,11 @@
 #define OS2CX_MESHER_TETGEN_HPP_
 
 #include "mesh.hpp"
-#include "poly_map.hpp"
+#include "plc.hpp"
 
 namespace os2cx {
 
-Mesh3 mesher_tetgen(const Poly3Map &poly3_map);
+Mesh3 mesher_tetgen(const Plc3 &plc);
 
 } /* namespace os2cx */
 

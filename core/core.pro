@@ -37,12 +37,12 @@ SOURCES += \
     util.cpp \
     polynomial.cpp \
     poly.cpp \
-    poly_map.cpp \
-    poly_map_index.cpp \
     beacon.cpp \
     main_backend.cpp \
-    poly_map_internal_traveral.cpp \
-    poly_map_internal_masks.cpp
+    plc_nef.cpp \
+    plc.cpp \
+    plc_nef_to_plc.cpp \
+    plc_index.cpp
 
 HEADERS += \
     attrs.hpp \
@@ -64,12 +64,12 @@ HEADERS += \
     polynomial.hpp \
     poly.hpp \
     poly.internal.hpp \
-    poly_map.hpp \
-    poly_map.internal.hpp \
-    poly_map_index.hpp \
     beacon.hpp \
-    poly_map_internal_traversal.hpp \
-    poly_map_internal_masks.hpp
+    plc_nef.hpp \
+    plc_nef.internal.hpp \
+    plc.hpp \
+    plc_nef_to_plc.hpp \
+    plc_index.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.

@@ -1,4 +1,4 @@
-#include "poly_map_index.hpp"
+#include "plc_index.hpp"
 
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_tree.h>
@@ -10,24 +10,24 @@ namespace os2cx {
 typedef CGAL::Simple_cartesian<double> KS;
 
 /* This is a model of the concept CGAL::AABBPrimitiveWithSharedData */
-class CgalAabbPrimitive {
+class PlcAabbPrimitive {
 public:
     typedef CGAL::Point_3<KS> Point;
     typedef CGAL::Triangle_3<KS> Datum;
-    typedef std::pair<Poly3Map::SurfaceId, int> Id;
-    typedef const Poly3Map *Shared_data;
+    typedef std::pair<Plc3::SurfaceId, int> Id;
+    typedef const Plc3 *Shared_data;
 
-    static Shared_data construct_shared_data(const Poly3Map *pm) {
+    static Shared_data construct_shared_data(const Plc3 *pm) {
         return pm;
     }
 
-    CgalAabbPrimitive() { }
+    PlcAabbPrimitive() { }
 
     template<class Iterator>
-    CgalAabbPrimitive(Iterator it, const Poly3Map *) : i(*it) { }
+    PlcAabbPrimitive(Iterator it, const Plc3 *) : i(*it) { }
 
-    Datum datum(const Poly3Map *rm) const {
-        const Poly3Map::Surface::Triangle &tri =
+    Datum datum(const Plc3 *rm) const {
+        const Plc3::Surface::Triangle &tri =
             rm->surfaces[i.first].triangles[i.second];
         return CGAL::Triangle_3<KS>(
             get_point(rm, tri.vertices[0]),
@@ -39,14 +39,14 @@ public:
         return i;
     }
 
-    Point reference_point(const Poly3Map *rm) const {
-        const Poly3Map::Surface::Triangle &tri =
+    Point reference_point(const Plc3 *rm) const {
+        const Plc3::Surface::Triangle &tri =
             rm->surfaces[i.first].triangles[i.second];
         return get_point(rm, tri.vertices[0]);
     }
 
 private:
-    Point get_point(const Poly3Map *rm, Poly3Map::VertexId vid) const {
+    Point get_point(const Plc3 *rm, Plc3::VertexId vid) const {
         return CGAL::Point_3<KS>(
             rm->vertices[vid].point.vector.x.val,
             rm->vertices[vid].point.vector.y.val,
@@ -56,12 +56,12 @@ private:
     Id i;
 };
 
-class CgalAabbPrimitiveIterator {
+class PlcAabbPrimitiveIterator {
 public:
-    bool operator!=(const CgalAabbPrimitiveIterator &other) {
+    bool operator!=(const PlcAabbPrimitiveIterator &other) {
         return pm != other.pm || pair != other.pair;
     }
-    CgalAabbPrimitiveIterator &operator++() {
+    PlcAabbPrimitiveIterator &operator++() {
         pair.second += 1;
         while (pair.first != static_cast<int>(pm->surfaces.size()) &&
                 pair.second == static_cast<int>(
@@ -71,43 +71,42 @@ public:
         }
         return *this;
     }
-    CgalAabbPrimitiveIterator operator++(int) {
-        CgalAabbPrimitiveIterator copy = *this;
+    PlcAabbPrimitiveIterator operator++(int) {
+        PlcAabbPrimitiveIterator copy = *this;
         ++*this;
         return copy;
     }
-    const std::pair<Poly3Map::SurfaceId, int> &operator*() const {
+    const std::pair<Plc3::SurfaceId, int> &operator*() const {
         return pair;
     }
-    const std::pair<Poly3Map::SurfaceId, int> *operator->() const {
+    const std::pair<Plc3::SurfaceId, int> *operator->() const {
         return &pair;
     }
 
-    const Poly3Map *pm;
-    std::pair<Poly3Map::SurfaceId, int> pair;
+    const Plc3 *pm;
+    std::pair<Plc3::SurfaceId, int> pair;
 };
 
-typedef CGAL::AABB_traits<KS, os2cx::CgalAabbPrimitive> CgalAabbTraits;
-typedef CGAL::AABB_tree<os2cx::CgalAabbTraits> CgalAabbTree;
+typedef CGAL::AABB_traits<KS, PlcAabbPrimitive> PlcAabbTraits;
+typedef CGAL::AABB_tree<PlcAabbTraits> PlcAabbTree;
 
-class Poly3MapIndexInternal {
+class Plc3IndexInternal {
 public:
-    CgalAabbTree tree;
+    PlcAabbTree tree;
 };
 
-Poly3MapIndex::Poly3MapIndex(const Poly3Map &pm) :
-        poly3_map(&pm)
+Plc3Index::Plc3Index(const Plc3 *plc_) : plc(plc_)
 {
-    i.reset(new Poly3MapIndexInternal);
-    CgalAabbPrimitiveIterator begin {&pm, {0, 0}};
-    CgalAabbPrimitiveIterator end {&pm, {pm.surfaces.size(), 0}};
-    i->tree.rebuild(begin, end, &pm);
+    i.reset(new Plc3IndexInternal);
+    PlcAabbPrimitiveIterator begin {plc, {0, 0}};
+    PlcAabbPrimitiveIterator end {plc, {plc->surfaces.size(), 0}};
+    i->tree.rebuild(begin, end, plc);
     i->tree.accelerate_distance_queries();
 }
 
-Poly3MapIndex::~Poly3MapIndex() { }
+Plc3Index::~Plc3Index() { }
 
-Length Poly3MapIndex::approx_scale() const {
+Length Plc3Index::approx_scale() const {
     double size = 0;
     size = std::max(size, i->tree.bbox().xmax());
     size = std::max(size, -i->tree.bbox().xmin());
@@ -118,9 +117,7 @@ Length Poly3MapIndex::approx_scale() const {
     return Length(size);
 }
 
-Poly3Map::VolumeId Poly3MapIndex::volume_containing_point(
-    Point point
-) const {
+Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
     CGAL::Random_points_on_sphere_3<CGAL::Point_3<KS> > random;
     CGAL::Vector_3<KS> direction(CGAL::ORIGIN, *random);
     CGAL::Ray_3<KS> ray(
@@ -130,32 +127,33 @@ Poly3Map::VolumeId Poly3MapIndex::volume_containing_point(
             point.vector.z.val),
         direction);
 
-    boost::optional<os2cx::CgalAabbPrimitive::Id> hit =
+    boost::optional<PlcAabbPrimitive::Id> hit =
         i->tree.first_intersected_primitive(ray);
-    if (!hit) return 0;
+    if (!hit) return plc->volume_outside;
 
-    const Poly3Map::Surface &surface = poly3_map->surfaces[hit->first];
-    const Poly3Map::Surface::Triangle &tri = surface.triangles[hit->second];
+    const Plc3::Surface &surface = plc->surfaces[hit->first];
+    const Plc3::Surface::Triangle &tri = surface.triangles[hit->second];
 
+    PureVector normal = triangle_normal(
+        plc->vertices[tri.vertices[0]].point,
+        plc->vertices[tri.vertices[1]].point,
+        plc->vertices[tri.vertices[2]].point);
     double dot =
-        direction.x() * tri.normal.x.val +
-        direction.y() * tri.normal.y.val +
-        direction.z() * tri.normal.z.val;
+        direction.x() * normal.x.val +
+        direction.y() * normal.y.val +
+        direction.z() * normal.z.val;
     /* The normal vector points into 'surface.volumes[0]' */
     return surface.volumes[(dot > 0) ? 1 : 0];
 }
 
-Poly3Map::SurfaceId Poly3MapIndex::surface_closest_to_point(
-    Point point
-) const {
+Plc3::SurfaceId Plc3Index::surface_closest_to_point(Point point) const {
     CGAL::Point_3<KS> point2(
         point.vector.x.val,
         point.vector.y.val,
         point.vector.z.val);
-    os2cx::CgalAabbTree::Point_and_primitive_id hit =
+    PlcAabbTree::Point_and_primitive_id hit =
         i->tree.closest_point_and_primitive(point2);
     return hit.second.first;
 }
 
 } /* namespace os2cx */
-

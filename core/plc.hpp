@@ -1,34 +1,34 @@
-#ifndef OS2CX_POLY_MAP_HPP_
-#define OS2CX_POLY_MAP_HPP_
+#ifndef OS2CX_PLC_HPP_
+#define OS2CX_PLC_HPP_
 
+#include <bitset>
 #include <deque>
-#include <iostream>
-#include <list>
-#include <map>
-#include <memory>
-#include <set>
 #include <vector>
+#include <set>
 
 #include "calc.hpp"
-#include "poly.hpp"
 
 namespace os2cx {
 
-class Poly3MapInternal;
-
-class Poly3Map {
+class Plc3
+{
 public:
+    static const int num_bits = 64;
+    typedef int BitIndex;
+    typedef std::bitset<num_bits> Bitset;
+
     typedef int VertexId;
     class Vertex {
     public:
         Point point;
+        Bitset bitset;
     };
     std::vector<Vertex> vertices;
 
     typedef int VolumeId;
     class Volume {
     public:
-        bool is_solid;
+        Bitset bitset;
     };
     std::vector<Volume> volumes;
     VolumeId volume_outside;
@@ -42,10 +42,10 @@ public:
         class Triangle {
         public:
             VertexId vertices[3];
-            PureVector normal;
         };
         std::vector<Triangle> triangles;
         VolumeId volumes[2];
+        Bitset bitset;
     };
     std::vector<Surface> surfaces;
 
@@ -53,32 +53,14 @@ public:
     class Border {
     public:
         std::deque<VertexId> vertices;
-        std::set<SurfaceId> surfaces;
+        std::vector<SurfaceId> surfaces;
+        Bitset bitset;
     };
     std::vector<Border> borders;
-    std::map<std::pair<VertexId, VertexId>, BorderId> borders_by_vertex;
 
-    Poly3Map();
-    ~Poly3Map();
-
-    void debug(std::ostream &stream) const;
-
-    std::unique_ptr<Poly3MapInternal> i;
+    void debug(std::ostream &) const;
 };
-
-class Poly3MapVolumeMask {
-public:
-    const Poly3 *poly;
-};
-
-void poly3_map_create(
-    const Poly3 &solid,
-    const std::vector<Poly3MapVolumeMask> &volume_masks,
-    Poly3Map *poly3_map_out,
-    const std::vector<std::set<Poly3Map::VolumeId> *>
-        &volume_mask_volumes_out);
 
 } /* namespace os2cx */
 
-#endif
-
+#endif /* OS2CX_PLC_HPP_ */

@@ -6,16 +6,17 @@
 
 namespace os2cx {
 
-class Poly3Internal;
-
 /* Poly3 is a closed polyhedron with an inside and an outside. It may have
 multiple disconnected parts. Not to be confused with Mesh3; a Poly3 only defines
 a surface, and uses triangles of whatever size is most convenient, whereas a
 Mesh3 fills a volume with tetrahedra or other elements, and subdivides them to a
-size that's good for simulation.
+size that's good for simulation. */
 
-Poly3 is internally implemented as a CGAL::Polyhedron_3, but CGAL headers take a
-long time to compile, so the implementation is hidden in Poly3Internal. */
+/* Poly3 is internally implemented as a CGAL::Polyhedron_3, but CGAL headers
+take a long time to compile, so the implementation is hidden in Poly3Internal.
+*/
+class Poly3Internal;
+
 class Poly3 {
 public:
     static Poly3 box(
