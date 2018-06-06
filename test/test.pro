@@ -19,5 +19,6 @@ SOURCES = $$CORE_SOURCES \
     polynomial_test.cpp \
     poly_map_test.cpp \
     poly_test.cpp \
-    beacon_test.cpp
+    beacon_test.cpp \
+    plc_nef_test.cpp
 
