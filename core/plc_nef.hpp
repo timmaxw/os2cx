@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "calc.hpp"
+#include "plc.hpp"
 #include "poly.hpp"
 
 namespace os2cx {
@@ -22,8 +23,7 @@ class PlcNef3Internal;
 class PlcNef3
 {
 public:
-    static const int num_bits = 64;
-    typedef std::bitset<num_bits> Bitset;
+    typedef Plc3::Bitset Bitset;
 
     enum class FeatureType { Volume, Face, Edge, Vertex };
 
