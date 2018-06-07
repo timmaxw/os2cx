@@ -4,8 +4,7 @@
 
 namespace os2cx {
 
-
-/* triangulate_nef_facet() and CGAL_RMapTriangulationHandler2 were copied with
+/* triangulate_nef_facet() and PlcTriangulationHandler were copied with
 modifications from CGAL/Nef_polyhedron_3.h */
 
 template<typename Kernel>
@@ -321,22 +320,95 @@ public:
     }
 
     void make_borders() {
-        typedef std::set<std::pair<Plc3::VertexId, Plc3::VertexId> > LinkSet;
-        LinkSet links;
+        std::set<std::pair<Plc3::VertexId, Plc3::VertexId> > todo;
+        std::map<Plc3::VertexId, int> vertex_counts;
 
+        /* Collect all the border halfedges and store them by vertex IDs */
         CgalNef3Plc::Halfedge_const_iterator hi;
         CGAL_forall_halfedges(hi, nef) {
-            if (is_border_halfedge(hi)) {
-                links.insert(std::make_pair(
-                    vertex_index[hi->source()],
-                    vertex_index[hi->target()]
-                ));
+            if (!is_border_halfedge(hi)) {
+                continue;
             }
+            VertexId v0 = vertex_index[hi->source()];
+            VertexId v1 = vertex_index[hi->target()];
+            todo.insert(std::make_pair(v0, v1));
+            ++vertex_counts[v0];
         }
 
-        while (!links.empty()) {
-            Plc3::Border border;
+        /* Collect contiguous sequences of border halfedges into plc.borders */
+        CGAL_forall_halfedges(hi, nef) {
+            if (!is_border_halfedge(hi)) {
+                continue;
+            }
+            VertexId v0 = vertex_index[hi->source()];
+            VertexId v1 = vertex_index[hi->target()];
+            auto todo_it = todo.find(std::make_pair(v0, v1));
+            if (todo_it == todo.end()) {
+                /* This halfedge is already part of a border */
+                continue;
+            }
 
+            Plc3::Border border;
+            border.bitset = hi->mark().bitset;
+
+            /* Calculate the surfaces incident to this border */
+            CgalNef3Plc::SHalfedge_const_handle
+                she = hi->out_sedge(), she_end = she;
+            do {
+                Plc3::SurfaceId surface =
+                    halffacet_surfaces[halffacet_index[she->facet()]];
+                border.surfaces.push_back(surface);
+            } while ((she = she->cyclic_adj_succ()) != she_end);
+
+            todo.erase(todo_it);
+            todo.erase(std::make_pair(v1, v0))
+
+            /* Follow a contiguous sequence of border halfedges in both
+            directions from this starting point */
+            for (int direction = 1; direction <= 2; ++direction) {
+                Plc3::VertexId cur = (direction == 1) ? v1 : v0;
+                Plc3::VertexId prev = (direction == 1) ? v0 : v1;
+                while (true) {
+                    assert(todo.count(std::make_pair(cur, prev)) == 0);
+                    assert(todo.count(std::make_pair(prev, cur)) == 0);
+
+                    if (direction == 1) border.vertices.push_front(cur);
+                    else border.vertices.push_back(cur);
+
+                    if (vertex_counts[cur] != 2 ||
+                            plc.vertices[cur].bitset != border.bitset) {
+                        /* End the sequence if we found a dead end, a multi-way
+                        junction, or a vertex with different bits set */
+                        break;
+                    }
+
+                    /* Find the next outgoing link from here */
+                    auto next_it = todo.lower_bound(std::make_pair(cur, 0));
+                    if (next_it == todo.end() || next_it->first != cur) {
+                        /* The outgoing link from here was already removed from
+                        'todo'. This should only happen if this border is a
+                        loop. */
+                        if (direction == 1) {
+                            /* We came back around to the start. */
+                            assert(cur == v0 && prev != v1);
+                        } else {
+                            /* We haven't gone anywhere because the very first
+                            link was already removed from 'todo' during the
+                            'direction == 1' phase. */
+                            assert(cur == v0 && prev == v1);
+                            assert(border.vertices.back() == v0);
+                        }
+                        break;
+                    }
+
+                    prev = cur;
+                    cur = next_it->second;
+                    todo.erase(next_it);
+                    todo.erase(std::make_pair(cur, prev));
+                }
+            }
+
+            plc.borders.push_back(border);
         }
     }
 
@@ -350,17 +422,12 @@ public:
     std::vector<bool> halffacet_orientations;
 };
 
-void plc_make_vertices(const PlcNef3 &plc_nef, Plc3 *plc_out) {
-    const CgalNef3Plc &nef = plc_nef.i->nef;
-    plc_out->vertices.reserve(plc_out->)
-}
-
 Plc3 plc_nef_to_plc(const PlcNef3 &plc_nef) {
     PlcConverter converter(plc_nef);
     converter.make_vertices();
     converter.make_volumes();
-    converter.make_borders();
     converter.make_surfaces();
+    converter.make_borders();
     return std::move(converter.plc);
 }
 

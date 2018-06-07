@@ -51,6 +51,7 @@ public:
     class Border {
     public:
         std::deque<VertexId> vertices;
+        std::vector<SurfaceId> surfaces;
         Bitset bitset;
     };
     std::vector<Border> borders;
