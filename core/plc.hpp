@@ -1,6 +1,7 @@
 #ifndef OS2CX_PLC_HPP_
 #define OS2CX_PLC_HPP_
 
+#include <bitset>
 #include <deque>
 #include <vector>
 #include <set>
@@ -55,6 +56,8 @@ public:
         Bitset bitset;
     };
     std::vector<Border> borders;
+
+    void debug(std::ostream &) const;
 };
 
 } /* namespace os2cx */

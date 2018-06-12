@@ -40,7 +40,7 @@ public:
                     CgalNef3Plc::Vertex_const_handle v =
                         sfc->source()->source();
                     CTVertex_handle ctv = ct.insert(v->point());
-                    ctv2v[ctv] = v;;
+                    ctv2v[ctv] = v;
                 }
             } else {
                 CgalNef3Plc::SHalfloop_const_handle shl = fci;
@@ -108,8 +108,11 @@ public:
         for (Finite_face_iterator fi = ct.finite_faces_begin();
                 fi != ct.finite_faces_end(); ++fi) {
             if (visited[fi] == false) continue;
-            CgalNef3Plc::Vertex_const_handle vs[3] =
-                { fi->vertex(0), fi->vertex(1), fi->vertex(2) };
+            CgalNef3Plc::Vertex_const_handle vs[3] = {
+                ctv2v[fi->vertex(0)],
+                ctv2v[fi->vertex(1)],
+                ctv2v[fi->vertex(2)],
+            };
             CGAL::Plane_3<KE> plane(
                 vs[0]->point(), vs[1]->point(), vs[2]->point());
             if (!same_orientation(plane)) {
@@ -154,16 +157,13 @@ void triangulate_nef_facet(
         c = CGAL::abs(orth[2]) > CGAL::abs(orth[c]) ? 2 : c;
 
         if (c == 0) {
-            os2cx::CGAL_RMapTriangulationHandler2<
-                CGAL::Projection_traits_yz_3<KE> > th(f);
+            PlcTriangulationHandler<CGAL::Projection_traits_yz_3<KE> > th(f);
             th.handle_triangles(callback);
         } else if (c == 1) {
-            os2cx::CGAL_RMapTriangulationHandler2<
-                CGAL::Projection_traits_xz_3<KE> > th(f);
+            PlcTriangulationHandler<CGAL::Projection_traits_xz_3<KE> > th(f);
             th.handle_triangles(callback);
         } else if (c == 2) {
-            os2cx::CGAL_RMapTriangulationHandler2<
-                CGAL::Projection_traits_xy_3<KE> > th(f);
+            PlcTriangulationHandler<CGAL::Projection_traits_xy_3<KE> > th(f);
             th.handle_triangles(callback);
         } else {
             CGAL_error_msg( "wrong value");
@@ -185,13 +185,13 @@ public:
         CgalNef3Plc::Vertex_const_iterator vi;
         CGAL_forall_vertices(vi, nef) {
             assert(vertex_index[vi] == plc.vertices.size());
-            Plc::Vertex vertex;
+            Plc3::Vertex vertex;
             vertex.point = Point::raw(
                 CGAL::to_double(vi->point().x()),
                 CGAL::to_double(vi->point().y()),
                 CGAL::to_double(vi->point().z()));
             vertex.bitset = vi->mark().bitset;
-            plc.vertices.push_back(v);
+            plc.vertices.push_back(vertex);
         }
     }
 
@@ -200,7 +200,7 @@ public:
         CgalNef3Plc::Volume_const_iterator ci;
         CGAL_forall_volumes(ci, nef) {
             assert(volume_index[ci] == plc.volumes.size());
-            Plc::Volume volume;
+            Plc3::Volume volume;
             volume.bitset = ci->mark().bitset;
             plc.volumes.push_back(volume);
         }
@@ -211,7 +211,7 @@ public:
         KE::FT min_x;
         CgalNef3Plc::Vertex_const_iterator vi;
         CGAL_forall_vertices(vi, nef) {
-            min_x = std::min(min_x, it->point().x());
+            min_x = std::min(min_x, vi->point().x());
         }
         CGAL::Point_3<KE> test_point(min_x - 1, 0, 0);
         CgalNef3Plc::Object_handle obj = nef.locate(test_point);
@@ -221,10 +221,42 @@ public:
         plc.volume_outside = volume_index[volume_outside];
     }
 
+    /* is_border_halfedge() checks if there's something 'special' about the
+    given halfedge, such that it should be part of a Border instead of embedded
+    into a Surface. */
+    bool is_border_halfedge(CgalNef3Plc::Halfedge_const_handle he) {
+        assert(!he->is_isolated());
+        CgalNef3Plc::SHalfedge_const_handle sedge_1, sedge_2;
+        sedge_1 = he->out_sedge();
+        if (sedge_1->mark() != he->mark()) {
+            /* The edge is differently marked than the adjacent face, so it must
+            be a border */
+            return true;
+        }
+        sedge_2 = sedge_1->cyclic_adj_succ();
+        if (sedge_2 == sedge_1) {
+            /* The edge is adjacent to only one face; the surface terminates in
+            the middle of a volume. */
+            return true;
+        }
+        if (sedge_2->mark() != he->mark()) {
+            /* The edge is differently marked than the other adjacent face, so
+            it must be a border. */
+            return true;
+        }
+        if (sedge_1 != sedge_2->cyclic_adj_succ()) {
+            /* The edge is adjacent to at least three faces */
+            return true;
+        }
+        /* The edge is adjacent to exactly two faces, and both faces and the
+        edge have exactly the same marks, so it's not a border halfedge. */
+        return false;
+    }
+
     void make_surfaces() {
         halffacet_surfaces = std::vector<Plc3::SurfaceId>(
             nef.number_of_halffacets(), -1);
-        halffacet_orientations = std::vector<Plc3::SurfaceId>(
+        halffacet_orientations = std::vector<bool>(
             nef.number_of_halffacets());
 
         CgalNef3Plc::Halffacet_const_iterator seed;
@@ -279,7 +311,7 @@ public:
 
                 /* Mark this facet's twin as visited */
                 int twin_index = halffacet_index[h->twin()];
-                assert(halffacet_surfaces[twin_index] == -1)
+                assert(halffacet_surfaces[twin_index] == -1);
                 halffacet_surfaces[twin_index] = surface_id;
                 halffacet_orientations[twin_index] = false;
 
@@ -309,7 +341,7 @@ public:
                         CgalNef3Plc::Halffacet_const_handle next_h =
                             she->snext()->facet();
                         if (halffacet_surfaces[halffacet_index[next_h]] == -1) {
-                            queue->push_back(next_h);
+                            queue.push_back(next_h);
                         }
                     } while ((she = she->next()) != fci);
                 }
@@ -329,8 +361,8 @@ public:
             if (!is_border_halfedge(hi)) {
                 continue;
             }
-            VertexId v0 = vertex_index[hi->source()];
-            VertexId v1 = vertex_index[hi->target()];
+            Plc3::VertexId v0 = vertex_index[hi->source()];
+            Plc3::VertexId v1 = vertex_index[hi->target()];
             todo.insert(std::make_pair(v0, v1));
             ++vertex_counts[v0];
         }
@@ -340,8 +372,8 @@ public:
             if (!is_border_halfedge(hi)) {
                 continue;
             }
-            VertexId v0 = vertex_index[hi->source()];
-            VertexId v1 = vertex_index[hi->target()];
+            Plc3::VertexId v0 = vertex_index[hi->source()];
+            Plc3::VertexId v1 = vertex_index[hi->target()];
             auto todo_it = todo.find(std::make_pair(v0, v1));
             if (todo_it == todo.end()) {
                 /* This halfedge is already part of a border */
@@ -361,7 +393,7 @@ public:
             } while ((she = she->cyclic_adj_succ()) != she_end);
 
             todo.erase(todo_it);
-            todo.erase(std::make_pair(v1, v0))
+            todo.erase(std::make_pair(v1, v0));
 
             /* Follow a contiguous sequence of border halfedges in both
             directions from this starting point */
