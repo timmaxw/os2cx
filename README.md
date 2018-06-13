@@ -1,5 +1,6 @@
 Dependencies:
 * OpenSCAD 2015.03-2 (sudo apt install openscad)
+* CalculiX 2.11 (sudo apt install calculix-ccx)
 * Qt 5.11
 * CGAL 4.11 (sudo apt install libcgal-dev)
 * tiny-process-library (install from source at https://gitlab.com/eidheim/tiny-process-library)
