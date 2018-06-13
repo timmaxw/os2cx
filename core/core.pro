@@ -37,12 +37,8 @@ SOURCES += \
     util.cpp \
     polynomial.cpp \
     poly.cpp \
-    poly_map.cpp \
-    poly_map_index.cpp \
     beacon.cpp \
     main_backend.cpp \
-    poly_map_internal_traveral.cpp \
-    poly_map_internal_masks.cpp \
     plc_nef.cpp \
     plc.cpp \
     plc_nef_to_plc.cpp \
@@ -68,12 +64,7 @@ HEADERS += \
     polynomial.hpp \
     poly.hpp \
     poly.internal.hpp \
-    poly_map.hpp \
-    poly_map.internal.hpp \
-    poly_map_index.hpp \
     beacon.hpp \
-    poly_map_internal_traversal.hpp \
-    poly_map_internal_masks.hpp \
     plc_nef.hpp \
     plc_nef.internal.hpp \
     plc.hpp \
