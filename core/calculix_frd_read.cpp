@@ -111,12 +111,15 @@ public:
     }
 
     void read_eol() {
-        int c = stream->get();
-        if (c == -1) {
-            fail("expected EOL, got EOF");
-        }
-        if (c != '\n') {
-            fail("expected EOL, got garbage");
+        while (true) {
+            int c = stream->get();
+            if (c == -1) {
+                fail("expected EOL, got EOF");
+            } else if (c == '\n') {
+                break;
+            } else if (c != ' ') {
+                fail("expected EOL, got '" + std::string(1, c) + "'");
+            }
         }
         ++line_no;
     }
