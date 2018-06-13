@@ -7,29 +7,41 @@ Plc3::BitIndex bit_index_solid() {
 }
 
 PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid) {
-    /* In solid regions, we set bit_index_solid() and clear all other bits. In
-    space regions, we do the exact opposite. This ensures that when
-    compute_plc_nef_select_volume() calls solid_nef.binary_or(mask_nef) then the
-    space regions won't be modified. */
-    Plc3::Bitset bitset_solid, bitset_space;
+    Plc3::Bitset bitset_solid;
     bitset_solid.set(bit_index_solid());
-    bitset_space = ~bitset_solid;
     PlcNef3 solid_nef = PlcNef3::from_poly(solid);
-    solid_nef.everywhere_map([&](Plc3::Bitset bitset, PlcNef3::FeatureType) {
-        return (bitset != Plc3::Bitset()) ? bitset_solid : bitset_space;
-    });
+    solid_nef.everywhere_binarize(bitset_solid);
     return solid_nef;
 }
 
 void compute_plc_nef_select_volume(
     PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask
 ) {
+    /* First, set the mask bit on every solid volume of solid_nef. We don't set
+    it on non-solid volumes, faces, edges, or vertices; so it stays zero there,
+    and we don't spew bits randomly over things we don't care about. */
     assert(bit_index_mask != bit_index_solid());
-    Plc3::Bitset bitset_mask;
-    bitset_mask.set(bit_index_mask);
+    solid_nef->everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
+        if (ft == PlcNef3::FeatureType::Volume && bs[bit_index_solid()]) {
+            bs[bit_index_mask] = true;
+        }
+        return bs;
+    });
+
+    /* For the mask nef: In the solid volumes of the mask, set all bits true.
+    Everywhere else, set all bits except 'bit_index_mask'. So AND-ing this
+    with solid_nef will clear the mask bit from solid_nef outside the mask. */
     PlcNef3 mask_nef = PlcNef3::from_poly(mask);
-    mask_nef.everywhere_binarize(bitset_mask);
-    *solid_nef = solid_nef->binary_or(mask_nef);
+    mask_nef.everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
+        Plc3::Bitset result;
+        result.set();
+        if (bs == Plc3::Bitset() || ft != PlcNef3::FeatureType::Volume) {
+            result.reset(bit_index_mask);
+        }
+        return result;
+    });
+
+    *solid_nef = solid_nef->binary_and(mask_nef);
 }
 
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {
@@ -59,7 +71,7 @@ ElementSet compute_element_set_from_plc_bit(
         c /= num_nodes;
         Plc3::VolumeId volume_id = plc_index.volume_containing_point(Point(c));
         Plc3::Bitset bitset = plc_index.plc->volumes[volume_id].bitset;
-        if (bitset[bit_index_solid()] && bitset[bit_index]) {
+        if (bitset[bit_index]) {
             set.elements.insert(eid);
         }
     }
