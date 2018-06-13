@@ -2,11 +2,16 @@
 #define OS2CX_ATTRS_HPP_
 
 #include "mesh.hpp"
-#include "poly.hpp"
-#include "poly_map.hpp"
-#include "poly_map_index.hpp"
+#include "plc.hpp"
+#include "plc_nef.hpp"
+#include "plc_index.hpp"
 
 namespace os2cx {
+
+Plc3::BitIndex bit_index_solid();
+PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid);
+void compute_plc_nef_select_volume(
+    PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask);
 
 class ElementSet {
 public:
@@ -15,12 +20,12 @@ public:
 
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end);
 
-ElementSet compute_element_set_from_mask(
-    const Poly3MapIndex &poly3_map_index,
+ElementSet compute_element_set_from_plc_bit(
+    const Plc3Index &plc_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
-    const std::set<Poly3Map::VolumeId> &poly3_map_volumes);
+    Plc3::BitIndex bit_index);
 
 class NodeSet {
 public:

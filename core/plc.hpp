@@ -14,6 +14,7 @@ class Plc3
 {
 public:
     static const int num_bits = 64;
+    typedef int BitIndex;
     typedef std::bitset<num_bits> Bitset;
 
     typedef int VertexId;

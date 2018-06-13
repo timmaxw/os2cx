@@ -7,9 +7,9 @@
 #include "attrs.hpp"
 #include "mesh.hpp"
 #include "mesh_index.hpp"
-#include "poly.hpp"
-#include "poly_map.hpp"
-#include "poly_map_index.hpp"
+#include "plc.hpp"
+#include "plc_nef.hpp"
+#include "plc_index.hpp"
 #include "result.hpp"
 
 namespace os2cx {
@@ -17,7 +17,9 @@ namespace os2cx {
 class Project {
 public:
     Project(const std::string &scad_path_, const std::string &temp_dir_) :
-        scad_path(scad_path_), temp_dir(temp_dir_) { }
+        scad_path(scad_path_),
+        temp_dir(temp_dir_),
+        next_bit_index(bit_index_solid() + 1) { }
 
     std::string scad_path;
     std::string temp_dir;
@@ -26,6 +28,8 @@ public:
 
     std::vector<std::string> calculix_deck;
 
+    Plc3::BitIndex next_bit_index;
+
     typedef std::string VolumeObjectName;
     typedef std::string MeshObjectName;
     typedef std::string SelectVolumeObjectName;
@@ -33,8 +37,6 @@ public:
 
     class VolumeObject {
     public:
-        std::map<MeshObjectName, std::set<Poly3Map::VolumeId> >
-            poly3_map_volumes;
         std::shared_ptr<const ElementSet> element_set;
         std::shared_ptr<const NodeSet> node_set;
     };
@@ -42,8 +44,8 @@ public:
     class MeshObject : public VolumeObject {
     public:
         std::shared_ptr<const Poly3> solid;
-        std::shared_ptr<const Poly3Map> poly3_map;
-        std::shared_ptr<const Poly3MapIndex> poly3_map_index;
+        std::shared_ptr<const Plc3> plc;
+        std::shared_ptr<const Plc3Index> plc_index;
 
         /* The partial_meshes of all the individual MeshObjects will be combined
         to form the overall project mesh. The nodes and elements will be
@@ -63,6 +65,7 @@ public:
 
     class SelectVolumeObject : public VolumeObject {
     public:
+        Plc3::BitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
     };
 

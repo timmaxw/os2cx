@@ -15,21 +15,35 @@ protected:
 
     virtual QColor surface_color(
         const Project::MeshObjectName &mesh_object_name,
-        Poly3Map::VolumeId volume_id);
+        Plc3::VolumeId volume_id);
 };
 
-class GuiScenePoly3Volume : public GuiScenePoly3
+class GuiScenePoly3Mesh : public GuiScenePoly3
 {
 public:
-    GuiScenePoly3Volume(
+    GuiScenePoly3Mesh(
         const SceneParams &params,
-        const Project::VolumeObjectName &volume);
+        const Project::MeshObjectName &mesh);
 
 protected:
     virtual QColor surface_color(
         const Project::MeshObjectName &mesh_object_name,
-        Poly3Map::VolumeId volume_id);
-    Project::VolumeObjectName volume;
+        Plc3::VolumeId volume_id);
+    Project::MeshObjectName mesh;
+};
+
+class GuiScenePoly3SelectVolume : public GuiScenePoly3
+{
+public:
+    GuiScenePoly3SelectVolume(
+        const SceneParams &params,
+        const Project::SelectVolumeObjectName &volume);
+
+protected:
+    virtual QColor surface_color(
+        const Project::MeshObjectName &mesh_object_name,
+        Plc3::VolumeId volume_id);
+    Plc3::BitIndex bit_index;
 };
 
 } /* namespace os2cx */

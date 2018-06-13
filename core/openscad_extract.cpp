@@ -1,6 +1,7 @@
 #include "openscad_extract.hpp"
 
 #include <iostream>
+#include <sstream>
 
 #include "openscad_run.hpp"
 
@@ -100,10 +101,13 @@ void do_select_volume_directive(
     Project::SelectVolumeObjectName name = echo[2].string_value;
     check_name(project, "volume", name);
 
-    project->select_volume_objects.insert(std::make_pair(
-        name,
-        Project::SelectVolumeObject()
-    ));
+    Project::SelectVolumeObject object;
+
+    /* If there are too many select_volume directives, bit_index will be greater
+    than or equal to Plc3::num_bits; we'll check this later. */
+    object.bit_index = project->next_bit_index++;
+
+    project->select_volume_objects.insert(std::make_pair(name, object));
 }
 
 void do_load_volume_directive(
@@ -169,6 +173,14 @@ void openscad_extract_inventory(Project *project) {
             throw BadEchoError(
                 "unknown directive: " + echo[1].string_value);
         }
+    }
+
+    if (project->next_bit_index > Plc3::num_bits) {
+        std::stringstream msg;
+        msg << "There are too many os2cx_select_volume() directives. There are "
+            << project->select_volume_objects.size()
+            << ", but the limit is " << Plc3::num_bits - 1 << ".";
+        throw UsageError(msg.str());
     }
 
     if (project->calculix_deck.empty()) {

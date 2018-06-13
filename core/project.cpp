@@ -7,6 +7,7 @@
 #include "calculix_run.hpp"
 #include "mesher_tetgen.hpp"
 #include "openscad_extract.hpp"
+#include "plc_nef_to_plc.hpp"
 
 namespace os2cx {
 
@@ -27,51 +28,16 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->mesh_objects) {
-        /* volume_mask and volume_mask_volumes are two parallel vectors.
-        poly3_map_create will slice the mesh solid by the masks and then write
-        out which volumes correspond to which masks into volume_mask_volumes,
-        which ultimately points to VolumeObject::poly3_map_volumes. */
-        std::vector<Poly3MapVolumeMask> volume_masks;
-        std::vector<std::set<Poly3Map::VolumeId> *> volume_mask_volumes;
+        PlcNef3 solid_nef = compute_plc_nef_for_solid(*pair.second.solid);
         for (auto &select_volume_pair : p->select_volume_objects) {
-            Poly3MapVolumeMask volume_mask;
-            volume_mask.poly = select_volume_pair.second.mask.get();
-            volume_masks.push_back(volume_mask);
-            volume_mask_volumes.push_back(
-                &select_volume_pair.second.poly3_map_volumes[pair.first]);
+            compute_plc_nef_select_volume(
+                &solid_nef,
+                *select_volume_pair.second.mask,
+                select_volume_pair.second.bit_index);
         }
 
-        std::shared_ptr<Poly3Map> poly3_map(new Poly3Map);
-        poly3_map_create(
-            *pair.second.solid,
-            volume_masks,
-            poly3_map.get(),
-            volume_mask_volumes
-        );
-        pair.second.poly3_map = poly3_map;
-
-        pair.second.poly3_map_index.reset(new Poly3MapIndex(*poly3_map));
-
-        for (auto &mesh_pair : p->mesh_objects) {
-            if (mesh_pair.first == pair.first) {
-                /* This is the same MeshObject that we just constructed the
-                poly3_map for; obviously it contains all its own Poly3Map
-                volumes */
-                std::set<Poly3Map::VolumeId> poly3_map_volumes;
-                for (Poly3Map::VolumeId volume_id = 0;
-                        volume_id < static_cast<int>(poly3_map->volumes.size());
-                        ++volume_id) {
-                    poly3_map_volumes.insert(volume_id);
-                }
-                mesh_pair.second.poly3_map_volumes[pair.first] =
-                    poly3_map_volumes;
-            } else {
-                /* Other MeshObjects don't contain any volumes from this
-                MeshObject's Poly3Map. */
-                mesh_pair.second.poly3_map_volumes[pair.first] =
-                    std::set<Poly3Map::VolumeId>();
-            }
-        }
+        pair.second.plc.reset(new Plc3(plc_nef_to_plc(solid_nef)));
+        pair.second.plc_index.reset(new Plc3Index(pair.second.plc.get()));
 
         callbacks->project_run_checkpoint();
     }
@@ -79,12 +45,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     for (auto &pair : p->mesh_objects) {
         p->approx_scale = std::max(
             p->approx_scale,
-            pair.second.poly3_map_index->approx_scale());
+            pair.second.plc_index->approx_scale());
     }
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
-        Mesh3 partial_mesh = mesher_tetgen(*pair.second.poly3_map);
+        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc);
         pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
         callbacks->project_run_checkpoint();
     }
@@ -117,12 +83,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     for (auto &pair : p->select_volume_objects) {
         ElementSet element_set;
         for (auto &mesh_pair : p->mesh_objects) {
-            ElementSet partial_element_set = compute_element_set_from_mask(
-                *mesh_pair.second.poly3_map_index,
+            ElementSet partial_element_set = compute_element_set_from_plc_bit(
+                *mesh_pair.second.plc_index,
                 *p->mesh,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,
-                pair.second.poly3_map_volumes.at(mesh_pair.first));
+                pair.second.bit_index);
             element_set.elements.insert(
                 partial_element_set.elements.begin(),
                 partial_element_set.elements.end());

@@ -5,37 +5,35 @@
 
 namespace os2cx {
 
-void convert_input(const Poly3Map &poly3_map, tetgenio *tetgen) {
-    tetgen->numberofpoints = poly3_map.vertices.size();
+void convert_input(const Plc3 &plc, tetgenio *tetgen) {
+    tetgen->numberofpoints = plc.vertices.size();
     tetgen->pointlist = new REAL[tetgen->numberofpoints * 3];
-    for (Poly3Map::VertexId vid = 0;
-            vid < static_cast<int>(poly3_map.vertices.size()); ++vid) {
-        tetgen->pointlist[3 * vid + 0] =
-            poly3_map.vertices[vid].point.vector.x.val;
-        tetgen->pointlist[3 * vid + 1] =
-            poly3_map.vertices[vid].point.vector.y.val;
-        tetgen->pointlist[3 * vid + 2] =
-            poly3_map.vertices[vid].point.vector.z.val;
+    for (Plc3::VertexId vid = 0;
+            vid < static_cast<int>(plc.vertices.size()); ++vid) {
+        tetgen->pointlist[3 * vid + 0] = plc.vertices[vid].point.vector.x.val;
+        tetgen->pointlist[3 * vid + 1] = plc.vertices[vid].point.vector.y.val;
+        tetgen->pointlist[3 * vid + 2] = plc.vertices[vid].point.vector.z.val;
     }
 
     tetgen->numberoffacets = 0;
-    for (const Poly3Map::Surface &surface : poly3_map.surfaces) {
+    for (const Plc3::Surface &surface : plc.surfaces) {
         tetgen->numberoffacets += surface.triangles.size();
     }
     tetgen->facetlist = new tetgenio::facet[tetgen->numberoffacets];
     tetgen->facetmarkerlist = new int[tetgen->numberoffacets];
     int facet_counter = 0;
-    for (Poly3Map::SurfaceId sid = 0;
-            sid < static_cast<int>(poly3_map.surfaces.size()); ++sid) {
-        const Poly3Map::Surface &surface = poly3_map.surfaces[sid];
+    for (Plc3::SurfaceId sid = 0;
+            sid < static_cast<int>(plc.surfaces.size()); ++sid) {
+        const Plc3::Surface &surface = plc.surfaces[sid];
         int facetmarker;
-        if (surface.volumes[0] == poly3_map.volume_outside ||
-                surface.volumes[1] == poly3_map.volume_outside) {
+        if (surface.volumes[0] == plc.volume_outside ||
+                surface.volumes[1] == plc.volume_outside) {
             facetmarker = sid + 1;
         } else {
+            /* TODO: How to denote features on internal faces? */
             facetmarker = 0;
         }
-        for (const Poly3Map::Surface::Triangle &tri : surface.triangles) {
+        for (const Plc3::Surface::Triangle &tri : surface.triangles) {
             tetgenio::facet *facet = &tetgen->facetlist[facet_counter];
             facet->polygonlist = new tetgenio::polygon[1];
             facet->numberofpolygons = 1;
@@ -96,9 +94,9 @@ Mesh3 convert_output(tetgenio *tetgen) {
     return mesh;
 }
 
-Mesh3 mesher_tetgen(const Poly3Map &poly3_map) {
+Mesh3 mesher_tetgen(const Plc3 &plc) {
     tetgenio tetgen_input;
-    convert_input(poly3_map, &tetgen_input);
+    convert_input(plc, &tetgen_input);
 
     tetgenio tetgen_output;
     tetrahedralize(const_cast<char *>("pq1.414a0.1Q"), &tetgen_input, &tetgen_output);
