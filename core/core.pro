@@ -27,7 +27,6 @@ SOURCES += \
     calculix_inp_write.cpp \
     calculix_run.cpp \
     mesh.cpp \
-    mesher_external.cpp \
     mesher_tetgen.cpp \
     mesh_index.cpp \
     mesh_type_info.cpp \
@@ -57,7 +56,6 @@ HEADERS += \
     calculix_inp_write.hpp \
     calculix_run.hpp \
     mesh.hpp \
-    mesher_external.hpp \
     mesher_tetgen.hpp \
     mesh_index.hpp \
     mesh_type_info.hpp \

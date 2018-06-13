@@ -12,7 +12,6 @@ SOURCES = $$CORE_SOURCES \
     attrs_test.cpp \
     calculix_read_test.cpp \
     mesh_index_test.cpp \
-    mesher_external_test.cpp \
     openscad_extract_test.cpp \
     openscad_run_test.cpp \
     openscad_value_test.cpp \
