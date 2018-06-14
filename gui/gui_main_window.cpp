@@ -71,10 +71,12 @@ void GuiMainWindow::regenerate_scene() {
         } else if (focus.type == GuiFocus::Type::Mesh ||
                 focus.type == GuiFocus::Type::SelectVolume) {
             scene = new GuiSceneMeshVolume(params, focus.target);
+        } else if (focus.type == GuiFocus::Type::SelectSurface) {
+            scene = new GuiSceneMeshSurface(params, focus.target);
         } else if (focus.type == GuiFocus::Type::Result) {
             scene = new GuiSceneMeshResultDisplacement(params, focus.target);
         } else {
-            /* TODO: loads */
+            /* TODO: GuiFocus::Type::Load */
             scene = new GuiSceneMesh(params);
         }
     } else {
@@ -85,7 +87,9 @@ void GuiMainWindow::regenerate_scene() {
         } else if (focus.type == GuiFocus::Type::SelectVolume) {
             scene = new GuiScenePoly3SelectVolume(params, focus.target);
         } else {
-            /* TODO: loads, results */
+            /* TODO: GuiFocus::Type::SelectSurface */
+            /* TODO: GuiFocus::Type::Load */
+            /* TODO: GuiFocus::Type::Result */
             scene = new GuiScenePoly3(params);
         }
     }

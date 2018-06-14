@@ -15,6 +15,7 @@ protected:
 
     virtual void calculate_attributes(
         ElementId element_id,
+        int face_index,
         NodeId node_id,
         QColor *color_out,
         PureVector *displacement_out);
@@ -30,10 +31,28 @@ public:
 private:
     virtual void calculate_attributes(
         ElementId element_id,
+        int face_index,
         NodeId node_id,
         QColor *color_out,
         PureVector *displacement_out);
     std::shared_ptr<const ElementSet> element_set;
+};
+
+class GuiSceneMeshSurface : public GuiSceneMesh
+{
+public:
+    GuiSceneMeshSurface(
+        const SceneParams &params,
+        const Project::SurfaceObjectName &surface);
+
+private:
+    virtual void calculate_attributes(
+        ElementId element_id,
+        int face_index,
+        NodeId node_id,
+        QColor *color_out,
+        PureVector *displacement_out);
+    std::shared_ptr<const FaceSet> face_set;
 };
 
 class GuiSceneMeshResultDisplacement : public GuiSceneMesh
@@ -46,6 +65,7 @@ public:
 private:
     virtual void calculate_attributes(
         ElementId element_id,
+        int face_index,
         NodeId node_id,
         QColor *color_out,
         PureVector *displacement_out);

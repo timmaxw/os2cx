@@ -76,6 +76,19 @@ module os2cx_select_volume(name) {
     }
 }
 
+module os2cx_select_surface(name) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: os2cx_select_surface() parameter must be a string");
+        }
+        # children();
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "select_surface_directive", name);
+    } else if (__openscad2calculix_mode == ["select_surface", name]) {
+        children();
+    }
+}
+
 module os2cx_load_volume(name, volume, magnitude) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {

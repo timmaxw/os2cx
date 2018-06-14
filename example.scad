@@ -5,7 +5,7 @@ module cantilever() {
 }
 
 os2cx_mesh("cantilever") cantilever();
-os2cx_select_volume("boundary") {
+os2cx_select_surface("boundary") {
     translate([-5, 0, 0]) cube([4, 3, 3], center=true);
 }
 os2cx_select_volume("load_volume") {

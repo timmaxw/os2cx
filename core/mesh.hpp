@@ -79,6 +79,10 @@ public:
     bool operator!=(FaceId other) const {
         return !(*this == other);
     }
+    bool operator<(FaceId other) const {
+        return (element_id < other.element_id) ||
+            (element_id == other.element_id && face < other.face);
+    }
     ElementId element_id;
     int face;
 };

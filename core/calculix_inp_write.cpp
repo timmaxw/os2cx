@@ -106,6 +106,14 @@ void write_calculix_job(
             select_stream, pair.first, *pair.second.element_set);
     }
 
+    for (const auto &pair : project.select_surface_objects) {
+        FilePath select_file_path = dir_path + "/" + pair.first + ".nam";
+        std::ofstream select_stream(select_file_path);
+        write_calculix_nset(
+            select_stream, pair.first, *pair.second.node_set);
+        /* TODO: write the face set too */
+    }
+
     for (const auto &pair : project.load_objects) {
         FilePath load_file_path = dir_path + "/" + pair.first + ".clo";
         std::ofstream load_stream(load_file_path);

@@ -31,13 +31,21 @@ public:
     Plc3::BitIndex next_bit_index;
 
     typedef std::string VolumeObjectName;
+    typedef std::string SurfaceObjectName;
     typedef std::string MeshObjectName;
     typedef std::string SelectVolumeObjectName;
+    typedef std::string SelectSurfaceObjectName;
     typedef std::string LoadObjectName;
 
     class VolumeObject {
     public:
         std::shared_ptr<const ElementSet> element_set;
+        std::shared_ptr<const NodeSet> node_set;
+    };
+
+    class SurfaceObject {
+    public:
+        std::shared_ptr<const FaceSet> face_set;
         std::shared_ptr<const NodeSet> node_set;
     };
 
@@ -71,17 +79,14 @@ public:
 
     std::map<SelectVolumeObjectName, SelectVolumeObject> select_volume_objects;
 
-    const VolumeObject *find_volume_object(const VolumeObjectName &name) const {
-        auto it = mesh_objects.find(name);
-        if (it != mesh_objects.end()) {
-            return &it->second;
-        }
-        auto jt = select_volume_objects.find(name);
-        if (jt != select_volume_objects.end()) {
-            return &jt->second;
-        }
-        return nullptr;
-    }
+    class SelectSurfaceObject : public SurfaceObject {
+    public:
+        Plc3::BitIndex bit_index;
+        std::shared_ptr<const Poly3> mask;
+    };
+
+    std::map<SelectSurfaceObjectName, SelectSurfaceObject>
+        select_surface_objects;
 
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
@@ -102,6 +107,27 @@ public:
     /* A very rough/informal approximation of the project's typical length
     scale. Will be zero until all the Poly3s have been loaded. */
     Length approx_scale;
+
+    const VolumeObject *find_volume_object(const VolumeObjectName &name) const {
+        auto it = mesh_objects.find(name);
+        if (it != mesh_objects.end()) {
+            return &it->second;
+        }
+        auto jt = select_volume_objects.find(name);
+        if (jt != select_volume_objects.end()) {
+            return &jt->second;
+        }
+        return nullptr;
+    }
+
+    const SurfaceObject *find_surface_object(
+            const SurfaceObjectName &name) const {
+        auto jt = select_surface_objects.find(name);
+        if (jt != select_surface_objects.end()) {
+            return &jt->second;
+        }
+        return nullptr;
+    }
 };
 
 /* project_run() performs all of the computations for a project. It gets run in

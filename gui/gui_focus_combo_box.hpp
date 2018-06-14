@@ -13,6 +13,7 @@ public:
         All, // no target
         Mesh, // target = mesh name
         SelectVolume, // target = select volume name
+        SelectSurface, // target = select surface name
         Load, // target = load name
         Result, // target = dataset name
     };

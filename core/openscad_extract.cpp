@@ -110,6 +110,27 @@ void do_select_volume_directive(
     project->select_volume_objects.insert(std::make_pair(name, object));
 }
 
+void do_select_surface_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &echo
+) {
+    if (echo.size() != 3 ||
+        echo[2].type != OpenscadValue::Type::String) {
+        throw BadEchoError("malformed select_surface_directive");
+    }
+
+    Project::SelectSurfaceObjectName name = echo[2].string_value;
+    check_name(project, "surface", name);
+
+    Project::SelectSurfaceObject object;
+
+    /* If there are too many select_* directives, bit_index will be greater than
+    or equal to Plc3::num_bits; we'll check this later. */
+    object.bit_index = project->next_bit_index++;
+
+    project->select_surface_objects.insert(std::make_pair(name, object));
+}
+
 void do_load_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &echo
@@ -167,6 +188,8 @@ void openscad_extract_inventory(Project *project) {
             do_mesh_directive(project, echo);
         } else if (echo[1].string_value == "select_volume_directive") {
             do_select_volume_directive(project, echo);
+        } else if (echo[1].string_value == "select_surface_directive") {
+            do_select_surface_directive(project, echo);
         } else if (echo[1].string_value == "load_volume_directive") {
             do_load_volume_directive(project, echo);
         } else {
@@ -177,8 +200,10 @@ void openscad_extract_inventory(Project *project) {
 
     if (project->next_bit_index > Plc3::num_bits) {
         std::stringstream msg;
-        msg << "There are too many os2cx_select_volume() directives. There are "
-            << project->select_volume_objects.size()
+        msg << "There are too many os2cx_select_volume() and/or "
+            << "os2cx_select_surface() directives. There are "
+            << (project->select_volume_objects.size() +
+                project->select_surface_objects.size())
             << ", but the limit is " << Plc3::num_bits - 1 << ".";
         throw UsageError(msg.str());
     }

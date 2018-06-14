@@ -19,7 +19,8 @@ void GuiSceneMesh::initialize_scene() {
         for (int i = 0; i < 3; ++i) {
             ps[i] = project->mesh->nodes[node_ids[i]].point;
             PureVector disp;
-            calculate_attributes(fi.element_id, node_ids[i], &cs[i], &disp);
+            calculate_attributes(
+                fi.element_id, fi.face, node_ids[i], &cs[i], &disp);
             ps[i] += disp * Length(1.0);
         }
 
@@ -42,11 +43,13 @@ void GuiSceneMesh::initialize_scene() {
 
 void GuiSceneMesh::calculate_attributes(
     ElementId element_id,
+    int face_index,
     NodeId node_id,
     QColor *color_out,
     PureVector *displacement_out
 ) {
     (void)element_id;
+    (void)face_index;
     (void)node_id;
     *color_out = QColor(0x80, 0x80, 0x80);
     *displacement_out = PureVector::zero();
@@ -63,12 +66,40 @@ GuiSceneMeshVolume::GuiSceneMeshVolume(
 
 void GuiSceneMeshVolume::calculate_attributes(
     ElementId element_id,
+    int face_index,
+    NodeId node_id,
+    QColor *color_out,
+    PureVector *displacement_out
+) {
+    (void)face_index;
+    (void)node_id;
+    if (element_set->elements.count(element_id)) {
+        *color_out = QColor(0xFF, 0x00, 0x00);
+    } else {
+        *color_out = QColor(0x80, 0x80, 0x80);
+    }
+    *displacement_out = PureVector::zero();
+}
+
+GuiSceneMeshSurface::GuiSceneMeshSurface(
+    const SceneParams &params,
+    const Project::SurfaceObjectName &surface
+) :
+    GuiSceneMesh(params)
+{
+    face_set = project->find_surface_object(surface)->face_set;
+}
+
+void GuiSceneMeshSurface::calculate_attributes(
+    ElementId element_id,
+    int face_index,
     NodeId node_id,
     QColor *color_out,
     PureVector *displacement_out
 ) {
     (void)node_id;
-    if (element_set->elements.count(element_id)) {
+    FaceId face_id { element_id, face_index };
+    if (face_set->faces.count(face_id)) {
         *color_out = QColor(0xFF, 0x00, 0x00);
     } else {
         *color_out = QColor(0x80, 0x80, 0x80);
@@ -86,11 +117,13 @@ GuiSceneMeshResultDisplacement::GuiSceneMeshResultDisplacement(
 
 void GuiSceneMeshResultDisplacement::calculate_attributes(
     ElementId element_id,
+    int face_index,
     NodeId node_id,
     QColor *color_out,
     PureVector *displacement_out
 ) {
     (void)element_id;
+    (void)face_index;
     *color_out = QColor(0x80, 0x80, 0x80);
     const ContiguousMap<NodeId, PureVector> &result =
         project->results->node_vectors.at(result_name);

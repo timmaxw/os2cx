@@ -49,6 +49,14 @@ void GuiFocusComboBox::regenerate_options() {
         );
     }
 
+    for (const auto &pair : project->select_surface_objects) {
+        push_option(
+            tr("Surface ") + QString(pair.first.c_str()),
+            GuiFocus::Type::SelectSurface,
+            pair.first
+        );
+    }
+
     for (const auto &pair : project->load_objects) {
         push_option(
             tr("Load ") + QString(pair.first.c_str()),

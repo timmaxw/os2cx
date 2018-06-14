@@ -26,6 +26,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             p, "select_volume", pair.first);
         callbacks->project_run_checkpoint();
     }
+    for (auto &pair : p->select_surface_objects) {
+        pair.second.mask = openscad_extract_poly3(
+            p, "select_surface", pair.first);
+        callbacks->project_run_checkpoint();
+    }
 
     for (auto &pair : p->mesh_objects) {
         PlcNef3 solid_nef = compute_plc_nef_for_solid(*pair.second.solid);
@@ -34,6 +39,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 &solid_nef,
                 *select_volume_pair.second.mask,
                 select_volume_pair.second.bit_index);
+        }
+        for (auto &select_surface_pair : p->select_surface_objects) {
+            compute_plc_nef_select_surface(
+                &solid_nef,
+                *select_surface_pair.second.mask,
+                select_surface_pair.second.bit_index);
         }
 
         pair.second.plc.reset(new Plc3(plc_nef_to_plc(solid_nef)));
@@ -98,6 +109,29 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_node_set_from_element_set(*p->mesh, element_set);
 
         pair.second.element_set.reset(new ElementSet(std::move(element_set)));
+        pair.second.node_set.reset(new NodeSet(std::move(node_set)));
+
+        callbacks->project_run_checkpoint();
+    }
+
+    for (auto &pair : p->select_surface_objects) {
+        FaceSet face_set;
+        for (auto &mesh_pair : p->mesh_objects) {
+            FaceSet partial_face_set = compute_face_set_from_plc_bit(
+                *mesh_pair.second.plc_index,
+                *p->mesh,
+                *p->mesh_index,
+                mesh_pair.second.element_begin,
+                mesh_pair.second.element_end,
+                pair.second.bit_index);
+            face_set.faces.insert(
+                partial_face_set.faces.begin(),
+                partial_face_set.faces.end());
+        }
+
+        NodeSet node_set = compute_node_set_from_face_set(*p->mesh, face_set);
+
+        pair.second.face_set.reset(new FaceSet(std::move(face_set)));
         pair.second.node_set.reset(new NodeSet(std::move(node_set)));
 
         callbacks->project_run_checkpoint();
