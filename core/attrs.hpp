@@ -10,9 +10,12 @@
 namespace os2cx {
 
 Plc3::BitIndex bit_index_solid();
+
 PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid);
+
 void compute_plc_nef_select_volume(
     PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask);
+
 void compute_plc_nef_select_surface(
     PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask);
 

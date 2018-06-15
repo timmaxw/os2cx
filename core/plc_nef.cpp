@@ -27,6 +27,110 @@ PlcNef3 PlcNef3::from_poly(const Poly3 &poly) {
     return poly_bits;
 }
 
+typedef CgalNef3Plc::Nef_rep::SNC_decorator CgalNef3Sncd;
+
+template<class Callable>
+void plc_nef_3_modify_volumes(
+    CgalNef3Sncd *snc_decorator,
+    const Callable &func
+) {
+    CgalNef3Sncd::Volume_iterator ci;
+    CGAL_forall_volumes(ci, *snc_decorator) {
+        ci->mark() = PlcNef3Mark(func(ci->mark().bitset));
+    }
+
+    /* Update sface marks to match new volume marks */
+    CgalNef3Sncd::Vertex_iterator vi;
+    CGAL_forall_vertices(vi, *snc_decorator) {
+        CgalNef3Plc::SM_decorator sm_decorator(&*vi);
+
+        CgalNef3Plc::Nef_rep::Sphere_map::SFace_iterator sfi;
+        CGAL_forall_sfaces(sfi, sm_decorator) {
+            sfi->mark() = sfi->volume()->mark();
+        }
+    }
+}
+
+template<class Callable>
+void plc_nef_3_modify_faces(
+    CgalNef3Sncd *snc_decorator,
+    const Callable &func
+) {
+    CgalNef3Sncd::Halffacet_iterator hfi;
+    CGAL_forall_halffacets(hfi, *snc_decorator) {
+        /* Visit each facet only once, so skip one of the two halffacets */
+        if (hfi < hfi->twin()) continue;
+
+        Plc3::Bitset
+            facet_bitset = hfi->mark().bitset,
+            volume1_bitset = hfi->incident_volume()->mark().bitset,
+            volume2_bitset = hfi->twin()->incident_volume()->mark().bitset;
+        CGAL::Vector_3<KE> cgal_normal = hfi->plane().orthogonal_vector();
+        PureVector normal = PureVector::raw(
+            CGAL::to_double(cgal_normal.x()),
+            CGAL::to_double(cgal_normal.y()),
+            CGAL::to_double(cgal_normal.z()));
+        normal /= normal.magnitude().val;
+
+        PlcNef3Mark new_mark(func(
+            facet_bitset,
+            volume1_bitset,
+            volume2_bitset,
+            normal
+        ));
+
+        hfi->mark() = new_mark;
+        hfi->twin()->mark() = new_mark;
+    }
+
+    /* Update shalfedge/shalfloop marks to match new facet marks */
+    CgalNef3Sncd::Vertex_iterator vi;
+    CGAL_forall_vertices(vi, *snc_decorator) {
+        CgalNef3Plc::SM_decorator sm_decorator(&*vi);
+
+        CgalNef3Plc::Nef_rep::Sphere_map::SHalfedge_iterator shei;
+        CGAL_forall_shalfedges(shei, sm_decorator) {
+            shei->mark() = shei->facet()->mark();
+        }
+
+        if (sm_decorator.has_shalfloop()) {
+            CgalNef3Plc::Nef_rep::Sphere_map::SHalfloop_handle shlh =
+                sm_decorator.shalfloop();
+            shlh->mark() = shlh->twin()->mark() = shlh->facet()->mark();
+        }
+    }
+}
+
+template<class Callable>
+void plc_nef_3_modify_edges(
+    CgalNef3Sncd *snc_decorator,
+    const Callable &func
+) {
+    CgalNef3Plc::Nef_rep::SNC_decorator::Vertex_iterator vi;
+    CGAL_forall_vertices(vi, *snc_decorator) {
+        CgalNef3Plc::SM_decorator sm_decorator(&*vi);
+
+        CgalNef3Plc::Nef_rep::Sphere_map::SVertex_iterator svi;
+        CGAL_forall_svertices(svi, sm_decorator) {
+            /* Visit each edge only once, so skip one of the two halfedges */
+            if (svi < svi->twin()) continue;
+            PlcNef3Mark new_mark(func(svi->mark().bitset));
+            svi->mark() = svi->twin()->mark() = new_mark;
+        }
+    }
+}
+
+template<class Callable>
+void plc_nef_3_modify_vertices(
+    CgalNef3Sncd *snc_decorator,
+    const Callable &func
+) {
+    CgalNef3Plc::Nef_rep::SNC_decorator::Vertex_iterator vi;
+    CGAL_forall_vertices(vi, *snc_decorator) {
+        vi->mark() = PlcNef3Mark(func(vi->mark().bitset));
+    }
+}
+
 template<class Callable>
 void plc_nef_3_modify(PlcNef3 *plc, const Callable &func) {
     class PlcNef3Modifier :
@@ -35,52 +139,8 @@ void plc_nef_3_modify(PlcNef3 *plc, const Callable &func) {
     public:
         PlcNef3Modifier(const Callable &f) : func(f) { }
         void operator()(CgalNef3Plc::Nef_rep::SNC_structure &snc) {
-            CgalNef3Plc::Nef_rep::SNC_decorator snc_decorator(snc);
-
-            CgalNef3Plc::Nef_rep::SNC_decorator::Vertex_iterator v;
-            CGAL_forall_vertices(v, snc_decorator) {
-                v->mark() = PlcNef3Mark(
-                    func(v->mark().bitset, PlcNef3::FeatureType::Vertex));
-
-                CgalNef3Plc::SM_decorator sm_decorator(&*v);
-
-                CgalNef3Plc::Nef_rep::Sphere_map::SVertex_iterator sv;
-                CGAL_forall_svertices(sv, sm_decorator) {
-                    sv->mark() = PlcNef3Mark(
-                        func(sv->mark().bitset, PlcNef3::FeatureType::Edge));
-                }
-
-                CgalNef3Plc::Nef_rep::Sphere_map::SHalfedge_iterator se;
-                CGAL_forall_shalfedges(se, sm_decorator) {
-                    se->mark() = PlcNef3Mark(
-                        func(se->mark().bitset, PlcNef3::FeatureType::Face));
-                }
-
-                if (sm_decorator.has_shalfloop()) {
-                    CgalNef3Plc::Nef_rep::Sphere_map::SHalfloop_handle shl =
-                        sm_decorator.shalfloop();
-                    shl->mark() = shl->twin()->mark() = PlcNef3Mark(
-                        func(shl->mark().bitset, PlcNef3::FeatureType::Face));
-                }
-
-                CgalNef3Plc::Nef_rep::Sphere_map::SFace_iterator sf;
-                CGAL_forall_sfaces(sf, sm_decorator) {
-                    sf->mark() = PlcNef3Mark(
-                        func(sf->mark().bitset, PlcNef3::FeatureType::Volume));
-                }
-            }
-
-            CgalNef3Plc::Nef_rep::SNC_decorator::Halffacet_iterator f;
-            CGAL_forall_halffacets(f, snc_decorator) {
-                f->mark() = PlcNef3Mark(
-                    func(f->mark().bitset, PlcNef3::FeatureType::Face));
-            }
-
-            CgalNef3Plc::Nef_rep::SNC_decorator::Volume_iterator c;
-            CGAL_forall_volumes(c, snc_decorator) {
-                c->mark() = PlcNef3Mark(
-                    func(c->mark().bitset, PlcNef3::FeatureType::Volume));
-            }
+            CgalNef3Sncd snc_decorator(snc);
+            func(&snc_decorator);
         }
         const Callable &func;
     };
@@ -88,18 +148,81 @@ void plc_nef_3_modify(PlcNef3 *plc, const Callable &func) {
     plc->i->p.delegate(modifier);
 }
 
-void PlcNef3::everywhere_map(
-    const std::function<Bitset(Bitset, FeatureType)> &func
-) {
-    plc_nef_3_modify(this, func);
+void PlcNef3::map_volumes(const std::function<Bitset(Bitset)> &func) {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        plc_nef_3_modify_volumes(sncd, func);
+    });
 }
 
-void PlcNef3::everywhere_binarize(Bitset value) {
-    plc_nef_3_modify(this, [&](Bitset prev, FeatureType) {
-        if (prev == Bitset()) {
-            return Bitset();
+void PlcNef3::map_faces(
+    const std::function<Bitset(
+        Bitset current_bitset,
+        Bitset volume1_bitset,
+        Bitset volume2_bitset,
+        PureVector normal_towards_volume1
+    )> &func
+) {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        plc_nef_3_modify_faces(sncd, func);
+    });
+}
+
+void PlcNef3::map_edges(const std::function<Bitset(Bitset)> &func) {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        plc_nef_3_modify_edges(sncd, func);
+    });
+}
+
+void PlcNef3::map_vertices(const std::function<Bitset(Bitset)> &func) {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        plc_nef_3_modify_vertices(sncd, func);
+    });
+}
+
+void PlcNef3::map_everywhere(
+    const std::function<Bitset(Bitset, FeatureType)> &func
+) {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        plc_nef_3_modify_volumes(sncd, [&](Plc3::Bitset bitset) {
+            return func(bitset, FeatureType::Volume);
+        });
+        plc_nef_3_modify_faces(sncd,
+        [&](Plc3::Bitset bitset, Plc3::Bitset, Plc3::Bitset, PureVector) {
+            return func(bitset, FeatureType::Face);
+        });
+        plc_nef_3_modify_edges(sncd, [&](Plc3::Bitset bitset) {
+            return func(bitset, FeatureType::Edge);
+        });
+        plc_nef_3_modify_vertices(sncd, [&](Plc3::Bitset bitset) {
+            return func(bitset, FeatureType::Vertex);
+        });
+    });
+}
+
+void PlcNef3::binarize(PlcNef3::Bitset bitset_one, PlcNef3::Bitset bitset_zero)
+{
+    map_everywhere([&](Bitset prev, FeatureType) {
+        if (prev != Bitset()) {
+            return bitset_one;
         } else {
-            return value;
+            return bitset_zero;
+        }
+    });
+}
+
+void PlcNef3::outline_faces() {
+    plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
+        CgalNef3Plc::Nef_rep::SNC_decorator::Vertex_iterator vi;
+        CGAL_forall_vertices(vi, *sncd) {
+            CgalNef3Plc::SM_decorator sm_decorator(&*vi);
+
+            CgalNef3Plc::Nef_rep::Sphere_map::SHalfedge_iterator shei;
+            CGAL_forall_shalfedges(shei, sm_decorator) {
+                shei->source()->mark() = PlcNef3Mark(
+                    shei->source()->mark().bitset | shei->mark().bitset);
+                vi->mark() = PlcNef3Mark(
+                    vi->mark().bitset | shei->mark().bitset);
+            }
         }
     });
 }

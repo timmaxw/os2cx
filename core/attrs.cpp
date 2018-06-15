@@ -10,7 +10,7 @@ PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid) {
     Plc3::Bitset bitset_solid;
     bitset_solid.set(bit_index_solid());
     PlcNef3 solid_nef = PlcNef3::from_poly(solid);
-    solid_nef.everywhere_binarize(bitset_solid);
+    solid_nef.binarize(bitset_solid, Plc3::Bitset());
     return solid_nef;
 }
 
@@ -21,7 +21,7 @@ void compute_plc_nef_select_volume(
     it on non-solid volumes, faces, edges, or vertices; so it stays zero there,
     and we don't spew bits randomly over things we don't care about. */
     assert(bit_index_mask != bit_index_solid());
-    solid_nef->everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
+    solid_nef->map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
         if (ft == PlcNef3::FeatureType::Volume && bs[bit_index_solid()]) {
             bs[bit_index_mask] = true;
         }
@@ -32,7 +32,7 @@ void compute_plc_nef_select_volume(
     Everywhere else, set all bits except 'bit_index_mask'. So AND-ing this
     with solid_nef will clear the mask bit from solid_nef outside the mask. */
     PlcNef3 mask_nef = PlcNef3::from_poly(mask);
-    mask_nef.everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
+    mask_nef.map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
         Plc3::Bitset result;
         result.set();
         if (bs == Plc3::Bitset() || ft != PlcNef3::FeatureType::Volume) {
@@ -52,7 +52,7 @@ void compute_plc_nef_select_surface(
     zero there. In particular, we won't create internal structures inside of
     existing volumes. */
     assert(bit_index_mask != bit_index_solid());
-    solid_nef->everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
+    solid_nef->map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
         if (ft != PlcNef3::FeatureType::Volume && bs[bit_index_solid()]) {
             bs[bit_index_mask] = true;
         }
@@ -63,7 +63,7 @@ void compute_plc_nef_select_surface(
     In the empty volumes, set all bits except 'bit_index_mask'. So AND-ing this
     with solid_nef will clear the mask bit from solid_nef outside the mask. */
     PlcNef3 mask_nef = PlcNef3::from_poly(mask);
-    mask_nef.everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
+    mask_nef.map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
         Plc3::Bitset result;
         result.set();
         if (bs == Plc3::Bitset()) {

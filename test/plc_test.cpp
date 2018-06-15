@@ -15,10 +15,10 @@ TEST(PlcTest, PlcNefToPlc) {
     bitset_mask.set(1);
     PlcNef3 solid = PlcNef3::from_poly(Poly3::box(0, 0, 0, 1, 1, 3));
     PlcNef3 mask = PlcNef3::from_poly(Poly3::box(-1, -1, 1, 2, 2, 2));
-    solid.everywhere_binarize(bitset_solid);
-    mask.everywhere_binarize(bitset_mask);
+    solid.binarize(bitset_solid, Plc3::Bitset());
+    mask.binarize(bitset_mask, Plc3::Bitset());
     PlcNef3 plc_nef = solid.binary_or(mask);
-    plc_nef.everywhere_map([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
+    plc_nef.map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
         if (bs == bitset_mask) return Plc3::Bitset();
         else return bs;
     });

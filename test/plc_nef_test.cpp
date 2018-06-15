@@ -31,28 +31,34 @@ TEST(PlcNefTest, FromPoly) {
     EXPECT_EQ(bitset_zero(), region_u.get_bitset(point_outside));
 }
 
-TEST(PlcNefTest, EverywhereMap) {
-    PlcNef3::Bitset bitset_volume, bitset_face, bitset_edge, bitset_vertex;
+TEST(PlcNefTest, Map) {
+    Plc3::Bitset bitset_volume, bitset_face, bitset_edge, bitset_vertex;
     bitset_volume.set(0);
     bitset_face.set(1);
     bitset_edge.set(2);
     bitset_vertex.set(3);
 
     PlcNef3 mapped = region_u.clone();
-    mapped.everywhere_map([&](PlcNef3::Bitset prev, PlcNef3::FeatureType ft) {
+    mapped.map_volumes([&](Plc3::Bitset prev) {
         if (prev == bitset_one()) {
-            switch (ft) {
-            case PlcNef3::FeatureType::Volume: return bitset_volume;
-            case PlcNef3::FeatureType::Face: return bitset_face;
-            case PlcNef3::FeatureType::Edge: return bitset_edge;
-            case PlcNef3::FeatureType::Vertex: return bitset_vertex;
-            default: assert(false);
-            }
+            return bitset_volume;
         } else {
             EXPECT_EQ(bitset_zero(), prev);
-            EXPECT_EQ(PlcNef3::FeatureType::Volume, ft);
             return bitset_zero();
         }
+    });
+    mapped.map_faces(
+    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, PureVector) {
+        EXPECT_EQ(bitset_one(), prev);
+        return bitset_face;
+    });
+    mapped.map_edges([&](Plc3::Bitset prev) {
+        EXPECT_EQ(bitset_one(), prev);
+        return bitset_edge;
+    });
+    mapped.map_vertices([&](Plc3::Bitset prev) {
+        EXPECT_EQ(bitset_one(), prev);
+        return bitset_vertex;
     });
 
     EXPECT_EQ(bitset_volume, mapped.get_bitset(point_in_u));
@@ -61,24 +67,24 @@ TEST(PlcNefTest, EverywhereMap) {
     EXPECT_EQ(bitset_vertex, mapped.get_bitset(point_on_u_vertex));
     EXPECT_EQ(bitset_zero(), mapped.get_bitset(point_outside));
 
-    mapped.everywhere_map([&](PlcNef3::Bitset prev, PlcNef3::FeatureType ft) {
-        switch (ft) {
-        case PlcNef3::FeatureType::Volume:
-            if (prev != bitset_zero()) {
-                EXPECT_EQ(bitset_volume, prev);
-            }
-            return prev;
-        case PlcNef3::FeatureType::Face:
-            EXPECT_EQ(bitset_face, prev);
-            return prev;
-        case PlcNef3::FeatureType::Edge:
-            EXPECT_EQ(bitset_edge, prev);
-            return prev;
-        case PlcNef3::FeatureType::Vertex:
-            EXPECT_EQ(bitset_vertex, prev);
-            return prev;
-        default: assert(false);
+    mapped.map_volumes([&](Plc3::Bitset prev) {
+        if (prev != bitset_zero()) {
+            EXPECT_EQ(bitset_volume, prev);
         }
+        return prev;
+    });
+    mapped.map_faces(
+    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, PureVector) {
+        EXPECT_EQ(bitset_face, prev);
+        return prev;
+    });
+    mapped.map_edges([&](Plc3::Bitset prev) {
+        EXPECT_EQ(bitset_edge, prev);
+        return prev;
+    });
+    mapped.map_vertices([&](Plc3::Bitset prev) {
+        EXPECT_EQ(bitset_vertex, prev);
+        return prev;
     });
 }
 
@@ -86,9 +92,9 @@ TEST(PlcNefTest, BinaryOps) {
     PlcNef3::Bitset bitset_u(0x00FF);
     PlcNef3::Bitset bitset_v(0x0FF0);
     PlcNef3 u = region_u.clone();
-    u.everywhere_binarize(bitset_u);
+    u.binarize(bitset_u, bitset_zero());
     PlcNef3 v = region_v.clone();
-    v.everywhere_binarize(bitset_v);
+    v.binarize(bitset_v, bitset_zero());
 
     PlcNef3 u_or_v = u.binary_or(v);
     EXPECT_EQ(bitset_zero(), u_or_v.get_bitset(point_outside));
