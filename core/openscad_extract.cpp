@@ -26,11 +26,35 @@ std::unique_ptr<OpenscadRun> call_openscad(
     return std::move(run);
 }
 
-void check_name(
-    Project *project,
-    const std::string &new_object_type,
-    const std::string &new_name
+void check_arg_count(
+    const std::vector<OpenscadValue> &args, int expect, const char *what
 ) {
+    if (static_cast<int>(args.size()) != expect) {
+        throw BadEchoError("wrong number of arguments to " + std::string(what));
+    }
+}
+
+std::string check_string(const OpenscadValue &value) {
+    if (value.type != OpenscadValue::Type::String) {
+        throw BadEchoError("expected string");
+    }
+    return value.string_value;
+}
+
+double check_number(const OpenscadValue &value) {
+    if (value.type != OpenscadValue::Type::Number) {
+        throw BadEchoError("expected number");
+    }
+    return value.number_value;
+}
+
+std::string check_name_new(
+    const OpenscadValue &value,
+    const std::string &new_object_type,
+    Project *project
+) {
+    std::string new_name = check_string(value);
+
     // TODO: Check character set
 
     std::string existing_object_type;
@@ -38,6 +62,8 @@ void check_name(
         existing_object_type = "mesh";
     } else if (project->select_volume_objects.count(new_name)) {
         existing_object_type = "volume";
+    } else if (project->select_surface_objects.count(new_name)) {
+        existing_object_type = "surface";
     } else if (project->load_objects.count(new_name)) {
         existing_object_type = "load";
     }
@@ -46,42 +72,59 @@ void check_name(
             new_name + "' because there already exists a " +
             existing_object_type + " named '" + new_name + "'.");
     }
+
+    return new_name;
+}
+
+template<class Inner, class InnerConverter>
+std::vector<Inner> check_vector(
+    const OpenscadValue &value,
+    const InnerConverter &inner_converter
+) {
+    std::vector<Inner> result;
+    if (value.type != OpenscadValue::Type::Vector) {
+        throw BadEchoError("expected vector");
+    }
+    for (const OpenscadValue &inner_value : value.vector_value) {
+        result.push_back(inner_converter(inner_value));
+    }
+    return result;
+}
+
+PureVector check_pure_vector(const OpenscadValue &value) {
+    std::vector<double> parts = check_vector<double>(value, &check_number);
+    if (parts.size() != 3) {
+        throw BadEchoError("expected vector to have 3 elements");
+    }
+    return PureVector::raw(parts[0], parts[1], parts[2]);
 }
 
 void do_analysis_directive(
     Project *project,
-    const std::vector<OpenscadValue> &echo
+    const std::vector<OpenscadValue> &args
 ) {
-    if (echo.size() != 3 ||
-            echo[2].type != OpenscadValue::Type::Vector) {
-        throw BadEchoError("malformed analysis_directive");
-    }
+    check_arg_count(args, 1, "analysis");
+
     if (!project->calculix_deck.empty()) {
         throw UsageError("Can't have multiple os2cx_analysis_...() directives "
             "in the same file.");
     }
-    for (const auto &subvalue : echo[2].vector_value) {
-        if (subvalue.type != OpenscadValue::Type::String) {
-            throw BadEchoError("malformed analysis_directive");
-        }
-        project->calculix_deck.push_back(subvalue.string_value);
-    }
-    if (project->calculix_deck.empty()) {
+
+    std::vector<std::string> deck =
+        check_vector<std::string>(args[0], &check_string);
+    if (deck.empty()) {
         throw BadEchoError("empty analysis_directive");
     }
+    project->calculix_deck = std::move(deck);
 }
 
 void do_mesh_directive(
     Project *project,
-    const std::vector<OpenscadValue> &echo
+    const std::vector<OpenscadValue> &args
 ) {
-    if (echo.size() != 3 ||
-        echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed mesh_directive");
-    }
+    check_arg_count(args, 1, "mesh");
 
-    Project::MeshObjectName name = echo[2].string_value;
-    check_name(project, "mesh", name);
+    Project::MeshObjectName name = check_name_new(args[0], "mesh", project);
 
     project->mesh_objects.insert(std::make_pair(
         name,
@@ -91,15 +134,12 @@ void do_mesh_directive(
 
 void do_select_volume_directive(
     Project *project,
-    const std::vector<OpenscadValue> &echo
+    const std::vector<OpenscadValue> &args
 ) {
-    if (echo.size() != 3 ||
-        echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed select_volume_directive");
-    }
+    check_arg_count(args, 1, "select_volume");
 
-    Project::SelectVolumeObjectName name = echo[2].string_value;
-    check_name(project, "volume", name);
+    Project::SelectVolumeObjectName name =
+        check_name_new(args[0], "volume", project);
 
     Project::SelectVolumeObject object;
 
@@ -112,15 +152,12 @@ void do_select_volume_directive(
 
 void do_select_surface_directive(
     Project *project,
-    const std::vector<OpenscadValue> &echo
+    const std::vector<OpenscadValue> &args
 ) {
-    if (echo.size() != 3 ||
-        echo[2].type != OpenscadValue::Type::String) {
-        throw BadEchoError("malformed select_surface_directive");
-    }
+    check_arg_count(args, 3, "select_surface");
 
-    Project::SelectSurfaceObjectName name = echo[2].string_value;
-    check_name(project, "surface", name);
+    Project::SelectSurfaceObjectName name =
+        check_name_new(args[0], "surface", project);
 
     Project::SelectSurfaceObject object;
 
@@ -128,31 +165,29 @@ void do_select_surface_directive(
     or equal to Plc3::num_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
+    object.direction_vector = check_pure_vector(args[1]);
+
+    object.direction_angle_tolerance = check_number(args[2]);
+
     project->select_surface_objects.insert(std::make_pair(name, object));
 }
 
 void do_load_volume_directive(
     Project *project,
-    const std::vector<OpenscadValue> &echo
+    const std::vector<OpenscadValue> &args
 ) {
-    if (echo.size() != 5 ||
-        echo[2].type != OpenscadValue::Type::String ||
-        echo[3].type != OpenscadValue::Type::String ||
-        echo[4].type != OpenscadValue::Type::Number) {
-        throw BadEchoError("malformed load_directive");
-    }
+    check_arg_count(args, 3, "load_volume");
 
-    Project::LoadObjectName name = echo[2].string_value;
-    check_name(project, "load", name);
+    Project::LoadObjectName name = check_name_new(args[0], "load", project);
 
-    Project::VolumeObjectName volume = echo[3].string_value;
+    Project::VolumeObjectName volume = check_string(args[1]);
     if (project->find_volume_object(volume) == nullptr) {
         throw UsageError("Load '" + name + "' refers to volume '" + volume +
             "', which does not exist (yet).");
     }
     project->load_objects[name].volume = volume;
 
-    auto force_density = ForceDensityVector::raw(0, 0, echo[4].number_value);
+    auto force_density = ForceDensityVector::raw(0, 0, check_number(args[2]));
     project->load_objects[name].force_density = force_density;
 }
 
@@ -178,23 +213,34 @@ void openscad_extract_inventory(Project *project) {
             echo[0] != OpenscadValue("__openscad2calculix")) {
             continue;
         }
-        if (echo.size() == 1 ||
-                echo[1].type != OpenscadValue::Type::String) {
-            throw BadEchoError("missing or malformed subdirective");
-        }
-        if (echo[1].string_value == "analysis_directive") {
-            do_analysis_directive(project, echo);
-        } else if (echo[1].string_value == "mesh_directive") {
-            do_mesh_directive(project, echo);
-        } else if (echo[1].string_value == "select_volume_directive") {
-            do_select_volume_directive(project, echo);
-        } else if (echo[1].string_value == "select_surface_directive") {
-            do_select_surface_directive(project, echo);
-        } else if (echo[1].string_value == "load_volume_directive") {
-            do_load_volume_directive(project, echo);
-        } else {
-            throw BadEchoError(
-                "unknown directive: " + echo[1].string_value);
+        try {
+            if (echo.size() == 1 ||
+                    echo[1].type != OpenscadValue::Type::String) {
+                throw BadEchoError("missing or malformed subdirective");
+            }
+            std::vector<OpenscadValue> args(echo.begin() + 2, echo.end());
+            if (echo[1].string_value == "analysis_directive") {
+                do_analysis_directive(project, args);
+            } else if (echo[1].string_value == "mesh_directive") {
+                do_mesh_directive(project, args);
+            } else if (echo[1].string_value == "select_volume_directive") {
+                do_select_volume_directive(project, args);
+            } else if (echo[1].string_value == "select_surface_directive") {
+                do_select_surface_directive(project, args);
+            } else if (echo[1].string_value == "load_volume_directive") {
+                do_load_volume_directive(project, args);
+            } else {
+                throw BadEchoError(
+                    "unknown directive: " + echo[1].string_value);
+            }
+        } catch (const BadEchoError &error) {
+            std::stringstream msg;
+            msg << "in line";
+            for (const OpenscadValue &value : echo) {
+                msg << ' ' << value;
+            }
+            msg << ": " << error.what();
+            throw BadEchoError(msg.str());
         }
     }
 

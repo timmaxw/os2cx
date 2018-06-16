@@ -15,7 +15,9 @@ PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid) {
 }
 
 void compute_plc_nef_select_volume(
-    PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask
+    PlcNef3 *solid_nef,
+    const Poly3 &mask,
+    Plc3::BitIndex bit_index_mask
 ) {
     /* First, set the mask bit on every solid volume of solid_nef. We don't set
     it on non-solid volumes, faces, edges, or vertices; so it stays zero there,
@@ -45,18 +47,37 @@ void compute_plc_nef_select_volume(
 }
 
 void compute_plc_nef_select_surface(
-    PlcNef3 *solid_nef, const Poly3 &mask, Plc3::BitIndex bit_index_mask
+    PlcNef3 *solid_nef,
+    const Poly3 &mask,
+    PureVector direction_vector,
+    double direction_angle_tolerance,
+    Plc3::BitIndex bit_index_mask
 ) {
-    /* First, set the mask bit on every solid face/edge/vertex of solid_nef. We
-    don't set it on volumes or on non-solid faces/edges/vertices, so it stays
-    zero there. In particular, we won't create internal structures inside of
-    existing volumes. */
+    double cos_threshold = cos(direction_angle_tolerance / 180 * M_PI);
+
+    /* First, set the mask bit on every external face of solid_nef that
+    satisfies the direction criterion. We don't set it on volumes, edges, or
+    vertices, so it stays zero there. */
     assert(bit_index_mask != bit_index_solid());
-    solid_nef->map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType ft) {
-        if (ft != PlcNef3::FeatureType::Volume && bs[bit_index_solid()]) {
-            bs[bit_index_mask] = true;
+    solid_nef->map_faces([&](
+        Plc3::Bitset face_bitset,
+        Plc3::Bitset vol1_bitset,
+        Plc3::Bitset vol2_bitset,
+        PureVector normal_towards_vol1
+    ) {
+        if (direction_vector == PureVector::zero()) {
+            face_bitset.set(bit_index_mask);
+        } else {
+            bool vol1_solid = vol1_bitset[bit_index_solid()];
+            bool vol2_solid = vol2_bitset[bit_index_solid()];
+            double dot = direction_vector.dot(normal_towards_vol1).val;
+            if (!vol1_solid && vol2_solid && dot > cos_threshold) {
+                face_bitset.set(bit_index_mask);
+            } else if (vol1_solid && !vol2_solid && -dot > cos_threshold) {
+                face_bitset.set(bit_index_mask);
+            }
         }
-        return bs;
+        return face_bitset;
     });
 
     /* For the mask nef: In all solid parts of the mask, set all bits true.

@@ -44,6 +44,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_plc_nef_select_surface(
                 &solid_nef,
                 *select_surface_pair.second.mask,
+                select_surface_pair.second.direction_vector,
+                select_surface_pair.second.direction_angle_tolerance,
                 select_surface_pair.second.bit_index);
         }
 

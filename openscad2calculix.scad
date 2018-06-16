@@ -76,14 +76,17 @@ module os2cx_select_volume(name) {
     }
 }
 
-module os2cx_select_surface(name) {
+module os2cx_select_surface(name, direction_vector, direction_angle_tolerance) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_select_surface() parameter must be a string");
         }
         # children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "select_surface_directive", name);
+        echo("__openscad2calculix", "select_surface_directive",
+            name,
+            direction_vector,
+            direction_angle_tolerance);
     } else if (__openscad2calculix_mode == ["select_surface", name]) {
         children();
     }

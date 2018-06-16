@@ -83,6 +83,8 @@ public:
     public:
         Plc3::BitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
+        PureVector direction_vector;
+        double direction_angle_tolerance;
     };
 
     std::map<SelectSurfaceObjectName, SelectSurfaceObject>
