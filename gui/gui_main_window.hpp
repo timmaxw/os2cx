@@ -26,7 +26,6 @@ private:
     GuiFocusComboBox *focus_combo_box;
     GuiCameraSettings camera_settings;
     GuiSceneAbstract *scene;
-    QAction *action_show_elements;
 };
 
 } /* namespace os2cx */

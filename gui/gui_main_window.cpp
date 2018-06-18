@@ -34,14 +34,6 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     menu_file->addAction(tr("Open"),
         this, &GuiMainWindow::menu_file_open);
 
-    QMenu *menu_view = menuBar()->addMenu(tr("View"));
-    action_show_elements = menu_view->addAction(tr("Show elements"));
-    action_show_elements->setCheckable(true);
-    connect(
-        action_show_elements, &QAction::changed,
-        this, &GuiMainWindow::regenerate_scene
-    );
-
     resize(QSize(800, 600));
 
     regenerate_scene();
@@ -57,42 +49,13 @@ void GuiMainWindow::regenerate_scene() {
         scene = nullptr;
     }
 
-    GuiFocus focus = focus_combo_box->get_focus();
-    bool show_elements = action_show_elements->isChecked();
-
     GuiSceneAbstract::SceneParams params;
     params.scene_parent = this;
     params.project = project_runner->get_project();
     params.camera_settings = &camera_settings;
 
-    if (show_elements) {
-        if (focus.type == GuiFocus::Type::All) {
-            scene = new GuiSceneMesh(params);
-        } else if (focus.type == GuiFocus::Type::Mesh ||
-                focus.type == GuiFocus::Type::SelectVolume) {
-            scene = new GuiSceneMeshVolume(params, focus.target);
-        } else if (focus.type == GuiFocus::Type::SelectSurface) {
-            scene = new GuiSceneMeshSurface(params, focus.target);
-        } else if (focus.type == GuiFocus::Type::Result) {
-            scene = new GuiSceneMeshResultDisplacement(params, focus.target);
-        } else {
-            /* TODO: GuiFocus::Type::Load */
-            scene = new GuiSceneMesh(params);
-        }
-    } else {
-        if (focus.type == GuiFocus::Type::All) {
-            scene = new GuiScenePoly3(params);
-        } else if (focus.type == GuiFocus::Type::Mesh) {
-            scene = new GuiScenePoly3Mesh(params, focus.target);
-        } else if (focus.type == GuiFocus::Type::SelectVolume) {
-            scene = new GuiScenePoly3SelectVolume(params, focus.target);
-        } else {
-            /* TODO: GuiFocus::Type::SelectSurface */
-            /* TODO: GuiFocus::Type::Load */
-            /* TODO: GuiFocus::Type::Result */
-            scene = new GuiScenePoly3(params);
-        }
-    }
+    scene = focus_combo_box->make_focus_scene(params);
+
     setCentralWidget(scene);
 }
 

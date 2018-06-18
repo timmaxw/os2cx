@@ -1,34 +1,14 @@
 #ifndef OS2CX_GUI_FOCUS_COMBO_BOX_HPP_
 #define OS2CX_GUI_FOCUS_COMBO_BOX_HPP_
 
+#include <functional>
+
 #include <QComboBox>
 
+#include "gui_scene_abstract.hpp"
 #include "project.hpp"
 
 namespace os2cx {
-
-class GuiFocus {
-public:
-    enum class Type {
-        All, // no target
-        Mesh, // target = mesh name
-        SelectVolume, // target = select volume name
-        SelectSurface, // target = select surface name
-        Load, // target = load name
-        Result, // target = dataset name
-    };
-
-    GuiFocus() : type(Type::All) { }
-    bool operator==(const GuiFocus &other) const {
-        return type == other.type && target == other.target;
-    }
-    bool operator!=(const GuiFocus &other) const {
-        return !(*this == other);
-    }
-
-    Type type;
-    std::string target;
-};
 
 class GuiFocusComboBox : public QComboBox
 {
@@ -36,7 +16,8 @@ class GuiFocusComboBox : public QComboBox
 public:
     GuiFocusComboBox(QWidget *parent, const Project *project);
 
-    GuiFocus get_focus();
+    GuiSceneAbstract *make_focus_scene(
+        const GuiSceneAbstract::SceneParams &params);
 
 signals:
     void focus_changed();
@@ -45,13 +26,14 @@ public slots:
     void regenerate_options();
 
 private:
-    void push_option(
-        const QString &text,
-        GuiFocus::Type type,
-        const std::string &target
-    );
+    typedef std::function<
+        GuiSceneAbstract *(
+            const GuiSceneAbstract::SceneParams &
+        )> SceneCallback;
+
+    void push_option(const QString &text, const SceneCallback &scene_callback);
     const Project *project;
-    std::vector<GuiFocus> focuses_by_index;
+    std::vector<SceneCallback> scene_callbacks;
 };
 
 } /* namespace os2cx */

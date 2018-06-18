@@ -1,5 +1,8 @@
 #include "gui_focus_combo_box.hpp"
 
+#include "gui_scene_mesh.hpp"
+#include "gui_scene_poly3.hpp"
+
 namespace os2cx {
 
 GuiFocusComboBox::GuiFocusComboBox(QWidget *parent, const Project *p) :
@@ -16,88 +19,54 @@ GuiFocusComboBox::GuiFocusComboBox(QWidget *parent, const Project *p) :
     );
 }
 
-GuiFocus GuiFocusComboBox::get_focus() {
+GuiSceneAbstract *GuiFocusComboBox::make_focus_scene(
+    const GuiSceneAbstract::SceneParams &params
+) {
     int index = currentIndex();
     if (index == -1) {
-        return GuiFocus();
+        return new GuiScenePoly3(params);
     } else {
-        return focuses_by_index[index];
+        return scene_callbacks[index](params);
     }
 }
 
 void GuiFocusComboBox::regenerate_options() {
-    GuiFocus old_focus = get_focus();
-
     clear();
-    focuses_by_index.clear();
+    scene_callbacks.clear();
 
-    push_option(tr("Overview"), GuiFocus::Type::All, "");
+    push_option(
+        tr("Pre-meshing geometry"),
+        [](const GuiSceneAbstract::SceneParams &params) {
+            return new GuiScenePoly3(params);
+        }
+    );
 
-    for (const auto &pair : project->mesh_objects) {
-        push_option(
-            tr("Mesh ") + QString(pair.first.c_str()),
-            GuiFocus::Type::Mesh,
-            pair.first
-        );
-    }
-
-    for (const auto &pair : project->select_volume_objects) {
-        push_option(
-            tr("Volume ") + QString(pair.first.c_str()),
-            GuiFocus::Type::SelectVolume,
-            pair.first
-        );
-    }
-
-    for (const auto &pair : project->select_surface_objects) {
-        push_option(
-            tr("Surface ") + QString(pair.first.c_str()),
-            GuiFocus::Type::SelectSurface,
-            pair.first
-        );
-    }
-
-    for (const auto &pair : project->load_objects) {
-        push_option(
-            tr("Load ") + QString(pair.first.c_str()),
-            GuiFocus::Type::Load,
-            pair.first
-        );
-    }
+    push_option(
+        tr("Post-meshing geometry"),
+        [](const GuiSceneAbstract::SceneParams &params) {
+            return new GuiSceneMesh(params);
+        }
+    );
 
     if (project->results) {
         for (const auto &pair : project->results->node_vectors) {
+            std::string name = pair.first;
             push_option(
                 tr("Result ") + QString(pair.first.c_str()),
-                GuiFocus::Type::Result,
-                pair.first
+                [name](const GuiSceneAbstract::SceneParams &params) {
+                    return new GuiSceneMeshResultDisplacement(params, name);
+                }
             );
         }
-    }
-
-    int new_index = 0;
-    for (int i = 0; i < static_cast<int>(focuses_by_index.size()); ++i) {
-        if (focuses_by_index[i] == old_focus) {
-            new_index = i;
-            break;
-        }
-    }
-    setCurrentIndex(new_index);
-    if (focuses_by_index[new_index] != old_focus) {
-        emit focus_changed();
     }
 }
 
 void GuiFocusComboBox::push_option(
     const QString &text,
-    GuiFocus::Type type,
-    const std::string &target
+    const SceneCallback &scene_callback
 ) {
     addItem(text);
-    GuiFocus focus;
-    focus.type = type;
-    focus.target = target;
-    focuses_by_index.push_back(focus);
+    scene_callbacks.push_back(scene_callback);
 }
 
 } /* namespace os2cx */
