@@ -42,7 +42,8 @@ SOURCES += \
     plc_nef.cpp \
     plc.cpp \
     plc_nef_to_plc.cpp \
-    plc_index.cpp
+    plc_index.cpp \
+    result.cpp
 
 HEADERS += \
     attrs.hpp \

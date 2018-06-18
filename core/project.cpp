@@ -155,13 +155,17 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     callbacks->project_run_checkpoint();
 
     run_calculix(p->temp_dir, "main");
-    Results results;
+
     std::ifstream frd_stream(p->temp_dir + "/main.frd");
+    std::vector<FrdAnalysis> frd_analyses;
     read_calculix_frd(
         frd_stream,
         p->mesh->nodes.key_begin(),
         p->mesh->nodes.key_end(),
-        &results);
+        &frd_analyses);
+
+    Results results;
+    results_from_frd_analyses(frd_analyses, &results);
     p->results.reset(new Results(std::move(results)));
     callbacks->project_run_checkpoint();
 }

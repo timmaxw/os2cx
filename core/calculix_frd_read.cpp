@@ -15,6 +15,7 @@ public:
             stream->ignore();
             --remaining;
         }
+        char *insert_nul_at = buf;
         while (remaining > 0) {
             int c = stream->peek();
             if (c == '\n') {
@@ -28,9 +29,14 @@ public:
             }
             *buf = stream->get();
             ++buf;
+            if (c != ' ') {
+                /* don't update insert_nul_at unless we found a non-space
+                character; this will ensure that we strip trailing spaces */
+                insert_nul_at = buf;
+            }
             --remaining;
         }
-        *buf = '\0';
+        *insert_nul_at = '\0';
     }
 
     template<int size>
@@ -277,39 +283,9 @@ void read_parameter_header_record(CalculixFrdReader &r) {
     r.read_eol();
 }
 
-enum class FrdAnalysis_ICType {
-    Static = 0,
-    TimeStep = 1,
-    Frequency = 2,
-    LoadStep = 3,
-    UserNamed = 4
-};
-
-enum class Frd_IRType {
-    NodalMaterialIndependent = 1,
-    NodalMaterialDependent = 2,
-    Element = 3
-};
-
-enum class FrdEntity_ICType {
-    Scalar = 1,
-    Vector_3 = 2,
-    Matrix = 4,
-    VectorAmplitudePhase_3 = 12
-};
-
-enum class Frd_IExist {
-    Provided = 0,
-    ShouldCalculate = 1,
-    ProvidedEarmarked = 2
-};
-
 void read_nodal_results_block_entity(
     CalculixFrdReader &r,
-    FrdEntity_ICType expected_ictype,
-    int expected_icind1,
-    int expected_icind2,
-    Frd_IExist expected_iexist
+    FrdEntity *entity_out
 ) {
     r.read_indent(1);
     int key = r.read_text_int<2>();
@@ -317,33 +293,32 @@ void read_nodal_results_block_entity(
         r.fail("expected key=-5 in nodal results block");
     }
     r.read_indent(2);
-    char comp_name[8 + 1];
-    r.read_text<8>(comp_name);
-    int menu = r.read_text_int<5>();
-    if (menu != 1) {
+
+    char name[8 + 1];
+    r.read_text<8>(name);
+    entity_out->name = std::string(name);
+
+    entity_out->menu = r.read_text_int<5>();
+    if (entity_out->menu != 1) {
         r.fail("expected menu=1");
     }
-    FrdEntity_ICType ictype =
-        static_cast<FrdEntity_ICType>(r.read_text_int<5>());
-    if (ictype != expected_ictype) {
-        r.fail("unexpected value of ictype");
+
+    entity_out->type = static_cast<FrdEntity::Type>(r.read_text_int<5>());
+    entity_out->ind1 = r.read_text_int<5>();
+    entity_out->ind2 = r.read_text_int<5>();
+
+    try {
+        entity_out->exist = static_cast<FrdEntity::Exist>(r.read_text_int<5>());
+    } catch (const CalculixFrdFileReadError &) {
+        entity_out->exist = FrdEntity::Exist::Provided;
     }
-    int icind1 = r.read_text_int<5>();
-    if (icind1 != expected_icind1) {
-        r.fail("unexpected value of icind1");
+
+    if (entity_out->exist != FrdEntity::Exist::Provided) {
+        char calculation_name[8 + 1];
+        r.read_text<8>(calculation_name);
+        entity_out->calculation_name = std::string(calculation_name);
     }
-    int icind2 = r.read_text_int<5>();
-    if (icind2 != expected_icind2) {
-        r.fail("unexpected value of icind2");
-    }
-    if (expected_iexist != Frd_IExist::Provided) {
-        Frd_IExist iexist = static_cast<Frd_IExist>(r.read_text_int<5>());
-        if (iexist != expected_iexist) {
-            r.fail("unexpected value of iexist");
-        }
-        char icname[8 + 1];
-        r.read_text<8>(icname);
-    }
+
     r.read_eol();
 }
 
@@ -401,28 +376,28 @@ void read_nodal_results_block(
     CalculixFrdReader &r,
     NodeId node_id_begin,
     NodeId node_id_end,
-    Results *results_out
+    FrdAnalysis *analysis_out
 ) {
     char setname[6 + 1];
     r.read_text<6>(setname);
-    double value = r.read_text_double<12>();
-    if (value != 1.0) {
-        r.fail("not implemented support for value!=1.0");
-    }
+    analysis_out->setname = std::string(setname);
+
+    analysis_out->value = r.read_text_double<12>();
+
     int numnod = r.read_text_int<12>();
+
     char text[20 + 1];
     r.read_text<20>(text);
-    FrdAnalysis_ICType analysis_ictype =
-        static_cast<FrdAnalysis_ICType>(r.read_text_int<2>());
-    if (analysis_ictype != FrdAnalysis_ICType::Static) {
-        r.fail("not implemented support for ictype!=static");
-    }
-    int numstp = r.read_text_int<5>();
-    if (numstp != 1) {
-        r.fail("not implemented support for numstp!=1");
-    }
+    analysis_out->text = std::string(text);
+
+    analysis_out->ctype = static_cast<FrdAnalysis::CType>(r.read_text_int<2>());
+
+    analysis_out->numstp = r.read_text_int<5>();
+
     char analys[10 + 1];
     r.read_text<10>(analys);
+    analysis_out->analys = analys;
+
     FrdFormat format = static_cast<FrdFormat>(r.read_text_int<2>());
     r.read_eol();
 
@@ -432,43 +407,45 @@ void read_nodal_results_block(
         r.fail("expected key=-4 in nodal results block");
     }
     r.read_indent(2);
+
     char name[8 + 1];
     r.read_text<8>(name);
+    analysis_out->name = std::string(name);
+
     int ncomps = r.read_text_int<5>();
-    Frd_IRType irtype = static_cast<Frd_IRType>(r.read_text_int<5>());
-    if (irtype != Frd_IRType::NodalMaterialIndependent) {
-        r.fail("not implemented support for irtype!=1");
-    }
+
+    analysis_out->rtype = static_cast<FrdAnalysis::RType>(r.read_text_int<5>());
+
     r.read_eol();
 
-    if (ncomps == 4) {
-        read_nodal_results_block_entity(r,
-            FrdEntity_ICType::Vector_3, 1, 0, Frd_IExist::Provided);
-        read_nodal_results_block_entity(r,
-            FrdEntity_ICType::Vector_3, 2, 0, Frd_IExist::Provided);
-        read_nodal_results_block_entity(r,
-            FrdEntity_ICType::Vector_3, 3, 0, Frd_IExist::Provided);
-        read_nodal_results_block_entity(r,
-            FrdEntity_ICType::Vector_3, 0, 0, Frd_IExist::ShouldCalculate);
+    analysis_out->entities.resize(ncomps);
+    int ncomps_present = 0;
+    for (int i = 0; i < ncomps; ++i) {
+        read_nodal_results_block_entity(r, &analysis_out->entities[i]);
 
-        ContiguousMap<NodeId, PureVector> result(
-            node_id_begin, node_id_end,
-            PureVector::raw(NAN, NAN, NAN));
+        if (analysis_out->entities[i].exist == FrdEntity::Exist::Provided) {
+            analysis_out->entities[i].data =
+                ContiguousMap<NodeId, double>(node_id_begin, node_id_end, NAN);
+            ++ncomps_present;
+        }
+    }
 
-        for (int i = 0; i < numnod; ++i) {
-            NodeId node_id;
-            double values[3];
-            read_nodal_results_block_data(r, format, 3, &node_id, values);
-            if (!result.key_in_range(node_id)) {
-                r.fail("node id out of range");
-            }
-            result[node_id] = PureVector::raw(values[0], values[1], values[2]);
+    std::vector<double> values(ncomps_present);
+    for (int i = 0; i < numnod; ++i) {
+        NodeId node_id;
+        read_nodal_results_block_data(
+            r, format, ncomps_present, &node_id, values.data());
+        if (node_id < node_id_begin || !(node_id < node_id_end)) {
+            r.fail("node id out of range");
         }
 
-        results_out->node_vectors[name] = std::move(result);
-
-    } else {
-        r.fail("not implemented ncomps!=4");
+        int i_present = 0;
+        for (int i = 0; i < ncomps; ++i) {
+            if (analysis_out->entities[i].exist == FrdEntity::Exist::Provided) {
+                analysis_out->entities[i].data[node_id] = values[i_present];
+                ++i_present;
+            }
+        }
     }
 
     if (format == FrdFormat::TextShort || format == FrdFormat::TextLong) {
@@ -485,7 +462,7 @@ void read_calculix_frd(
     std::istream &stream,
     NodeId node_id_begin,
     NodeId node_id_end,
-    Results *results_out
+    std::vector<FrdAnalysis> *analyses_out
 ) {
     CalculixFrdReader r(&stream);
 
@@ -517,8 +494,9 @@ void read_calculix_frd(
         } else if (key == 1 && code[0] == 'P') {
             read_parameter_header_record(r);
         } else if (key == 100 && code[0] == 'C') {
-            read_nodal_results_block(
-                r, node_id_begin, node_id_end, results_out);
+            FrdAnalysis analysis;
+            read_nodal_results_block(r, node_id_begin, node_id_end, &analysis);
+            analyses_out->push_back(std::move(analysis));
         } else {
             r.fail("unrecognized block code");
         }
