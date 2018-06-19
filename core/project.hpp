@@ -16,10 +16,24 @@ namespace os2cx {
 
 class Project {
 public:
+    enum class Progress {
+        NothingDone,
+        InventoryDone,
+        PolysDone,
+        PolyAttrsDone,
+        MeshDone,
+        MeshAttrsDone,
+        ResultsDone,
+        AllDone = ResultsDone
+    };
+
     Project(const std::string &scad_path_, const std::string &temp_dir_) :
+        progress(Progress::NothingDone),
         scad_path(scad_path_),
         temp_dir(temp_dir_),
         next_bit_index(bit_index_solid() + 1) { }
+
+    Progress progress;
 
     std::string scad_path;
     std::string temp_dir;

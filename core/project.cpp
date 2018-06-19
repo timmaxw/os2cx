@@ -14,6 +14,7 @@ namespace os2cx {
 void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     maybe_create_directory(p->temp_dir);
     openscad_extract_inventory(p);
+    p->progress = Project::Progress::InventoryDone;
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
@@ -31,6 +32,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             p, "select_surface", pair.first);
         callbacks->project_run_checkpoint();
     }
+    p->progress = Project::Progress::PolysDone;
+    callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
         PlcNef3 solid_nef = compute_plc_nef_for_solid(*pair.second.solid);
@@ -60,6 +63,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             p->approx_scale,
             pair.second.plc_index->approx_scale());
     }
+    p->progress = Project::Progress::PolyAttrsDone;
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
@@ -90,6 +94,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         }
         p->mesh.reset(new Mesh3(std::move(combined_mesh)));
         p->mesh_index.reset(new Mesh3Index(p->mesh.get()));
+        p->progress = Project::Progress::MeshDone;
         callbacks->project_run_checkpoint();
     }
 
@@ -151,6 +156,9 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_checkpoint();
     }
 
+    p->progress = Project::Progress::MeshAttrsDone;
+    callbacks->project_run_checkpoint();
+
     write_calculix_job(p->temp_dir, "main", *p);
     callbacks->project_run_checkpoint();
 
@@ -167,6 +175,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     Results results;
     results_from_frd_analyses(frd_analyses, &results);
     p->results.reset(new Results(std::move(results)));
+    p->progress = Project::Progress::ResultsDone;
     callbacks->project_run_checkpoint();
 }
 

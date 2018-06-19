@@ -22,18 +22,16 @@ public slots:
     void regenerate_results_menu();
 
 private:
+    void change_central_widget(QWidget *new_central_widget);
+    void change_central_widget_to_progress_panel();
     GuiSceneAbstract::SceneParams scene_params();
-    void change_scene(GuiSceneAbstract *new_scene);
 
     GuiProjectRunner *project_runner;
     GuiCameraSettings camera_settings;
-    GuiSceneAbstract *scene;
 
     QMenu *menu_results;
     QActionGroup *action_group_results;
-    QAction *action_results_poly3;
-    QAction *action_results_mesh;
-    std::vector<QAction *> action_results_results;
+    QAction *action_first_result;
 };
 
 } /* namespace os2cx */

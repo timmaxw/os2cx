@@ -12,7 +12,8 @@ HEADERS = $$CORE_HEADERS \
     gui_scene_abstract.hpp \
     gui_scene_mesh.hpp \
     gui_scene_poly3.hpp \
-    gui_main_window.hpp
+    gui_main_window.hpp \
+    gui_progress_panel.hpp
 
 SOURCES = $$CORE_SOURCES \
     gui_project_runner.cpp \
@@ -20,4 +21,5 @@ SOURCES = $$CORE_SOURCES \
     gui_scene_mesh.cpp \
     gui_scene_poly3.cpp \
     main_gui.cpp \
-    gui_main_window.cpp
+    gui_main_window.cpp \
+    gui_progress_panel.cpp
