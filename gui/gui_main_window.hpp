@@ -1,7 +1,8 @@
 #ifndef OS2CX_GUI_MAIN_WINDOW_HPP_
 #define OX2CX_GUI_MAIN_WINDOW_HPP_
 
-#include <QActionGroup>
+#include <QComboBox>
+#include <QSplitter>
 #include <QMainWindow>
 
 #include "gui_scene_abstract.hpp"
@@ -19,19 +20,23 @@ public:
 
 public slots:
     void menu_file_open();
-    void regenerate_results_menu();
+    void refresh_activity_combo_box();
+    void refresh_activity(int new_index);
 
 private:
-    void change_central_widget(QWidget *new_central_widget);
-    void change_central_widget_to_progress_panel();
+    QSize sizeHint() const;
+    void change_activity(QWidget *new_activity);
+    void change_activity_to_progress_panel();
     GuiSceneAbstract::SceneParams scene_params();
 
     GuiProjectRunner *project_runner;
     GuiCameraSettings camera_settings;
 
-    QMenu *menu_results;
-    QActionGroup *action_group_results;
-    QAction *action_first_result;
+    QSplitter *splitter;
+    QWidget *left_panel;
+    QComboBox *activity_combo_box;
+    std::vector<std::function<void()> > activity_callbacks;
+    int activity_first_result_index;
 };
 
 } /* namespace os2cx */

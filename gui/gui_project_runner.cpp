@@ -20,7 +20,7 @@ void GuiProjectRunnerWorkerThread::run() {
 /* project_run() calls project_run_checkpoint() on the worker thread */
 void GuiProjectRunnerWorkerThread::project_run_checkpoint() {
     checkpoint_active = true;
-
+    sleep(1);
     emit checkpoint_signal();
 
     /* The QWaitCondition documentation doesn't explicitly state whether or not
