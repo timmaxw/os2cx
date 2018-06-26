@@ -1,11 +1,11 @@
-#include "gui_progress_panel.hpp"
+#include "gui_scene_progress.hpp"
 
 #include <QVBoxLayout>
 
 namespace os2cx {
 
-GuiProgressPanel::GuiProgressPanel(QWidget *parent, const Project *project) :
-    QWidget(parent), project(project)
+GuiSceneProgress::GuiSceneProgress(QWidget *parent, const Project *project) :
+    GuiSceneAbstract(parent, project)
 {
     progress_bar = new QProgressBar(this);
     progress_bar->setMaximum(static_cast<int>(Project::Progress::AllDone));
@@ -17,19 +17,22 @@ GuiProgressPanel::GuiProgressPanel(QWidget *parent, const Project *project) :
     );
 
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addStretch(1);
     layout->addWidget(progress_bar, 0);
-    layout->addStretch(1);
     layout->addWidget(button_results, 0, Qt::AlignRight);
+    layout->addStretch(1);
     setLayout(layout);
 
-    update();
+    update_progress();
 }
 
-void GuiProgressPanel::update() {
+void GuiSceneProgress::update_progress() {
     progress_bar->setValue(static_cast<int>(project->progress));
     button_results->setEnabled(
         project->progress == Project::Progress::ResultsDone);
+}
+
+void GuiSceneProgress::initialize_scene() {
+    /* do nothing, show a blank page. TODO: do better */
 }
 
 } /* namespace os2cx */

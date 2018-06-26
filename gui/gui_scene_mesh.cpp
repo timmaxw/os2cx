@@ -2,8 +2,6 @@
 
 namespace os2cx {
 
-GuiSceneMesh::GuiSceneMesh(const SceneParams &params) : GuiSceneAbstract(params) { }
-
 void GuiSceneMesh::initialize_scene() {
     for (const FaceId &fi : project->mesh_index->unmatched_faces) {
         const Element3 &element = project->mesh->elements[fi.element_id];
@@ -55,64 +53,10 @@ void GuiSceneMesh::calculate_attributes(
     *displacement_out = PureVector::zero();
 }
 
-GuiSceneMeshVolume::GuiSceneMeshVolume(
-    const SceneParams &params,
-    const Project::VolumeObjectName &volume
-) :
-    GuiSceneMesh(params)
-{
-    element_set = project->find_volume_object(volume)->element_set;
-}
-
-void GuiSceneMeshVolume::calculate_attributes(
-    ElementId element_id,
-    int face_index,
-    NodeId node_id,
-    QColor *color_out,
-    PureVector *displacement_out
-) {
-    (void)face_index;
-    (void)node_id;
-    if (element_set->elements.count(element_id)) {
-        *color_out = QColor(0xFF, 0x00, 0x00);
-    } else {
-        *color_out = QColor(0x80, 0x80, 0x80);
-    }
-    *displacement_out = PureVector::zero();
-}
-
-GuiSceneMeshSurface::GuiSceneMeshSurface(
-    const SceneParams &params,
-    const Project::SurfaceObjectName &surface
-) :
-    GuiSceneMesh(params)
-{
-    face_set = project->find_surface_object(surface)->face_set;
-}
-
-void GuiSceneMeshSurface::calculate_attributes(
-    ElementId element_id,
-    int face_index,
-    NodeId node_id,
-    QColor *color_out,
-    PureVector *displacement_out
-) {
-    (void)node_id;
-    FaceId face_id { element_id, face_index };
-    if (face_set->faces.count(face_id)) {
-        *color_out = QColor(0xFF, 0x00, 0x00);
-    } else {
-        *color_out = QColor(0x80, 0x80, 0x80);
-    }
-    *displacement_out = PureVector::zero();
-}
-
 GuiSceneMeshResultDisplacement::GuiSceneMeshResultDisplacement(
-    const SceneParams &params,
-    const std::string &rn
+    QWidget *parent, const Project *project, const std::string &result_name_
 ) :
-    GuiSceneMesh(params),
-    result_name(rn)
+    GuiSceneMesh(parent, project), result_name(result_name_)
 { }
 
 void GuiSceneMeshResultDisplacement::calculate_attributes(

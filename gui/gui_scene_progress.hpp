@@ -5,24 +5,25 @@
 #include <QPushButton>
 #include <QWidget>
 
-#include "project.hpp"
+#include "gui_scene_abstract.hpp"
 
 namespace os2cx {
 
-class GuiProgressPanel : public QWidget
+class GuiSceneProgress : public GuiSceneAbstract
 {
     Q_OBJECT
 public:
-    GuiProgressPanel(QWidget *parent, const Project *project);
+    GuiSceneProgress(QWidget *parent, const Project *project);
 
 signals:
     void see_results();
 
 public slots:
-    void update();
+    void update_progress();
 
 private:
-    const Project *project;
+    void initialize_scene();
+
     QProgressBar *progress_bar;
     QPushButton *button_results;
 };

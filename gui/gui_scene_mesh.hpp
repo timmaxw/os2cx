@@ -8,10 +8,10 @@ namespace os2cx {
 class GuiSceneMesh : public GuiSceneAbstract
 {
 public:
-    explicit GuiSceneMesh(const SceneParams &params);
+    using GuiSceneAbstract::GuiSceneAbstract;
 
 protected:
-    virtual void initialize_scene();
+    void initialize_scene();
 
     virtual void calculate_attributes(
         ElementId element_id,
@@ -19,51 +19,18 @@ protected:
         NodeId node_id,
         QColor *color_out,
         PureVector *displacement_out);
-};
-
-class GuiSceneMeshVolume : public GuiSceneMesh
-{
-public:
-    GuiSceneMeshVolume(
-        const SceneParams &params,
-        const Project::VolumeObjectName &volume);
-
-private:
-    virtual void calculate_attributes(
-        ElementId element_id,
-        int face_index,
-        NodeId node_id,
-        QColor *color_out,
-        PureVector *displacement_out);
-    std::shared_ptr<const ElementSet> element_set;
-};
-
-class GuiSceneMeshSurface : public GuiSceneMesh
-{
-public:
-    GuiSceneMeshSurface(
-        const SceneParams &params,
-        const Project::SurfaceObjectName &surface);
-
-private:
-    virtual void calculate_attributes(
-        ElementId element_id,
-        int face_index,
-        NodeId node_id,
-        QColor *color_out,
-        PureVector *displacement_out);
-    std::shared_ptr<const FaceSet> face_set;
 };
 
 class GuiSceneMeshResultDisplacement : public GuiSceneMesh
 {
 public:
     GuiSceneMeshResultDisplacement(
-        const SceneParams &params,
+        QWidget *parent,
+        const Project *project,
         const std::string &result_name);
 
 private:
-    virtual void calculate_attributes(
+    void calculate_attributes(
         ElementId element_id,
         int face_index,
         NodeId node_id,
