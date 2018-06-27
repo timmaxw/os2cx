@@ -31,7 +31,9 @@ public:
         progress(Progress::NothingDone),
         scad_path(scad_path_),
         temp_dir(temp_dir_),
-        next_bit_index(bit_index_solid() + 1) { }
+        next_bit_index(bit_index_solid() + 1),
+        approx_scale(Length(0))
+        { }
 
     Progress progress;
 

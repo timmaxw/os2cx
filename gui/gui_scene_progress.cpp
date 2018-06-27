@@ -16,11 +16,8 @@ GuiSceneProgress::GuiSceneProgress(QWidget *parent, const Project *project) :
         [this]() { emit see_results(); }
     );
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(progress_bar, 0);
     layout->addWidget(button_results, 0, Qt::AlignRight);
-    layout->addStretch(1);
-    setLayout(layout);
 
     update_progress();
 }

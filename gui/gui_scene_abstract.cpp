@@ -1,10 +1,20 @@
 #include "gui_scene_abstract.hpp"
 
+#include <QLabel>
+
 namespace os2cx {
 
 GuiSceneAbstract::GuiSceneAbstract(QWidget *parent, const Project *project_) :
     QWidget(parent), project(project_)
-{ }
+{
+    layout = new QVBoxLayout(this);
+    setLayout(layout);
+}
+
+void GuiSceneAbstract::create_widget_label(const QString &text) {
+    QLabel *label = new QLabel(text, this);
+    layout->addWidget(label);
+}
 
 void GuiSceneAbstract::add_triangle(
     const Point *points, const QColor *colors
