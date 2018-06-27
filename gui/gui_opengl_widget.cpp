@@ -66,19 +66,6 @@ void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
     glViewport(0, 0, viewport_width, viewport_height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-#if 0
-    float ratio_w_h = viewport_width / static_cast<float>(viewport_height);
-    float fov_slope_y = (viewport_width > viewport_height)
-        ? fov_slope_min
-        : (fov_slope_min / ratio_w_h);
-    float fov_angle_y = 2 * atan(fov_slope_y) / M_PI * 180;
-    gluPerspective(
-        fov_angle_y,
-        ratio_w_h,
-        0.1 /*clip close*/,
-        200 /*clip far*/
-    );
-#endif
     float slope_x, slope_y;
     if (viewport_width > viewport_height) {
         slope_y = fov_slope_min;
