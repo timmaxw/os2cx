@@ -16,6 +16,7 @@ public:
     GuiSceneAbstract(QWidget *parent, const Project *project);
 
 signals:
+    void rerender();
 
 public slots:
 
@@ -24,6 +25,7 @@ protected:
 
     virtual void initialize_scene() = 0;
 
+    void clear();
     void add_triangle(const Point *points, const QColor *colors);
     void add_line(const Point *points);
 
@@ -33,8 +35,6 @@ protected:
 
 private:
     friend class GuiOpenglWidget;
-
-    void clear();
 
     int num_triangles;
     std::vector<GLfloat> triangle_vertices;

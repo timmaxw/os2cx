@@ -16,15 +16,16 @@ GuiSceneResultDisplacement::GuiSceneResultDisplacement(
             std::max(max_displacement, result[node_id].magnitude().val);
     }
 
+    construct_combo_box_exaggeration();
+}
+
+void GuiSceneResultDisplacement::construct_combo_box_exaggeration() {
     create_widget_label(tr("Displacement"));
     combo_box_exaggeration = new QComboBox(this);
     layout->addWidget(combo_box_exaggeration);
-    populate_combo_box_exaggeration();
-}
 
-void GuiSceneResultDisplacement::populate_combo_box_exaggeration() {
     double max_exaggeration_factor =
-        (project->approx_scale.val / 20) / max_displacement;
+        (project->approx_scale.val / 3) / max_displacement;
     if (max_exaggeration_factor < 1) {
         max_exaggeration_factor = 1;
     }
@@ -67,6 +68,21 @@ void GuiSceneResultDisplacement::populate_combo_box_exaggeration() {
 
         combo_box_exaggeration->addItem(text, QVariant(factor));
     }
+
+    /* Select largest exaggeration by default */
+    combo_box_exaggeration->setCurrentIndex(
+        combo_box_exaggeration->count() - 1);
+    displacement_exaggeration =
+        combo_box_exaggeration->currentData().value<double>();
+
+    connect(combo_box_exaggeration, QOverload<int>::of(&QComboBox::activated),
+    [this](int new_index) {
+        displacement_exaggeration =
+            combo_box_exaggeration->itemData(new_index).value<double>();
+        clear();
+        initialize_scene();
+        emit rerender();
+    });
 }
 
 void GuiSceneResultDisplacement::calculate_attributes(
@@ -81,7 +97,7 @@ void GuiSceneResultDisplacement::calculate_attributes(
     *color_out = QColor(0x80, 0x80, 0x80);
     const ContiguousMap<NodeId, PureVector> &result =
         project->results->node_vectors.at(result_name);
-    *displacement_out = result[node_id];
+    *displacement_out = result[node_id] * displacement_exaggeration;
 }
 
 } /* namespace os2cx */

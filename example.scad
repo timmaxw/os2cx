@@ -11,7 +11,7 @@ os2cx_select_surface("boundary", [-1, 0, 0], 45) {
 os2cx_select_volume("load_volume") {
     translate([5, 0, 0]) cube([4, 3, 3], center=true);
 }
-os2cx_load_volume("load", "load_volume", 1e9);
+os2cx_load_volume("load", "load_volume", 1000);
 
 os2cx_analysis_custom([
     "*INCLUDE, INPUT=cantilever.msh",

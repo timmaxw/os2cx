@@ -139,11 +139,14 @@ void GuiMainWindow::set_current_scene(GuiSceneAbstract *new_scene) {
     if (old_scene != nullptr) {
         left_panel_layout->removeWidget(old_scene);
         old_scene->hide();
+        disconnect(old_scene, nullptr, right_panel, nullptr);
     }
 
     if (new_scene != nullptr) {
         left_panel_layout->insertWidget(1, new_scene);
         new_scene->show();
+        connect(new_scene, &GuiSceneAbstract::rerender,
+            right_panel, QOverload<>::of(&GuiOpenglWidget::update));
     }
 
     right_panel->set_scene(new_scene);

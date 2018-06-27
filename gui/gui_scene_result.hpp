@@ -16,7 +16,7 @@ public:
         const std::string &result_name);
 
 private:
-    void populate_combo_box_exaggeration();
+    void construct_combo_box_exaggeration();
 
     void calculate_attributes(
         ElementId element_id,
@@ -26,9 +26,10 @@ private:
         PureVector *displacement_out);
 
     std::string result_name;
-
     double max_displacement;
+
     QComboBox *combo_box_exaggeration;
+    double displacement_exaggeration;
 };
 
 } /* namespace os2cx */
