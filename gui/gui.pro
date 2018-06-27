@@ -15,7 +15,8 @@ HEADERS = $$CORE_HEADERS \
     gui_main_window.hpp \
     gui_combo_box_scenes.hpp \
     gui_scene_progress.hpp \
-    gui_opengl_widget.hpp
+    gui_opengl_widget.hpp \
+    gui_scene_result.hpp
 
 SOURCES = $$CORE_SOURCES \
     gui_project_runner.cpp \
@@ -26,4 +27,5 @@ SOURCES = $$CORE_SOURCES \
     gui_main_window.cpp \
     gui_combo_box_scenes.cpp \
     gui_scene_progress.cpp \
-    gui_opengl_widget.cpp
+    gui_opengl_widget.cpp \
+    gui_scene_result.cpp

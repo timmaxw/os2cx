@@ -8,6 +8,7 @@
 #include "gui_scene_mesh.hpp"
 #include "gui_scene_poly3.hpp"
 #include "gui_scene_progress.hpp"
+#include "gui_scene_result.hpp"
 
 namespace os2cx {
 
@@ -116,7 +117,7 @@ void GuiMainWindow::refresh_combo_box_scenes() {
             scenes.push_back({
                 name,
                 [this, result_name]() {
-                    return new GuiSceneMeshResultDisplacement(
+                    return new GuiSceneResultDisplacement(
                         left_panel,
                         project_runner->get_project(),
                         result_name);
