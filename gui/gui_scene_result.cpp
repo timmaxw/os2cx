@@ -17,6 +17,15 @@ GuiSceneResultDisplacement::GuiSceneResultDisplacement(
     }
 
     construct_combo_box_exaggeration();
+
+    create_widget_label(tr("Color scale"));
+    color_scale = new GuiColorScale(
+        this,
+        GuiColorScale::Anchor::Zero,
+        0.0,
+        max_displacement
+    );
+    layout->addWidget(color_scale);
 }
 
 void GuiSceneResultDisplacement::construct_combo_box_exaggeration() {
@@ -39,6 +48,9 @@ void GuiSceneResultDisplacement::construct_combo_box_exaggeration() {
 
     combo_box_exaggeration->addItem(
         tr("0\u00D7 (undisplaced shape)"), QVariant(static_cast<double>(0)));
+
+    /* Default to not exaggerating, to avoid misleading novice users */
+    displacement_exaggeration = 1.0;
 
     for (int exaggeration_num : exaggeration_nums) {
         int exp_part = exaggeration_num / 3;
@@ -67,13 +79,12 @@ void GuiSceneResultDisplacement::construct_combo_box_exaggeration() {
         }
 
         combo_box_exaggeration->addItem(text, QVariant(factor));
-    }
 
-    /* Select largest exaggeration by default */
-    combo_box_exaggeration->setCurrentIndex(
-        combo_box_exaggeration->count() - 1);
-    displacement_exaggeration =
-        combo_box_exaggeration->currentData().value<double>();
+        if (exaggeration_num == 0) {
+            combo_box_exaggeration->setCurrentIndex(
+                combo_box_exaggeration->count() - 1);
+        }
+    }
 
     connect(combo_box_exaggeration, QOverload<int>::of(&QComboBox::activated),
     [this](int new_index) {
@@ -94,10 +105,11 @@ void GuiSceneResultDisplacement::calculate_attributes(
 ) {
     (void)element_id;
     (void)face_index;
-    *color_out = QColor(0x80, 0x80, 0x80);
     const ContiguousMap<NodeId, Vector> &result =
         project->results->node_vectors.at(result_name);
-    *displacement_out = result[node_id] * displacement_exaggeration;
+    Vector displacement = result[node_id];
+    *color_out = color_scale->color(displacement.magnitude());
+    *displacement_out = displacement * displacement_exaggeration;
 }
 
 } /* namespace os2cx */

@@ -3,6 +3,7 @@
 
 #include <QComboBox>
 
+#include "gui_color_scale.hpp"
 #include "gui_scene_mesh.hpp"
 
 namespace os2cx {
@@ -30,6 +31,8 @@ private:
 
     QComboBox *combo_box_exaggeration;
     double displacement_exaggeration;
+
+    GuiColorScale *color_scale;
 };
 
 } /* namespace os2cx */
