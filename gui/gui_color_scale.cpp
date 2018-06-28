@@ -16,20 +16,27 @@ GuiColorScale::GuiColorScale(
     if (anchor == Anchor::Floating) {
         range_min = val_min;
         range_max = val_max;
+        colors[range_min] = QColor(0x00, 0x00, 0xFF);
+        colors[(range_min+range_max) / 2] = QColor(0xAA, 0x00, 0xAA);
+        colors[range_max] = QColor(0xFF, 0x00, 0x00);
     } else if (anchor == Anchor::Zero) {
         assert(0 <= val_min);
         range_min = 0;
         range_max = val_max;
+        colors[0] = QColor(0x80, 0x80, 0x80);
+        colors[range_max / 2] = QColor(0xFF, 0xFF, 0x00);
+        colors[range_max] = QColor(0xFF, 0x00, 0x00);
     } else if (anchor == Anchor::Balanced) {
         range_min = -std::max(std::abs(val_min), std::abs(val_max));
         range_max = -range_min;
+        colors[range_min] = QColor(0x00, 0x00, 0xFF);
+        colors[range_min / 2] = QColor(0x00, 0xFF, 0xFF);
+        colors[0] = QColor(0x80, 0x80, 0x80);
+        colors[range_max / 2] = QColor(0xFF, 0xFF, 0x00);
+        colors[range_max] = QColor(0xFF, 0x00, 0x00);
     } else {
         assert(false);
     }
-
-    colors[range_min] = QColor(0xFF, 0x00, 0x00);
-    colors[(range_min + range_max) / 2] = QColor(0x00, 0xFF, 0x00);
-    colors[range_max] = QColor(0x00, 0x00, 0xFF);
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 }
