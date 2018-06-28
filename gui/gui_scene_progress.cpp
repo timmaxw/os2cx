@@ -7,6 +7,7 @@ namespace os2cx {
 GuiSceneProgress::GuiSceneProgress(QWidget *parent, const Project *project) :
     GuiSceneAbstract(parent, project)
 {
+    create_widget_label(tr("Calculating..."));
     progress_bar = new QProgressBar(this);
     progress_bar->setMaximum(static_cast<int>(Project::Progress::AllDone));
 

@@ -9,9 +9,15 @@ GuiSceneAbstract::GuiSceneAbstract(QWidget *parent, const Project *project_) :
 {
     layout = new QVBoxLayout(this);
     setLayout(layout);
+
+    /* Disable the inner margins because we'll be embedded in the 'left_panel'
+    widget that has its own margins */
+    setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(0, 0, 0, 0);
 }
 
 void GuiSceneAbstract::create_widget_label(const QString &text) {
+    layout->addSpacing(10);
     QLabel *label = new QLabel(text, this);
     layout->addWidget(label);
 }

@@ -74,6 +74,8 @@ void GuiColorScale::paintEvent(QPaintEvent *) {
         double normalized = (pair.first - range_min) / (range_max - range_min);
         gradient.setColorAt(normalized, pair.second);
     }
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(gradient);
     QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);
-    painter.fillRect(bar_rect, gradient);
+    painter.drawRoundedRect(bar_rect, bar_size_px / 10, bar_size_px / 10);
 }
