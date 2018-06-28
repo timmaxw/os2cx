@@ -25,6 +25,8 @@ signals:
 public slots:
 
 private:
+    static const int bar_size_px = 20;
+
     QSize sizeHint() const;
     void paintEvent(QPaintEvent *event);
 

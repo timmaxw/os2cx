@@ -57,15 +57,23 @@ QColor GuiColorScale::color(double val) const {
 }
 
 QSize GuiColorScale::sizeHint() const {
-    return QSize(200, 20);
+    return QSize(200, bar_size_px + fontMetrics().height());
 }
 
 void GuiColorScale::paintEvent(QPaintEvent *) {
+    QPainter painter(this);
+
+    QRect label_rect(0, 0, width(), fontMetrics().height());
+    painter.drawText(label_rect, Qt::AlignLeft|Qt::AlignBottom,
+        QString("%1").arg(range_min));
+    painter.drawText(label_rect, Qt::AlignRight|Qt::AlignBottom,
+        QString("%1").arg(range_max));
+
     QLinearGradient gradient(0, 0, width(), 0);
     for (const auto &pair : colors) {
         double normalized = (pair.first - range_min) / (range_max - range_min);
         gradient.setColorAt(normalized, pair.second);
     }
-    QPainter painter(this);
-    painter.fillRect(rect(), gradient);
+    QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);
+    painter.fillRect(bar_rect, gradient);
 }
