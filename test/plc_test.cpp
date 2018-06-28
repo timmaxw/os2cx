@@ -36,16 +36,11 @@ TEST(PlcTest, PlcNefToPlc) {
 
     Plc3Index ind(&plc);
 
-    Plc3::VolumeId out =
-        ind.volume_containing_point(Point::raw(0.5, 0.5, -0.5));
-    Plc3::VolumeId box1 =
-        ind.volume_containing_point(Point::raw(0.5, 0.5, 0.5));
-    Plc3::VolumeId box2 =
-        ind.volume_containing_point(Point::raw(0.5, 0.5, 1.5));
-    Plc3::VolumeId box3 =
-        ind.volume_containing_point(Point::raw(0.5, 0.5, 2.5));
-    Plc3::VolumeId out2 =
-        ind.volume_containing_point(Point::raw(0.5, 0.5, 3.5));
+    Plc3::VolumeId out = ind.volume_containing_point(Point(0.5, 0.5, -0.5));
+    Plc3::VolumeId box1 = ind.volume_containing_point(Point(0.5, 0.5, 0.5));
+    Plc3::VolumeId box2 = ind.volume_containing_point(Point(0.5, 0.5, 1.5));
+    Plc3::VolumeId box3 = ind.volume_containing_point(Point(0.5, 0.5, 2.5));
+    Plc3::VolumeId out2 = ind.volume_containing_point(Point(0.5, 0.5, 3.5));
     EXPECT_EQ(out, out2);
     EXPECT_EQ(plc.volume_outside, out);
     EXPECT_NE(box1, box3);
@@ -54,16 +49,13 @@ TEST(PlcTest, PlcNefToPlc) {
     EXPECT_EQ(bitset_solid | bitset_mask, plc.volumes[box2].bitset);
     EXPECT_EQ(bitset_solid, plc.volumes[box3].bitset);
 
-    Plc3::SurfaceId box1_out =
-        ind.surface_closest_to_point(Point::raw(0, 0, 0.5));
-    Plc3::SurfaceId box2_out =
-        ind.surface_closest_to_point(Point::raw(0, 0, 1.5));
-    Plc3::SurfaceId box3_out =
-        ind.surface_closest_to_point(Point::raw(0, 0, 2.5));
+    Plc3::SurfaceId box1_out = ind.surface_closest_to_point(Point(0, 0, 0.5));
+    Plc3::SurfaceId box2_out = ind.surface_closest_to_point(Point(0, 0, 1.5));
+    Plc3::SurfaceId box3_out = ind.surface_closest_to_point(Point(0, 0, 2.5));
     Plc3::SurfaceId box1_box2 =
-        ind.surface_closest_to_point(Point::raw(0.5, 0.5, 1));
+        ind.surface_closest_to_point(Point(0.5, 0.5, 1));
     Plc3::SurfaceId box2_box3 =
-        ind.surface_closest_to_point(Point::raw(0.5, 0.5, 2));
+        ind.surface_closest_to_point(Point(0.5, 0.5, 2));
     EXPECT_EQ(std::min(box1, out), plc.surfaces[box1_out].volumes[0]);
     EXPECT_EQ(std::max(box1, out), plc.surfaces[box1_out].volumes[1]);
     EXPECT_EQ(std::min(box2, out), plc.surfaces[box2_out].volumes[0]);

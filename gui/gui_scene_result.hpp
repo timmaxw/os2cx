@@ -23,7 +23,7 @@ private:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        PureVector *displacement_out);
+        Vector *displacement_out);
 
     std::string result_name;
     double max_displacement;

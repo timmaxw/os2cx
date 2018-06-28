@@ -34,22 +34,22 @@ void expect_equal_affine_transform(
     AffineTransform expected,
     AffineTransform actual
 ) {
-    EXPECT_NEAR(expected.translation.x.val, actual.translation.x.val, 1e-6);
-    EXPECT_NEAR(expected.translation.y.val, actual.translation.y.val, 1e-6);
-    EXPECT_NEAR(expected.translation.z.val, actual.translation.z.val, 1e-6);
+    EXPECT_NEAR(expected.translation.x, actual.translation.x, 1e-6);
+    EXPECT_NEAR(expected.translation.y, actual.translation.y, 1e-6);
+    EXPECT_NEAR(expected.translation.z, actual.translation.z, 1e-6);
     for (int i = 0; i < 3; ++i) {
-        EXPECT_NEAR(expected.matrix[i].x.val, actual.matrix[i].x.val, 1e-6);
-        EXPECT_NEAR(expected.matrix[i].y.val, actual.matrix[i].y.val, 1e-6);
-        EXPECT_NEAR(expected.matrix[i].z.val, actual.matrix[i].z.val, 1e-6);
+        EXPECT_NEAR(expected.matrix[i].x, actual.matrix[i].x, 1e-6);
+        EXPECT_NEAR(expected.matrix[i].y, actual.matrix[i].y, 1e-6);
+        EXPECT_NEAR(expected.matrix[i].z, actual.matrix[i].z, 1e-6);
     }
 }
 
 TEST(BeaconTest, Identity) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(0, 0, 0);
-    expected.matrix[0] = LengthVector::raw(1, 0, 0);
-    expected.matrix[1] = LengthVector::raw(0, 1, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 1);
+    expected.translation = LengthVector(0, 0, 0);
+    expected.matrix[0] = LengthVector(1, 0, 0);
+    expected.matrix[1] = LengthVector(0, 1, 0);
+    expected.matrix[2] = LengthVector(0, 0, 1);
     AffineTransform actual = try_beacon(
         "__os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);
@@ -57,10 +57,10 @@ TEST(BeaconTest, Identity) {
 
 TEST(BeaconTest, Rotate) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(0, 0, 0);
-    expected.matrix[0] = LengthVector::raw(0, 1, 0);
-    expected.matrix[1] = LengthVector::raw(-1, 0, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 1);
+    expected.translation = LengthVector(0, 0, 0);
+    expected.matrix[0] = LengthVector(0, 1, 0);
+    expected.matrix[1] = LengthVector(-1, 0, 0);
+    expected.matrix[2] = LengthVector(0, 0, 1);
     AffineTransform actual = try_beacon(
         "rotate([0, 0, 90]) __os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);
@@ -68,10 +68,10 @@ TEST(BeaconTest, Rotate) {
 
 TEST(BeaconTest, Translate) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(12, 34, 56);
-    expected.matrix[0] = LengthVector::raw(1, 0, 0);
-    expected.matrix[1] = LengthVector::raw(0, 1, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 1);
+    expected.translation = LengthVector(12, 34, 56);
+    expected.matrix[0] = LengthVector(1, 0, 0);
+    expected.matrix[1] = LengthVector(0, 1, 0);
+    expected.matrix[2] = LengthVector(0, 0, 1);
     AffineTransform actual = try_beacon(
         "translate([12, 34, 56]) __os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);
@@ -79,10 +79,10 @@ TEST(BeaconTest, Translate) {
 
 TEST(BeaconTest, RotateTranslate) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(-34, 12, 56);
-    expected.matrix[0] = LengthVector::raw(0, 1, 0);
-    expected.matrix[1] = LengthVector::raw(-1, 0, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 1);
+    expected.translation = LengthVector(-34, 12, 56);
+    expected.matrix[0] = LengthVector(0, 1, 0);
+    expected.matrix[1] = LengthVector(-1, 0, 0);
+    expected.matrix[2] = LengthVector(0, 0, 1);
     AffineTransform actual = try_beacon(
         "rotate([0, 0, 90]) translate([12, 34, 56]) __os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);
@@ -90,10 +90,10 @@ TEST(BeaconTest, RotateTranslate) {
 
 TEST(BeaconTest, Scale) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(0, 0, 0);
-    expected.matrix[0] = LengthVector::raw(12, 0, 0);
-    expected.matrix[1] = LengthVector::raw(0, 34, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 56);
+    expected.translation = LengthVector(0, 0, 0);
+    expected.matrix[0] = LengthVector(12, 0, 0);
+    expected.matrix[1] = LengthVector(0, 34, 0);
+    expected.matrix[2] = LengthVector(0, 0, 56);
     AffineTransform actual = try_beacon(
         "scale([12, 34, 56]) __os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);
@@ -101,10 +101,10 @@ TEST(BeaconTest, Scale) {
 
 TEST(BeaconTest, Mirror) {
     AffineTransform expected;
-    expected.translation = LengthVector::raw(0, 0, 0);
-    expected.matrix[0] = LengthVector::raw(-1, 0, 0);
-    expected.matrix[1] = LengthVector::raw(0, 1, 0);
-    expected.matrix[2] = LengthVector::raw(0, 0, 1);
+    expected.translation = LengthVector(0, 0, 0);
+    expected.matrix[0] = LengthVector(-1, 0, 0);
+    expected.matrix[1] = LengthVector(0, 1, 0);
+    expected.matrix[2] = LengthVector(0, 0, 1);
     AffineTransform actual = try_beacon(
         "mirror([1, 0, 0]) __os2cx_beacon();");
     expect_equal_affine_transform(expected, actual);

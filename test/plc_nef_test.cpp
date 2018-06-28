@@ -18,13 +18,13 @@ PlcNef3::Bitset bitset_one() {
 
 const PlcNef3 region_u = PlcNef3::from_poly(Poly3::box(0, 0, 0, 2, 2, 2));
 const PlcNef3 region_v = PlcNef3::from_poly(Poly3::box(0, 0, 1, 2, 2, 3));
-const Point point_in_u = Point::raw(1, 1, 0.5);
-const Point point_in_v = Point::raw(1, 1, 2.5);
-const Point point_in_uv = Point::raw(1, 1, 1.5);
-const Point point_on_u_face = Point::raw(1, 1, 0);
-const Point point_on_u_edge = Point::raw(1, 0, 0);
-const Point point_on_u_vertex = Point::raw(0, 0, 0);
-const Point point_outside = Point::raw(-1, -1, -1);
+const Point point_in_u(1, 1, 0.5);
+const Point point_in_v(1, 1, 2.5);
+const Point point_in_uv(1, 1, 1.5);
+const Point point_on_u_face(1, 1, 0);
+const Point point_on_u_edge(1, 0, 0);
+const Point point_on_u_vertex(0, 0, 0);
+const Point point_outside(-1, -1, -1);
 
 TEST(PlcNefTest, FromPoly) {
     EXPECT_EQ(bitset_one(), region_u.get_bitset(point_in_u));
@@ -48,7 +48,7 @@ TEST(PlcNefTest, Map) {
         }
     });
     mapped.map_faces(
-    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, PureVector) {
+    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, Vector) {
         EXPECT_EQ(bitset_one(), prev);
         return bitset_face;
     });
@@ -74,7 +74,7 @@ TEST(PlcNefTest, Map) {
         return prev;
     });
     mapped.map_faces(
-    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, PureVector) {
+    [&](Plc3::Bitset prev, Plc3::Bitset, Plc3::Bitset, Vector) {
         EXPECT_EQ(bitset_face, prev);
         return prev;
     });

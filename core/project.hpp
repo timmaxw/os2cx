@@ -99,7 +99,7 @@ public:
     public:
         Plc3::BitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
-        PureVector direction_vector;
+        Vector direction_vector;
         double direction_angle_tolerance;
     };
 
@@ -114,7 +114,7 @@ public:
     class LoadObject {
     public:
         VolumeObjectName volume;
-        ForceDensityVector force_density;
+        Vector force_density;
         std::shared_ptr<const ConcentratedLoad> load;
     };
 

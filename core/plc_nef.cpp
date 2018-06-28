@@ -66,11 +66,11 @@ void plc_nef_3_modify_faces(
             volume1_bitset = hfi->incident_volume()->mark().bitset,
             volume2_bitset = hfi->twin()->incident_volume()->mark().bitset;
         CGAL::Vector_3<KE> cgal_normal = hfi->plane().orthogonal_vector();
-        PureVector normal = PureVector::raw(
+        Vector normal = Vector(
             CGAL::to_double(cgal_normal.x()),
             CGAL::to_double(cgal_normal.y()),
             CGAL::to_double(cgal_normal.z()));
-        normal /= normal.magnitude().val;
+        normal /= normal.magnitude();
 
         PlcNef3Mark new_mark(func(
             facet_bitset,
@@ -159,7 +159,7 @@ void PlcNef3::map_faces(
         Bitset current_bitset,
         Bitset volume1_bitset,
         Bitset volume2_bitset,
-        PureVector normal_towards_volume1
+        Vector normal_towards_volume1
     )> &func
 ) {
     plc_nef_3_modify(this, [&](CgalNef3Sncd *sncd) {
@@ -187,7 +187,7 @@ void PlcNef3::map_everywhere(
             return func(bitset, FeatureType::Volume);
         });
         plc_nef_3_modify_faces(sncd,
-        [&](Plc3::Bitset bitset, Plc3::Bitset, Plc3::Bitset, PureVector) {
+        [&](Plc3::Bitset bitset, Plc3::Bitset, Plc3::Bitset, Vector) {
             return func(bitset, FeatureType::Face);
         });
         plc_nef_3_modify_edges(sncd, [&](Plc3::Bitset bitset) {
@@ -252,10 +252,7 @@ PlcNef3 PlcNef3::binary_xor(const PlcNef3 &other) const {
 }
 
 PlcNef3::Bitset PlcNef3::get_bitset(Point point) const {
-    CGAL::Point_3<KE> point2(
-        point.vector.x.val,
-        point.vector.y.val,
-        point.vector.z.val);
+    CGAL::Point_3<KE> point2(point.x, point.y, point.z);
     CgalNef3Plc::Object_handle obj = i->p.locate(point2);
 
     CgalNef3Plc::Vertex_const_handle vh;

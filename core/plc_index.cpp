@@ -48,9 +48,9 @@ public:
 private:
     Point get_point(const Plc3 *rm, Plc3::VertexId vid) const {
         return CGAL::Point_3<KS>(
-            rm->vertices[vid].point.vector.x.val,
-            rm->vertices[vid].point.vector.y.val,
-            rm->vertices[vid].point.vector.z.val);
+            rm->vertices[vid].point.x,
+            rm->vertices[vid].point.y,
+            rm->vertices[vid].point.z);
     }
 
     Id i;
@@ -121,10 +121,7 @@ Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
     CGAL::Random_points_on_sphere_3<CGAL::Point_3<KS> > random;
     CGAL::Vector_3<KS> direction(CGAL::ORIGIN, *random);
     CGAL::Ray_3<KS> ray(
-        CGAL::Point_3<KS>(
-            point.vector.x.val,
-            point.vector.y.val,
-            point.vector.z.val),
+        CGAL::Point_3<KS>(point.x, point.y, point.z),
         direction);
 
     boost::optional<PlcAabbPrimitive::Id> hit =
@@ -134,23 +131,20 @@ Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
     const Plc3::Surface &surface = plc->surfaces[hit->first];
     const Plc3::Surface::Triangle &tri = surface.triangles[hit->second];
 
-    PureVector normal = triangle_normal(
+    Vector normal = triangle_normal(
         plc->vertices[tri.vertices[0]].point,
         plc->vertices[tri.vertices[1]].point,
         plc->vertices[tri.vertices[2]].point);
     double dot =
-        direction.x() * normal.x.val +
-        direction.y() * normal.y.val +
-        direction.z() * normal.z.val;
+        direction.x() * normal.x +
+        direction.y() * normal.y +
+        direction.z() * normal.z;
     /* The normal vector points into 'surface.volumes[0]' */
     return surface.volumes[(dot > 0) ? 1 : 0];
 }
 
 Plc3::SurfaceId Plc3Index::surface_closest_to_point(Point point) const {
-    CGAL::Point_3<KS> point2(
-        point.vector.x.val,
-        point.vector.y.val,
-        point.vector.z.val);
+    CGAL::Point_3<KS> point2(point.x, point.y, point.z);
     PlcAabbTree::Point_and_primitive_id hit =
         i->tree.closest_point_and_primitive(point2);
     return hit.second.first;

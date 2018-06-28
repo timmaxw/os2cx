@@ -91,12 +91,12 @@ std::vector<Inner> check_vector(
     return result;
 }
 
-PureVector check_pure_vector(const OpenscadValue &value) {
+Vector check_vector_3(const OpenscadValue &value) {
     std::vector<double> parts = check_vector<double>(value, &check_number);
     if (parts.size() != 3) {
         throw BadEchoError("expected vector to have 3 elements");
     }
-    return PureVector::raw(parts[0], parts[1], parts[2]);
+    return Vector(parts[0], parts[1], parts[2]);
 }
 
 void do_analysis_directive(
@@ -165,7 +165,7 @@ void do_select_surface_directive(
     or equal to Plc3::num_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
-    object.direction_vector = check_pure_vector(args[1]);
+    object.direction_vector = check_vector_3(args[1]);
 
     object.direction_angle_tolerance = check_number(args[2]);
 
@@ -187,7 +187,7 @@ void do_load_volume_directive(
     }
     project->load_objects[name].volume = volume;
 
-    auto force_density = ForceDensityVector::raw(0, 0, check_number(args[2]));
+    Vector force_density(0, 0, check_number(args[2]));
     project->load_objects[name].force_density = force_density;
 }
 

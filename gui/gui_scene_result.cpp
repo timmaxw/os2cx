@@ -8,12 +8,12 @@ GuiSceneResultDisplacement::GuiSceneResultDisplacement(
     GuiSceneMesh(parent, project), result_name(result_name_)
 {
     max_displacement = 0;
-    const ContiguousMap<NodeId, PureVector> &result =
+    const ContiguousMap<NodeId, Vector> &result =
         project->results->node_vectors.at(result_name);
     for (NodeId node_id = result.key_begin();
             node_id != result.key_end(); ++node_id) {
         max_displacement =
-            std::max(max_displacement, result[node_id].magnitude().val);
+            std::max(max_displacement, result[node_id].magnitude());
     }
 
     construct_combo_box_exaggeration();
@@ -25,7 +25,7 @@ void GuiSceneResultDisplacement::construct_combo_box_exaggeration() {
     layout->addWidget(combo_box_exaggeration);
 
     double max_exaggeration_factor =
-        (project->approx_scale.val / 3) / max_displacement;
+        (project->approx_scale / 3) / max_displacement;
     if (max_exaggeration_factor < 1) {
         max_exaggeration_factor = 1;
     }
@@ -90,12 +90,12 @@ void GuiSceneResultDisplacement::calculate_attributes(
     int face_index,
     NodeId node_id,
     QColor *color_out,
-    PureVector *displacement_out
+    Vector *displacement_out
 ) {
     (void)element_id;
     (void)face_index;
     *color_out = QColor(0x80, 0x80, 0x80);
-    const ContiguousMap<NodeId, PureVector> &result =
+    const ContiguousMap<NodeId, Vector> &result =
         project->results->node_vectors.at(result_name);
     *displacement_out = result[node_id] * displacement_exaggeration;
 }

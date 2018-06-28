@@ -90,7 +90,7 @@ void GuiOpenglWidget::paintGL() {
 
     /* Position camera such that entire project is visible */
     float fov_slop_factor = 1.5;
-    float dist = project->approx_scale.val / fov_slope_min * fov_slop_factor;
+    Length dist = project->approx_scale / fov_slope_min * fov_slop_factor;
     glTranslatef(0, 0, -dist);
 
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);

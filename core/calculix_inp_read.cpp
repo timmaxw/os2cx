@@ -68,7 +68,7 @@ public:
                 fail("Expect node numbers to be consecutive");
             }
             Node3 node;
-            node.point = Point::raw(
+            node.point = Point(
                 safe_atod(line[1]),
                 safe_atod(line[2]),
                 safe_atod(line[3]));

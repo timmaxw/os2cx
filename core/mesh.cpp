@@ -57,9 +57,9 @@ double Mesh3::evaluate_polynomial(
             int vertex = shape_function_variables::coord_to_vertex(var);
             Point point = nodes[element.nodes[vertex]].point;
             switch (shape_function_variables::coord_to_dimension(var)) {
-            case 0: return point.vector.x.val;
-            case 1: return point.vector.y.val;
-            case 2: return point.vector.z.val;
+            case 0: return point.x;
+            case 1: return point.y;
+            case 2: return point.z;
             default: assert(false);
             }
         }

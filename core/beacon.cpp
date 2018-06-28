@@ -11,10 +11,7 @@ AffineTransform recover_beacon(const Poly3 &beacon) {
     right degree (two degree-3 vertices, three degree-4 vertices) */
     std::vector<Point> deg3, deg4;
     for (auto it = p.vertices_begin(); it != p.vertices_end(); ++it) {
-        Point point;
-        point.vector.x.val = it->point().x();
-        point.vector.y.val = it->point().y();
-        point.vector.z.val = it->point().z();
+        Point point(it->point().x(), it->point().y(), it->point().z());
         if (it->vertex_degree() == 3) {
             deg3.push_back(point);
         } else if (it->vertex_degree() == 4) {
@@ -32,9 +29,12 @@ AffineTransform recover_beacon(const Poly3 &beacon) {
     /* One of the degree-3 vertices is the "origin" vertex and the other is the
     "concave" vertex. We can tell them apart because the "concave" vertex is
     closer to the average of the degree-4 vertices. */
-    Point deg4_avg((deg4[0].vector + deg4[1].vector + deg4[2].vector) / 3.0);
+    Point deg4_avg = Point::origin()
+        + (deg4[0] - Point::origin()) / 3.0
+        + (deg4[1] - Point::origin()) / 3.0
+        + (deg4[2] - Point::origin()) / 3.0;
     Point origin, concave;
-    if ((deg3[1] - deg3[0]).dot(deg4_avg - deg3[0]).val > 0) {
+    if ((deg3[1] - deg3[0]).dot(deg4_avg - deg3[0]) > 0) {
         origin = deg3[0];
         concave = deg3[1];
     } else {
@@ -49,11 +49,11 @@ AffineTransform recover_beacon(const Poly3 &beacon) {
     bool corner_found[3] = {false, false, false};
     for (Point candidate : deg4) {
         Length distance = (candidate - origin).magnitude();
-        if (distance.val == 0) {
+        if (distance == 0) {
             throw BeaconError();
         }
-        PureVector direction = (candidate - origin) / distance;
-        double a = ((concave - origin).dot(direction) / distance).val;
+        Vector direction = (candidate - origin) / distance;
+        double a = ((concave - origin).dot(direction) / distance);
         for (int i = 0; i < 3; ++i) {
             if (fabs(a - concave_coords[i]) < 1e-3) {
                 if (corner_found[i]) {
@@ -72,7 +72,7 @@ AffineTransform recover_beacon(const Poly3 &beacon) {
     /* Once we know which vertex is which, it's easy to reconstruct the affine
     transformation that was applied to the beacon */
     AffineTransform transform;
-    transform.translation = origin.vector;
+    transform.translation = origin - Point::origin();
     for (int i = 0; i < 3; ++i) {
         transform.matrix[i] = corner_xyz[i] - origin;
     }

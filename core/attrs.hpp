@@ -21,7 +21,7 @@ void compute_plc_nef_select_volume(
 void compute_plc_nef_select_surface(
     PlcNef3 *solid_nef,
     const Poly3 &mask,
-    PureVector direction_vector,
+    Vector direction_vector,
     double direction_angle_tolerance,
     Plc3::BitIndex bit_index_mask);
 
@@ -71,8 +71,8 @@ class ConcentratedLoad {
 public:
     class Load {
     public:
-        Load() : force(ForceVector::zero()) { }
-        ForceVector force;
+        Load() : force(0, 0, 0) { }
+        Vector force;
     };
     std::map<NodeId, Load> loads;
 };
@@ -80,7 +80,7 @@ public:
 ConcentratedLoad compute_load_from_element_set(
     const Mesh3 &mesh,
     const ElementSet &element_set,
-    ForceDensityVector force);
+    Vector force_density);
 
 } /* namespace os2cx */
 

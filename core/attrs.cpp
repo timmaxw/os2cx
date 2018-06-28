@@ -49,7 +49,7 @@ void compute_plc_nef_select_volume(
 void compute_plc_nef_select_surface(
     PlcNef3 *solid_nef,
     const Poly3 &mask,
-    PureVector direction_vector,
+    Vector direction_vector,
     double direction_angle_tolerance,
     Plc3::BitIndex bit_index_mask
 ) {
@@ -63,14 +63,14 @@ void compute_plc_nef_select_surface(
         Plc3::Bitset face_bitset,
         Plc3::Bitset vol1_bitset,
         Plc3::Bitset vol2_bitset,
-        PureVector normal_towards_vol1
+        Vector normal_towards_vol1
     ) {
-        if (direction_vector == PureVector::zero()) {
+        if (direction_vector == Vector::zero()) {
             face_bitset.set(bit_index_mask);
         } else {
             bool vol1_solid = vol1_bitset[bit_index_solid()];
             bool vol2_solid = vol2_bitset[bit_index_solid()];
-            double dot = direction_vector.dot(normal_towards_vol1).val;
+            double dot = direction_vector.dot(normal_towards_vol1);
             if (!vol1_solid && vol2_solid && dot > cos_threshold) {
                 face_bitset.set(bit_index_mask);
             } else if (vol1_solid && !vol2_solid && -dot > cos_threshold) {
@@ -115,14 +115,15 @@ ElementSet compute_element_set_from_plc_bit(
     ElementSet set;
     for (ElementId eid = element_begin; eid != element_end; ++eid) {
         const Element3 &element = mesh.elements[eid];
-        LengthVector c = LengthVector::zero();
+
+        LengthVector sum = LengthVector::zero();
         int num_nodes = element.num_nodes();
         for (int i = 0; i < num_nodes; ++i) {
-            c += mesh.nodes[element.nodes[i]].point.vector;
+            sum += mesh.nodes[element.nodes[i]].point - Point::origin();
         }
-        c /= num_nodes;
+        Point center = Point::origin() + sum / num_nodes;
 
-        Plc3::VolumeId volume_id = plc_index.volume_containing_point(Point(c));
+        Plc3::VolumeId volume_id = plc_index.volume_containing_point(center);
         Plc3::Bitset bitset = plc_index.plc->volumes[volume_id].bitset;
         if (bitset[bit_index]) {
             set.elements.insert(eid);
@@ -155,14 +156,16 @@ FaceSet compute_face_set_from_plc_bit(
                 continue;
             }
 
-            LengthVector c = LengthVector::zero();
+            LengthVector sum = LengthVector::zero();
             for (int vertex_index : shape->faces[fid.face].vertices) {
-                c += mesh.nodes[element.nodes[vertex_index]].point.vector;
+                sum += mesh.nodes[element.nodes[vertex_index]].point
+                    - Point::origin();
             }
-            c /= shape->faces[fid.face].vertices.size();
+            Point center = Point::origin()
+                + sum / shape->faces[fid.face].vertices.size();
 
             Plc3::SurfaceId surface_id =
-                plc_index.surface_closest_to_point(Point(c));
+                plc_index.surface_closest_to_point(center);
             Plc3::Bitset bitset = plc_index.plc->surfaces[surface_id].bitset;
             if (bitset[bit_index]) {
                 set.faces.insert(fid);
@@ -212,10 +215,9 @@ NodeSet compute_node_set_from_face_set(
     return set;
 }
 
-ConcentratedLoad compute_load_from_element_set(
-    const Mesh3 &mesh,
+ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,
     const ElementSet &element_set,
-    ForceDensityVector force
+    Vector force_density
 ) {
     ConcentratedLoad load;
     for (ElementId element_id : element_set.elements) {
@@ -223,7 +225,7 @@ ConcentratedLoad compute_load_from_element_set(
         int num_nodes = element.num_nodes();
         for (int i = 0; i < num_nodes; ++i) {
             Volume vol = mesh.volume_for_node(element, i);
-            load.loads[element.nodes[i]].force += vol * force;
+            load.loads[element.nodes[i]].force += vol * force_density;
         }
     }
     return load;

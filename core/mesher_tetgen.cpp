@@ -10,9 +10,9 @@ void convert_input(const Plc3 &plc, tetgenio *tetgen) {
     tetgen->pointlist = new REAL[tetgen->numberofpoints * 3];
     for (Plc3::VertexId vid = 0;
             vid < static_cast<int>(plc.vertices.size()); ++vid) {
-        tetgen->pointlist[3 * vid + 0] = plc.vertices[vid].point.vector.x.val;
-        tetgen->pointlist[3 * vid + 1] = plc.vertices[vid].point.vector.y.val;
-        tetgen->pointlist[3 * vid + 2] = plc.vertices[vid].point.vector.z.val;
+        tetgen->pointlist[3 * vid + 0] = plc.vertices[vid].point.x;
+        tetgen->pointlist[3 * vid + 1] = plc.vertices[vid].point.y;
+        tetgen->pointlist[3 * vid + 2] = plc.vertices[vid].point.z;
     }
 
     tetgen->numberoffacets = 0;
@@ -60,7 +60,7 @@ Mesh3 convert_output(tetgenio *tetgen) {
     mesh.nodes.reserve(tetgen->numberofpoints);
     for (int nid = 0; nid < tetgen->numberofpoints; ++nid) {
         Node3 node;
-        node.point = Point::raw(
+        node.point = Point(
             tetgen->pointlist[3 * nid + 0],
             tetgen->pointlist[3 * nid + 1],
             tetgen->pointlist[3 * nid + 2]);

@@ -16,10 +16,10 @@ void results_from_frd_analyses(
             const ContiguousMap<NodeId, double> &dx = fa.entities[0].data;
             const ContiguousMap<NodeId, double> &dy = fa.entities[1].data;
             const ContiguousMap<NodeId, double> &dz = fa.entities[2].data;
-            ContiguousMap<NodeId, PureVector> dxyz(
-                dx.key_begin(), dx.key_end(), PureVector::raw(NAN, NAN, NAN));
+            ContiguousMap<NodeId, Vector> dxyz(
+                dx.key_begin(), dx.key_end(), Vector(NAN, NAN, NAN));
             for (NodeId node = dx.key_begin(); node != dx.key_end(); ++node) {
-                dxyz[node] = PureVector::raw(dx[node], dy[node], dz[node]);
+                dxyz[node] = Vector(dx[node], dy[node], dz[node]);
             }
             results_out->node_vectors.insert(
                 std::make_pair(fa.name, std::move(dxyz)));

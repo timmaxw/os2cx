@@ -61,11 +61,25 @@ std::string unit_abbreviation(int m, int kg, int s) {
     }
 }
 
-PureVector triangle_normal(Point p1, Point p2, Point p3) {
+std::ostream &operator<<(std::ostream &stream, Vector vector) {
+    return stream << '['
+        << vector.x << ' '
+        << vector.y << ' '
+        << vector.z << ']';
+}
+
+Vector triangle_normal(Point p1, Point p2, Point p3) {
     LengthVector v1 = p2 - p1;
     LengthVector v2 = p3 - p1;
-    Vector<2, 0, 0> c = v1.cross(v2);
+    Vector c = v1.cross(v2);
     return c / c.magnitude();
+}
+
+std::ostream &operator<<(std::ostream &stream, Point point) {
+    return stream << '('
+        << point.x << ' '
+        << point.y << ' '
+        << point.z << ')';
 }
 
 } /* namespace os2cx */

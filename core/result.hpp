@@ -11,7 +11,7 @@ namespace os2cx {
 
 class Results {
 public:
-    std::map<std::string, ContiguousMap<NodeId, PureVector> > node_vectors;
+    std::map<std::string, ContiguousMap<NodeId, Vector> > node_vectors;
 };
 
 void results_from_frd_analyses(

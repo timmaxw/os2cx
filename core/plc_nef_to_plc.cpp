@@ -186,7 +186,7 @@ public:
         CGAL_forall_vertices(vi, nef) {
             assert(vertex_index[vi] == plc.vertices.size());
             Plc3::Vertex vertex;
-            vertex.point = Point::raw(
+            vertex.point = Point(
                 CGAL::to_double(vi->point().x()),
                 CGAL::to_double(vi->point().y()),
                 CGAL::to_double(vi->point().z()));

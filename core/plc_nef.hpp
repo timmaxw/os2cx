@@ -45,7 +45,7 @@ public:
             Bitset current_bitset,
             Bitset volume1_bitset,
             Bitset volume2_bitset,
-            PureVector normal_towards_volume1
+            Vector normal_towards_volume1
         )> &func);
 
     /* Applies the given function to the bits of every edge, in place */

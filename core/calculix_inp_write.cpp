@@ -17,9 +17,10 @@ void write_calculix_nodes_and_elements(
     for (NodeId nid = node_begin; nid != node_end; ++nid) {
         const Node3 &node = mesh.nodes[nid];
         stream << nid.to_int()
-            << ", " << node.point.vector.x.val
-            << ", " << node.point.vector.y.val
-            << ", " << node.point.vector.z.val << '\n';
+            << ", " << node.point.x
+            << ", " << node.point.y
+            << ", " << node.point.z
+            << '\n';
     }
 
     std::set<ElementType> types_present;
@@ -70,15 +71,15 @@ void write_calculix_cload(
     const ConcentratedLoad &cload
 ) {
     for (const auto &pair : cload.loads) {
-        const ForceVector &force = pair.second.force;
-        if (force.x != Force(0)) {
-            stream << pair.first.to_int() << ",1," << force.x.val << std::endl;
+        const Vector &force = pair.second.force;
+        if (force.x != 0) {
+            stream << pair.first.to_int() << ",1," << force.x << std::endl;
         }
-        if (force.y != Force(0)) {
-            stream << pair.first.to_int() << ",2," << force.y.val << std::endl;
+        if (force.y != 0) {
+            stream << pair.first.to_int() << ",2," << force.y << std::endl;
         }
-        if (force.z != Force(0)) {
-            stream << pair.first.to_int() << ",3," << force.z.val << std::endl;
+        if (force.z != 0) {
+            stream << pair.first.to_int() << ",3," << force.z << std::endl;
         }
     }
 }

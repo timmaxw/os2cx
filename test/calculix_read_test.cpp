@@ -27,19 +27,19 @@ TEST(CalculixReadTest, ReadCalculixNodesAndElements) {
     ASSERT_EQ(4, mesh.nodes.size());
 
     const Node3 &n1 = mesh.nodes[NodeId::from_int(1)];
-    EXPECT_EQ(0, n1.point.vector.x.val);
-    EXPECT_EQ(0, n1.point.vector.y.val);
-    EXPECT_FLOAT_EQ(0.1, n1.point.vector.z.val);
+    EXPECT_EQ(0, n1.point.x);
+    EXPECT_EQ(0, n1.point.y);
+    EXPECT_FLOAT_EQ(0.1, n1.point.z);
 
     const Node3 &n2 = mesh.nodes[NodeId::from_int(2)];
-    EXPECT_EQ(-1, n2.point.vector.x.val);
-    EXPECT_EQ(0, n2.point.vector.y.val);
-    EXPECT_FLOAT_EQ(n2.point.vector.z.val, 0.2);
+    EXPECT_EQ(-1, n2.point.x);
+    EXPECT_EQ(0, n2.point.y);
+    EXPECT_FLOAT_EQ(n2.point.z, 0.2);
 
     const Node3 &n3 = mesh.nodes[NodeId::from_int(3)];
-    EXPECT_EQ(0, n3.point.vector.x.val);
-    EXPECT_EQ(1, n3.point.vector.y.val);
-    EXPECT_FLOAT_EQ(-0.3, n3.point.vector.z.val);
+    EXPECT_EQ(0, n3.point.x);
+    EXPECT_EQ(1, n3.point.y);
+    EXPECT_FLOAT_EQ(-0.3, n3.point.z);
 
     ASSERT_EQ(1, mesh.elements.size());
     const Element3 &e = mesh.elements[ElementId::from_int(1)];

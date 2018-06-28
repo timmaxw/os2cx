@@ -22,19 +22,18 @@ TEST(AttrsTest, LoadVolume) {
         mesh.elements.key_end(),
         bit_index_mask);
 
-    ForceDensityVector force_density =
-        ForceDensityVector::raw(1.234, 0, 0);
+    Vector force_density(1.234, 0, 0);
     ConcentratedLoad load = compute_load_from_element_set(
         mesh, element_set, force_density);
 
-    ForceVector total_force = ForceVector::zero();
+    Vector total_force(0, 0, 0);
     for (const auto &pair : load.loads) {
         total_force += pair.second.force;
     }
 
-    Force expected_force = force_density.x * Volume(1);
-    Force actual_force = total_force.x;
-    EXPECT_NEAR(expected_force.val, actual_force.val, 1e-6);
+    double expected_force = force_density.x * Volume(1);
+    double actual_force = total_force.x;
+    EXPECT_NEAR(expected_force, actual_force, 1e-6);
 }
 
 } /* namespace os2cx */

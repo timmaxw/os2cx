@@ -16,7 +16,7 @@ void GuiSceneMesh::initialize_scene() {
         QColor cs[3];
         for (int i = 0; i < 3; ++i) {
             ps[i] = project->mesh->nodes[node_ids[i]].point;
-            PureVector disp;
+            Vector disp;
             calculate_attributes(
                 fi.element_id, fi.face, node_ids[i], &cs[i], &disp);
             ps[i] += disp * Length(1.0);
@@ -44,13 +44,13 @@ void GuiSceneMesh::calculate_attributes(
     int face_index,
     NodeId node_id,
     QColor *color_out,
-    PureVector *displacement_out
+    Vector *displacement_out
 ) {
     (void)element_id;
     (void)face_index;
     (void)node_id;
     *color_out = QColor(0x80, 0x80, 0x80);
-    *displacement_out = PureVector::zero();
+    *displacement_out = Vector::zero();
 }
 
 } /* namespace os2cx */
