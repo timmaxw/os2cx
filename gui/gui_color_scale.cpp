@@ -24,15 +24,15 @@ GuiColorScale::GuiColorScale(
         range_min = 0;
         range_max = val_max;
         colors[0] = QColor(0x80, 0x80, 0x80);
-        colors[range_max / 2] = QColor(0xFF, 0xFF, 0x00);
+        colors[range_max / 2] = QColor(0xEE, 0xEE, 0x00);
         colors[range_max] = QColor(0xFF, 0x00, 0x00);
     } else if (anchor == Anchor::Balanced) {
         range_min = -std::max(std::abs(val_min), std::abs(val_max));
         range_max = -range_min;
         colors[range_min] = QColor(0x00, 0x00, 0xFF);
-        colors[range_min / 2] = QColor(0x00, 0xFF, 0xFF);
+        colors[range_min / 2] = QColor(0x00, 0xEE, 0xEE);
         colors[0] = QColor(0x80, 0x80, 0x80);
-        colors[range_max / 2] = QColor(0xFF, 0xFF, 0x00);
+        colors[range_max / 2] = QColor(0xEE, 0xEE, 0x00);
         colors[range_max] = QColor(0xFF, 0x00, 0x00);
     } else {
         assert(false);
@@ -76,13 +76,21 @@ void GuiColorScale::paintEvent(QPaintEvent *) {
     painter.drawText(label_rect, Qt::AlignRight|Qt::AlignBottom,
         QString("%1").arg(range_max));
 
-    QLinearGradient gradient(0, 0, width(), 0);
+    /* Draw the main color gradient */
+    QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);
+    painter.setPen(Qt::NoPen);
+    QLinearGradient gradient(bar_rect.left(), 0, bar_rect.right(), 0);
     for (const auto &pair : colors) {
         double normalized = (pair.first - range_min) / (range_max - range_min);
         gradient.setColorAt(normalized, pair.second);
     }
-    painter.setPen(Qt::NoPen);
     painter.setBrush(gradient);
-    QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);
+    painter.drawRoundedRect(bar_rect, bar_size_px / 10, bar_size_px / 10);
+
+    /* Draw shading on top of the main color gradient */
+    QLinearGradient vgradient(0, bar_rect.top(), 0, bar_rect.bottom());
+    vgradient.setColorAt(0.0, QColor(0x00, 0x00, 0x00, 0x00));
+    vgradient.setColorAt(1.0, QColor(0x00, 0x00, 0x00, 0x30));
+    painter.setBrush(vgradient);
     painter.drawRoundedRect(bar_rect, bar_size_px / 10, bar_size_px / 10);
 }
