@@ -111,13 +111,13 @@ void GuiMainWindow::refresh_combo_box_scenes() {
         scenes.push_back({tr("Results..."), nullptr});
     } else {
         first_result_scene_name = QString();
-        for (const auto &pair : project->results->node_vectors) {
+        for (const auto &pair : project->results->static_steps) {
             std::string result_name = pair.first;
             QString name = tr("Result ") + QString(result_name.c_str());
             scenes.push_back({
                 name,
                 [this, result_name]() {
-                    return new GuiSceneResultDisplacement(
+                    return new GuiSceneResultStatic(
                         left_panel,
                         project_runner->get_project(),
                         result_name);

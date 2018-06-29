@@ -4,14 +4,16 @@
 
 #include <QPainter>
 
-GuiColorScale::GuiColorScale(
-    QWidget *parent,
-    Anchor anchor,
-    double val_min,
-    double val_max
-) :
-    QWidget(parent), anchor(anchor)
+GuiColorScale::GuiColorScale(QWidget *parent) :
+    QWidget(parent)
 {
+    set_range(Anchor::Zero, 0.0, 1.0);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+}
+
+void GuiColorScale::set_range(Anchor a, double val_min, double val_max) {
+    anchor = a;
+    colors.clear();
     assert(val_min <= val_max);
     if (anchor == Anchor::Floating) {
         range_min = val_min;
@@ -37,8 +39,7 @@ GuiColorScale::GuiColorScale(
     } else {
         assert(false);
     }
-
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    update();
 }
 
 QColor GuiColorScale::color(double val) const {

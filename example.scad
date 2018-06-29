@@ -28,5 +28,7 @@ os2cx_analysis_custom([
     "*INCLUDE, INPUT=load.clo",
     "*NODE FILE, Nset=Ncantilever",
     "U",
+    "*EL FILE, Elset=Ecantilever",
+    "S",
     "*END STEP"
 ]);

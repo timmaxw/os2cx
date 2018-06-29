@@ -12,8 +12,10 @@ public:
      - With Anchor::Zero, it will range from 0.0 to 3.4.
      - With Anchor::Balanced, it will range from -3.4 to 3.4. */
     enum class Anchor { Floating, Zero, Balanced };
-    GuiColorScale(
-        QWidget *parent,
+
+    explicit GuiColorScale(QWidget *parent = nullptr);
+
+    void set_range(
         Anchor anchor,
         double val_min,
         double val_max);

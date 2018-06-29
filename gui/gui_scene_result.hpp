@@ -8,16 +8,18 @@
 
 namespace os2cx {
 
-class GuiSceneResultDisplacement : public GuiSceneMesh
+class GuiSceneResultStatic : public GuiSceneMesh
 {
 public:
-    GuiSceneResultDisplacement(
+    GuiSceneResultStatic(
         QWidget *parent,
         const Project *project,
         const std::string &result_name);
 
 private:
-    void construct_combo_box_exaggeration();
+    void construct_combo_box_disp_scale();
+
+    void set_color_variable(const std::string &new_var);
 
     void calculate_attributes(
         ElementId element_id,
@@ -27,10 +29,13 @@ private:
         Vector *displacement_out);
 
     std::string result_name;
-    double max_displacement;
+    std::map<std::string, double> variable_maxima;
 
-    QComboBox *combo_box_exaggeration;
-    double displacement_exaggeration;
+    QComboBox *combo_box_disp_scale;
+    double disp_scale;
+
+    QComboBox *combo_box_color_variable;
+    std::string color_variable;
 
     GuiColorScale *color_scale;
 };
