@@ -135,6 +135,30 @@ Vector triangle_normal(Point p1, Point p2, Point p3);
 
 std::ostream &operator<<(std::ostream &stream, Point point);
 
+class Matrix {
+public:
+    static Matrix zero();
+    static Matrix identity();
+    static Matrix rotation(int axis, double radians);
+    static Matrix scale(double xs, double ys, double zs);
+
+    Vector apply(Vector v) const {
+        return v.x * cols[0] + v.y * cols[1] + v.z * cols[2];
+    }
+
+    Vector cols[3];
+};
+
+class AffineTransform {
+public:
+    Point apply(Point v) const {
+        return Point::origin() + matrix.apply(v - Point::origin()) + vector;
+    }
+
+    Matrix matrix;
+    LengthVector vector;
+};
+
 } /* namespace os2cx */
 
 #endif

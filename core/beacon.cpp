@@ -72,9 +72,9 @@ AffineTransform recover_beacon(const Poly3 &beacon) {
     /* Once we know which vertex is which, it's easy to reconstruct the affine
     transformation that was applied to the beacon */
     AffineTransform transform;
-    transform.translation = origin - Point::origin();
+    transform.vector = origin - Point::origin();
     for (int i = 0; i < 3; ++i) {
-        transform.matrix[i] = corner_xyz[i] - origin;
+        transform.matrix.cols[i] = corner_xyz[i] - origin;
     }
     return transform;
 }
