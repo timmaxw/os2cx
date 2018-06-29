@@ -16,24 +16,24 @@ GuiColorScale::GuiColorScale(
     if (anchor == Anchor::Floating) {
         range_min = val_min;
         range_max = val_max;
-        colors[range_min] = QColor(0x00, 0x00, 0xFF);
-        colors[(range_min+range_max) / 2] = QColor(0xAA, 0x00, 0xAA);
-        colors[range_max] = QColor(0xFF, 0x00, 0x00);
+        colors[range_min]                   = QColor::fromHsl(210, 0xFF, 0x99);
+        colors[(range_min + range_max) / 2] = QColor::fromHsl(285, 0x33, 0x66);
+        colors[range_max]                   = QColor::fromHsl(  0, 0xFF, 0x99);
     } else if (anchor == Anchor::Zero) {
         assert(0 <= val_min);
         range_min = 0;
         range_max = val_max;
-        colors[0] = QColor(0x80, 0x80, 0x80);
-        colors[range_max / 2] = QColor(0xEE, 0xEE, 0x00);
-        colors[range_max] = QColor(0xFF, 0x00, 0x00);
+        colors[0]             = QColor::fromHsl( 60, 0x00, 0xEE);
+        colors[range_max / 3] = QColor::fromHsl( 60, 0xEE, 0x99);
+        colors[range_max]     = QColor::fromHsl(  0, 0xFF, 0x66);
     } else if (anchor == Anchor::Balanced) {
         range_min = -std::max(std::abs(val_min), std::abs(val_max));
         range_max = -range_min;
-        colors[range_min] = QColor(0x00, 0x00, 0xFF);
-        colors[range_min / 2] = QColor(0x00, 0xEE, 0xEE);
-        colors[0] = QColor(0x80, 0x80, 0x80);
-        colors[range_max / 2] = QColor(0xEE, 0xEE, 0x00);
-        colors[range_max] = QColor(0xFF, 0x00, 0x00);
+        colors[range_min]     = QColor::fromHsl(240, 0xFF, 0x66);
+        colors[range_min / 3] = QColor::fromHsl(180, 0xEE, 0x99);
+        colors[0]             = QColor::fromHsl(120, 0x00, 0xEE);
+        colors[range_max / 3] = QColor::fromHsl( 60, 0xEE, 0x99);
+        colors[range_max]     = QColor::fromHsl(  0, 0xFF, 0x66);
     } else {
         assert(false);
     }
