@@ -18,11 +18,15 @@ public:
         std::unique_ptr<ContiguousMap<NodeId, Vector> > node_vector;
         std::unique_ptr<ContiguousMap<NodeId, Matrix> > node_matrix;
     };
+
     class VariableSet {
     public:
-        VariableSet() : has_disp(false) { }
         std::map<std::string, Variable> vars;
-        bool has_disp; /* The DISP variable is given special treatment */
+
+        /* disp_key is the key in 'vars' under which the displacement variable
+        is stored, or an empty string if there's no displacement variable in
+        this VariableSet */
+        std::string disp_key;
     };
     std::map<std::string, VariableSet> static_steps;
 };

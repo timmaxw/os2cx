@@ -68,6 +68,9 @@ void results_from_frd_analyses(
                 &results_out->static_steps[fa.analys];
             Results::Variable *var = &step->vars[fa.name];
             result_var_from_frd_analysis(fa, var);
+            if (fa.name == "DISP" && var->node_vector) {
+                step->disp_key = fa.name;
+            }
         }
     }
 }

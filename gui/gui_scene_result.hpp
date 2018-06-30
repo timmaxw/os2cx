@@ -17,6 +17,16 @@ public:
         const std::string &result_name);
 
 private:
+    enum class SubVariable {
+        VectorMagnitude, VectorX, VectorY, VectorZ,
+        MatrixXX, MatrixYY, MatrixZZ, MatrixXY, MatrixYZ, MatrixZX
+    };
+
+    static double subvariable_value(
+        const Results::Variable &var,
+        SubVariable subvar,
+        NodeId node_id);
+
     void construct_combo_box_disp_scale();
 
     void set_color_variable(const std::string &new_var);
@@ -36,6 +46,8 @@ private:
 
     QComboBox *combo_box_color_variable;
     std::string color_variable;
+
+    SubVariable color_subvariable;
 
     GuiColorScale *color_scale;
 };
