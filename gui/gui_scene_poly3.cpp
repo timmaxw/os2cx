@@ -1,8 +1,11 @@
 #include "gui_scene_poly3.hpp"
 
+#include "gui_opengl_widget.hpp"
+
 namespace os2cx {
 
-void GuiScenePoly3::initialize_scene() {
+std::shared_ptr<const GuiOpenglTriangles> GuiScenePoly3::make_triangles() {
+    GuiOpenglTriangles triangles;
     for (const auto &pair : project->mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();
         if (plc == nullptr) {
@@ -32,10 +35,11 @@ void GuiScenePoly3::initialize_scene() {
                 if (outside_volume_index == 1) {
                     std::swap(ps[2], ps[1]);
                 }
-                add_triangle(ps, colors);
+                triangles.add_triangle(ps, colors);
             }
         }
     }
+    return std::make_shared<GuiOpenglTriangles>(std::move(triangles));
 }
 
 } /* namespace os2cx */

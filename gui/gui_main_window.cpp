@@ -145,8 +145,8 @@ void GuiMainWindow::set_current_scene(GuiSceneAbstract *new_scene) {
     if (new_scene != nullptr) {
         left_panel_layout->insertWidget(1, new_scene);
         new_scene->show();
-        connect(new_scene, &GuiSceneAbstract::rerender,
-            right_panel, QOverload<>::of(&GuiOpenglWidget::update));
+        connect(new_scene, &GuiSceneAbstract::refresh_scene,
+            right_panel, &GuiOpenglWidget::refresh_scene);
     }
 
     right_panel->set_scene(new_scene);

@@ -8,6 +8,22 @@
 
 namespace os2cx {
 
+class GuiOpenglTriangles {
+public:
+    GuiOpenglTriangles();
+
+    void add_triangle(const Point *points, const QColor *colors);
+    void add_line(const Point *points);
+
+    int num_triangles;
+    std::vector<GLfloat> triangle_vertices;
+    std::vector<GLubyte> triangle_colors;
+    std::vector<GLfloat> triangle_normals;
+
+    int num_lines;
+    std::vector<GLfloat> line_vertices;
+};
+
 class GuiOpenglWidget :
     public QOpenGLWidget, public QOpenGLFunctions_1_1
 {
@@ -16,6 +32,9 @@ public:
     GuiOpenglWidget(QWidget *parent, const Project *project);
 
     void set_scene(GuiSceneAbstract *scene);
+
+public slots:
+    void refresh_scene();
 
 private:
     void initializeGL();
@@ -27,6 +46,7 @@ private:
 
     const Project *project;
     GuiSceneAbstract *scene;
+    std::shared_ptr<const GuiOpenglTriangles> triangles;
     int mouse_last_x, mouse_last_y;
     float yaw, pitch; /* in degrees */
 };

@@ -9,40 +9,27 @@
 
 namespace os2cx {
 
+class GuiOpenglTriangles;
+
 class GuiSceneAbstract : public QWidget
 {
     Q_OBJECT
 public:
     GuiSceneAbstract(QWidget *parent, const Project *project);
 
+    virtual std::shared_ptr<const GuiOpenglTriangles> make_triangles() = 0;
+
 signals:
-    void rerender();
+    void refresh_scene();
 
 public slots:
 
 protected:
     void create_widget_label(const QString &label);
 
-    virtual void initialize_scene() = 0;
-
-    void clear();
-    void add_triangle(const Point *points, const QColor *colors);
-    void add_line(const Point *points);
-
     const Project *const project;
 
     QVBoxLayout *layout;
-
-private:
-    friend class GuiOpenglWidget;
-
-    int num_triangles;
-    std::vector<GLfloat> triangle_vertices;
-    std::vector<GLubyte> triangle_colors;
-    std::vector<GLfloat> triangle_normals;
-
-    int num_lines;
-    std::vector<GLfloat> line_vertices;
 };
 
 

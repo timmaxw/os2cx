@@ -4,6 +4,37 @@
 
 namespace os2cx {
 
+GuiOpenglTriangles::GuiOpenglTriangles() :
+    num_triangles(0), num_lines(0)
+{ }
+
+void GuiOpenglTriangles::add_triangle(
+    const Point *points, const QColor *colors
+) {
+    Vector normal = triangle_normal(points[0], points[1], points[2]);
+    ++num_triangles;
+    for (int i = 0; i < 3; ++i) {
+        triangle_vertices.push_back(points[i].x);
+        triangle_vertices.push_back(points[i].y);
+        triangle_vertices.push_back(points[i].z);
+        triangle_colors.push_back(colors[i].red());
+        triangle_colors.push_back(colors[i].green());
+        triangle_colors.push_back(colors[i].blue());
+        triangle_normals.push_back(normal.x);
+        triangle_normals.push_back(normal.y);
+        triangle_normals.push_back(normal.z);
+    }
+}
+
+void GuiOpenglTriangles::add_line(const Point *points) {
+    ++num_lines;
+    for (int i = 0; i < 2; ++i) {
+        line_vertices.push_back(points[i].x);
+        line_vertices.push_back(points[i].y);
+        line_vertices.push_back(points[i].z);
+    }
+}
+
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent, const Project *project_) :
     QOpenGLWidget(parent),
     project(project_),
@@ -13,14 +44,16 @@ GuiOpenglWidget::GuiOpenglWidget(QWidget *parent, const Project *project_) :
 { }
 
 void GuiOpenglWidget::set_scene(GuiSceneAbstract *new_scene) {
-    if (scene != nullptr) {
-        scene->clear();
-    }
-    if (new_scene != nullptr) {
-        new_scene->clear();
-        new_scene->initialize_scene();
-    }
     scene = new_scene;
+    refresh_scene();
+}
+
+void GuiOpenglWidget::refresh_scene() {
+    if (scene != nullptr) {
+        triangles = scene->make_triangles();
+    } else {
+        triangles = nullptr;
+    }
     update();
 }
 
@@ -53,11 +86,6 @@ void GuiOpenglWidget::initializeGL() {
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
 
     /* TODO: Back-face culling */
-
-    if (scene != nullptr) {
-        scene->clear();
-        scene->initialize_scene();
-    }
 }
 
 static const float fov_slope_min = 0.5;
@@ -96,26 +124,27 @@ void GuiOpenglWidget::paintGL() {
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);
     glRotatef(-yaw, 0.0f, 0.0f, 1.0f);
 
-    if (scene != nullptr) {
-        if (scene->num_triangles != 0) {
+    if (triangles != nullptr) {
+        if (triangles->num_triangles != 0) {
             glEnable(GL_VERTEX_ARRAY);
             glEnable(GL_COLOR_ARRAY);
             glEnable(GL_NORMAL_ARRAY);
-            glVertexPointer(3, GL_FLOAT, 0, scene->triangle_vertices.data());
+            glVertexPointer(
+                3, GL_FLOAT, 0, triangles->triangle_vertices.data());
             glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, scene->triangle_colors.data());
-            glNormalPointer(GL_FLOAT, 0, scene->triangle_normals.data());
-            glDrawArrays(GL_TRIANGLES, 0, 3 * scene->num_triangles);
+                3, GL_UNSIGNED_BYTE, 0, triangles->triangle_colors.data());
+            glNormalPointer(GL_FLOAT, 0, triangles->triangle_normals.data());
+            glDrawArrays(GL_TRIANGLES, 0, 3 * triangles->num_triangles);
             glDisable(GL_NORMAL_ARRAY);
             glDisable(GL_COLOR_ARRAY);
             glDisable(GL_VERTEX_ARRAY);
         }
 
-        if (scene->num_lines != 0) {
+        if (triangles->num_lines != 0) {
             glColor3f(0, 0, 0);
             glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(3, GL_FLOAT, 0, scene->line_vertices.data());
-            glDrawArrays(GL_LINES, 0, 2 * scene->num_triangles);
+            glVertexPointer(3, GL_FLOAT, 0, triangles->line_vertices.data());
+            glDrawArrays(GL_LINES, 0, 2 * triangles->num_triangles);
             glDisable(GL_VERTEX_ARRAY);
         }
     }

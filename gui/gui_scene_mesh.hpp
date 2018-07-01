@@ -11,7 +11,7 @@ public:
     using GuiSceneAbstract::GuiSceneAbstract;
 
 protected:
-    void initialize_scene();
+    std::shared_ptr<const GuiOpenglTriangles> make_triangles();
 
     virtual void calculate_attributes(
         ElementId element_id,

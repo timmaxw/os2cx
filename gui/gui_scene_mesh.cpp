@@ -1,8 +1,11 @@
 #include "gui_scene_mesh.hpp"
 
+#include "gui_opengl_widget.hpp"
+
 namespace os2cx {
 
-void GuiSceneMesh::initialize_scene() {
+std::shared_ptr<const GuiOpenglTriangles> GuiSceneMesh::make_triangles() {
+    GuiOpenglTriangles triangles;
     for (const FaceId &fi : project->mesh_index->unmatched_faces) {
         const Element3 &element = project->mesh->elements[fi.element_id];
         const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
@@ -22,7 +25,7 @@ void GuiSceneMesh::initialize_scene() {
             ps[i] += disp * Length(1.0);
         }
 
-        add_triangle(ps, cs);
+        triangles.add_triangle(ps, cs);
 
         for (int i = 0; i < 3; ++i) {
             int j = (i + 1) % 3;
@@ -33,10 +36,11 @@ void GuiSceneMesh::initialize_scene() {
                 Point line_ps[2];
                 line_ps[0] = ps[i];
                 line_ps[1] = ps[j];
-                add_line(line_ps);
+                triangles.add_line(line_ps);
             }
         }
     }
+    return std::make_shared<GuiOpenglTriangles>(std::move(triangles));
 }
 
 void GuiSceneMesh::calculate_attributes(

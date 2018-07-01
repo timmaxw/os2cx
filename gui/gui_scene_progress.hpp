@@ -22,7 +22,7 @@ public slots:
     void update_progress();
 
 private:
-    void initialize_scene();
+    std::shared_ptr<const GuiOpenglTriangles> make_triangles();
 
     QProgressBar *progress_bar;
     QPushButton *button_results;

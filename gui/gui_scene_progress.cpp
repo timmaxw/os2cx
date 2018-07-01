@@ -1,6 +1,6 @@
 #include "gui_scene_progress.hpp"
 
-#include <QVBoxLayout>
+#include "gui_opengl_widget.hpp"
 
 namespace os2cx {
 
@@ -29,8 +29,9 @@ void GuiSceneProgress::update_progress() {
         project->progress == Project::Progress::ResultsDone);
 }
 
-void GuiSceneProgress::initialize_scene() {
+std::shared_ptr<const GuiOpenglTriangles> GuiSceneProgress::make_triangles() {
     /* do nothing, show a blank page. TODO: do better */
+    return std::make_shared<GuiOpenglTriangles>();
 }
 
 } /* namespace os2cx */

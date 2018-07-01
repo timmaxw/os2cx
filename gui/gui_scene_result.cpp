@@ -150,9 +150,7 @@ void GuiSceneResultStatic::construct_combo_box_disp_scale() {
     [this](int new_index) {
         disp_scale =
             combo_box_disp_scale->itemData(new_index).value<double>();
-        clear();
-        initialize_scene();
-        emit rerender();
+        emit refresh_scene();
     });
 }
 
@@ -189,9 +187,7 @@ void GuiSceneResultStatic::set_color_variable(const std::string &new_var) {
     }
 
     color_scale->set_range(anchor, min_datum, max_datum);
-    clear();
-    initialize_scene();
-    emit rerender();
+    emit refresh_scene();
 }
 
 void GuiSceneResultStatic::calculate_attributes(
