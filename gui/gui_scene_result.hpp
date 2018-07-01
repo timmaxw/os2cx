@@ -23,7 +23,7 @@ private:
     };
 
     static double subvariable_value(
-        const Results::Variable &var,
+        const Results::Dataset &dataset,
         SubVariable subvar,
         NodeId node_id);
 

@@ -4,7 +4,7 @@ namespace os2cx {
 
 void result_var_from_frd_analysis(
     const FrdAnalysis &fa,
-    Results::Variable *var
+    Results::Dataset *var
 ) {
     if (fa.entities.size() == 4 &&
             fa.entities[0].ind1 == 1 &&
@@ -64,9 +64,9 @@ void results_from_frd_analyses(
 ) {
     for (const FrdAnalysis &fa : frd_analyses) {
         if (fa.ctype == FrdAnalysis::CType::Static) {
-            Results::VariableSet *step =
+            Results::StaticStep *step =
                 &results_out->static_steps[fa.analys];
-            Results::Variable *var = &step->vars[fa.name];
+            Results::Dataset *var = &step->datasets[fa.name];
             result_var_from_frd_analysis(fa, var);
             if (fa.name == "DISP" && var->node_vector) {
                 step->disp_key = fa.name;

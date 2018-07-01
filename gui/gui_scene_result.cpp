@@ -7,10 +7,10 @@ GuiSceneResultStatic::GuiSceneResultStatic(
 ) :
     GuiSceneMesh(parent, project), result_name(result_name_)
 {
-    const Results::VariableSet &step =
+    const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
 
-    for (const auto &pair : step.vars) {
+    for (const auto &pair : step.datasets) {
         double maximum = 0;
         if (pair.second.node_vector) {
             const ContiguousMap<NodeId, Vector> &nv = *pair.second.node_vector;
@@ -33,7 +33,7 @@ GuiSceneResultStatic::GuiSceneResultStatic(
     create_widget_label(tr("Color by variable"));
     combo_box_color_variable = new QComboBox(this);
     layout->addWidget(combo_box_color_variable);
-    for (const auto &pair : step.vars) {
+    for (const auto &pair : step.datasets) {
         combo_box_color_variable->addItem(QString(pair.first.c_str()));
     }
     connect(combo_box_color_variable,
@@ -47,35 +47,35 @@ GuiSceneResultStatic::GuiSceneResultStatic(
     color_scale = new GuiColorScale(this);
     layout->addWidget(color_scale);
 
-    set_color_variable(step.vars.begin()->first);
+    set_color_variable(step.datasets.begin()->first);
 }
 
 double GuiSceneResultStatic::subvariable_value(
-    const Results::Variable &var,
+    const Results::Dataset &dataset,
     SubVariable subvar,
     NodeId node_id
 ) {
     switch (subvar) {
     case SubVariable::VectorMagnitude:
-        return (*var.node_vector)[node_id].magnitude();
+        return (*dataset.node_vector)[node_id].magnitude();
     case SubVariable::VectorX:
-        return (*var.node_vector)[node_id].x;
+        return (*dataset.node_vector)[node_id].x;
     case SubVariable::VectorY:
-        return (*var.node_vector)[node_id].y;
+        return (*dataset.node_vector)[node_id].y;
     case SubVariable::VectorZ:
-        return (*var.node_vector)[node_id].z;
+        return (*dataset.node_vector)[node_id].z;
     case SubVariable::MatrixXX:
-        return (*var.node_matrix)[node_id].cols[0].x;
+        return (*dataset.node_matrix)[node_id].cols[0].x;
     case SubVariable::MatrixYY:
-        return (*var.node_matrix)[node_id].cols[1].y;
+        return (*dataset.node_matrix)[node_id].cols[1].y;
     case SubVariable::MatrixZZ:
-        return (*var.node_matrix)[node_id].cols[2].z;
+        return (*dataset.node_matrix)[node_id].cols[2].z;
     case SubVariable::MatrixXY:
-        return (*var.node_matrix)[node_id].cols[0].y;
+        return (*dataset.node_matrix)[node_id].cols[0].y;
     case SubVariable::MatrixYZ:
-        return (*var.node_matrix)[node_id].cols[1].z;
+        return (*dataset.node_matrix)[node_id].cols[1].z;
     case SubVariable::MatrixZX:
-        return (*var.node_matrix)[node_id].cols[2].x;
+        return (*dataset.node_matrix)[node_id].cols[2].x;
     default: assert(false);
     }
 }
@@ -85,10 +85,10 @@ void GuiSceneResultStatic::construct_combo_box_disp_scale() {
     combo_box_disp_scale = new QComboBox(this);
     layout->addWidget(combo_box_disp_scale);
 
-    const Results::VariableSet &step =
+    const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
     const ContiguousMap<NodeId, Vector> &disp =
-        *step.vars.at(step.disp_key).node_vector;
+        *step.datasets.at(step.disp_key).node_vector;
     double max_disp;
     for (NodeId ni = disp.key_begin(); ni != disp.key_end(); ++ni) {
         max_disp = std::max(max_disp, disp[ni].magnitude());
@@ -159,26 +159,26 @@ void GuiSceneResultStatic::construct_combo_box_disp_scale() {
 void GuiSceneResultStatic::set_color_variable(const std::string &new_var) {
     color_variable = new_var;
 
-    const Results::VariableSet &step =
+    const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
-    const Results::Variable &var =
-        step.vars.at(color_variable);
-    if (var.node_vector) {
+    const Results::Dataset &dataset =
+        step.datasets.at(color_variable);
+    if (dataset.node_vector) {
         color_subvariable = SubVariable::VectorMagnitude;
     } else {
         color_subvariable = SubVariable::MatrixXX;
     }
 
-    double min_var = std::numeric_limits<double>::max();
-    double max_var = std::numeric_limits<double>::min();
-    NodeId node_begin = var.node_vector ?
-        var.node_vector->key_begin() : var.node_matrix->key_begin();
-    NodeId node_end = var.node_vector ?
-        var.node_vector->key_end() : var.node_matrix->key_end();
+    double min_datum = std::numeric_limits<double>::max();
+    double max_datum = std::numeric_limits<double>::min();
+    NodeId node_begin = dataset.node_vector ?
+        dataset.node_vector->key_begin() : dataset.node_matrix->key_begin();
+    NodeId node_end = dataset.node_vector ?
+        dataset.node_vector->key_end() : dataset.node_matrix->key_end();
     for (NodeId ni = node_begin; ni != node_end; ++ni) {
-        double value = subvariable_value(var, color_subvariable, ni);
-        min_var = std::min(min_var, value);
-        max_var = std::max(max_var, value);
+        double value = subvariable_value(dataset, color_subvariable, ni);
+        min_datum = std::min(min_datum, value);
+        max_datum = std::max(max_datum, value);
     }
 
     GuiColorScale::Anchor anchor;
@@ -188,7 +188,7 @@ void GuiSceneResultStatic::set_color_variable(const std::string &new_var) {
         anchor = GuiColorScale::Anchor::Balanced;
     }
 
-    color_scale->set_range(anchor, min_var, max_var);
+    color_scale->set_range(anchor, min_datum, max_datum);
     clear();
     initialize_scene();
     emit rerender();
@@ -204,15 +204,15 @@ void GuiSceneResultStatic::calculate_attributes(
     (void)element_id;
     (void)face_index;
 
-    const Results::VariableSet &step =
+    const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
 
-    double color_value = subvariable_value(
-        step.vars.at(color_variable), color_subvariable, node_id);
-    *color_out = color_scale->color(color_value);
+    double color_datum = subvariable_value(
+        step.datasets.at(color_variable), color_subvariable, node_id);
+    *color_out = color_scale->color(color_datum);
 
     if (!step.disp_key.empty()) {
-        Vector disp = (*step.vars.at(step.disp_key).node_vector)[node_id];
+        Vector disp = (*step.datasets.at(step.disp_key).node_vector)[node_id];
         *displacement_out = disp * disp_scale;
     } else {
         *displacement_out = Vector(0, 0, 0);
