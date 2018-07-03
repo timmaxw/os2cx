@@ -4,8 +4,8 @@
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglTriangles> GuiModePoly3::make_triangles() {
-    GuiOpenglTriangles triangles;
+std::shared_ptr<const GuiOpenglScene> GuiModePoly3::make_scene() {
+    GuiOpenglScene scene;
     for (const auto &pair : project->mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();
         if (plc == nullptr) {
@@ -35,11 +35,11 @@ std::shared_ptr<const GuiOpenglTriangles> GuiModePoly3::make_triangles() {
                 if (outside_volume_index == 1) {
                     std::swap(ps[2], ps[1]);
                 }
-                triangles.add_triangle(ps, colors);
+                scene.add_triangle(ps, colors);
             }
         }
     }
-    return std::make_shared<GuiOpenglTriangles>(std::move(triangles));
+    return std::make_shared<GuiOpenglScene>(std::move(scene));
 }
 
 } /* namespace os2cx */

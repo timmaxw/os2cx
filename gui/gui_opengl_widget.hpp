@@ -8,9 +8,9 @@
 
 namespace os2cx {
 
-class GuiOpenglTriangles {
+class GuiOpenglScene {
 public:
-    GuiOpenglTriangles();
+    GuiOpenglScene();
 
     void add_triangle(const Point *points, const QColor *colors);
     void add_line(const Point *points);
@@ -46,7 +46,7 @@ private:
 
     const Project *project;
     GuiModeAbstract *mode;
-    std::shared_ptr<const GuiOpenglTriangles> triangles;
+    std::shared_ptr<const GuiOpenglScene> scene;
     int mouse_last_x, mouse_last_y;
     float yaw, pitch; /* in degrees */
 };

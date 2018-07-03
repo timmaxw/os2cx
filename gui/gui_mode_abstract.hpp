@@ -9,7 +9,7 @@
 
 namespace os2cx {
 
-class GuiOpenglTriangles;
+class GuiOpenglScene;
 
 class GuiModeAbstract : public QWidget
 {
@@ -17,7 +17,7 @@ class GuiModeAbstract : public QWidget
 public:
     GuiModeAbstract(QWidget *parent, const Project *project);
 
-    virtual std::shared_ptr<const GuiOpenglTriangles> make_triangles() = 0;
+    virtual std::shared_ptr<const GuiOpenglScene> make_scene() = 0;
 
 signals:
     void refresh_scene();

@@ -4,11 +4,11 @@
 
 namespace os2cx {
 
-GuiOpenglTriangles::GuiOpenglTriangles() :
+GuiOpenglScene::GuiOpenglScene() :
     num_triangles(0), num_lines(0)
 { }
 
-void GuiOpenglTriangles::add_triangle(
+void GuiOpenglScene::add_triangle(
     const Point *points, const QColor *colors
 ) {
     Vector normal = triangle_normal(points[0], points[1], points[2]);
@@ -26,7 +26,7 @@ void GuiOpenglTriangles::add_triangle(
     }
 }
 
-void GuiOpenglTriangles::add_line(const Point *points) {
+void GuiOpenglScene::add_line(const Point *points) {
     ++num_lines;
     for (int i = 0; i < 2; ++i) {
         line_vertices.push_back(points[i].x);
@@ -50,9 +50,9 @@ void GuiOpenglWidget::set_mode(GuiModeAbstract *new_mode) {
 
 void GuiOpenglWidget::refresh_scene() {
     if (mode != nullptr) {
-        triangles = mode->make_triangles();
+        scene = mode->make_scene();
     } else {
-        triangles = nullptr;
+        scene = nullptr;
     }
     update();
 }
@@ -124,27 +124,27 @@ void GuiOpenglWidget::paintGL() {
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);
     glRotatef(-yaw, 0.0f, 0.0f, 1.0f);
 
-    if (triangles != nullptr) {
-        if (triangles->num_triangles != 0) {
+    if (scene != nullptr) {
+        if (scene->num_triangles != 0) {
             glEnable(GL_VERTEX_ARRAY);
             glEnable(GL_COLOR_ARRAY);
             glEnable(GL_NORMAL_ARRAY);
             glVertexPointer(
-                3, GL_FLOAT, 0, triangles->triangle_vertices.data());
+                3, GL_FLOAT, 0, scene->triangle_vertices.data());
             glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, triangles->triangle_colors.data());
-            glNormalPointer(GL_FLOAT, 0, triangles->triangle_normals.data());
-            glDrawArrays(GL_TRIANGLES, 0, 3 * triangles->num_triangles);
+                3, GL_UNSIGNED_BYTE, 0, scene->triangle_colors.data());
+            glNormalPointer(GL_FLOAT, 0, scene->triangle_normals.data());
+            glDrawArrays(GL_TRIANGLES, 0, 3 * scene->num_triangles);
             glDisable(GL_NORMAL_ARRAY);
             glDisable(GL_COLOR_ARRAY);
             glDisable(GL_VERTEX_ARRAY);
         }
 
-        if (triangles->num_lines != 0) {
+        if (scene->num_lines != 0) {
             glColor3f(0, 0, 0);
             glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(3, GL_FLOAT, 0, triangles->line_vertices.data());
-            glDrawArrays(GL_LINES, 0, 2 * triangles->num_triangles);
+            glVertexPointer(3, GL_FLOAT, 0, scene->line_vertices.data());
+            glDrawArrays(GL_LINES, 0, 2 * scene->num_triangles);
             glDisable(GL_VERTEX_ARRAY);
         }
     }

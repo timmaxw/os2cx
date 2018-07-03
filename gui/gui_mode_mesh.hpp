@@ -11,7 +11,7 @@ public:
     using GuiModeAbstract::GuiModeAbstract;
 
 protected:
-    std::shared_ptr<const GuiOpenglTriangles> make_triangles();
+    std::shared_ptr<const GuiOpenglScene> make_scene();
 
     virtual void calculate_attributes(
         ElementId element_id,

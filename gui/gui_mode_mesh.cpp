@@ -4,8 +4,8 @@
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglTriangles> GuiModeMesh::make_triangles() {
-    GuiOpenglTriangles triangles;
+std::shared_ptr<const GuiOpenglScene> GuiModeMesh::make_scene() {
+    GuiOpenglScene scene;
     for (const FaceId &fi : project->mesh_index->unmatched_faces) {
         const Element3 &element = project->mesh->elements[fi.element_id];
         const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
@@ -25,7 +25,7 @@ std::shared_ptr<const GuiOpenglTriangles> GuiModeMesh::make_triangles() {
             ps[i] += disp * Length(1.0);
         }
 
-        triangles.add_triangle(ps, cs);
+        scene.add_triangle(ps, cs);
 
         for (int i = 0; i < 3; ++i) {
             int j = (i + 1) % 3;
@@ -36,11 +36,11 @@ std::shared_ptr<const GuiOpenglTriangles> GuiModeMesh::make_triangles() {
                 Point line_ps[2];
                 line_ps[0] = ps[i];
                 line_ps[1] = ps[j];
-                triangles.add_line(line_ps);
+                scene.add_line(line_ps);
             }
         }
     }
-    return std::make_shared<GuiOpenglTriangles>(std::move(triangles));
+    return std::make_shared<GuiOpenglScene>(std::move(scene));
 }
 
 void GuiModeMesh::calculate_attributes(

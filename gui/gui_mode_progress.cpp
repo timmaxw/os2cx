@@ -29,9 +29,9 @@ void GuiModeProgress::update_progress() {
         project->progress == Project::Progress::ResultsDone);
 }
 
-std::shared_ptr<const GuiOpenglTriangles> GuiModeProgress::make_triangles() {
+std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {
     /* do nothing, show a blank page. TODO: do better */
-    return std::make_shared<GuiOpenglTriangles>();
+    return std::make_shared<GuiOpenglScene>();
 }
 
 } /* namespace os2cx */
