@@ -5,20 +5,20 @@
 #include <QMenu>
 #include <QMenuBar>
 
-#include "gui_scene_mesh.hpp"
-#include "gui_scene_poly3.hpp"
-#include "gui_scene_progress.hpp"
-#include "gui_scene_result.hpp"
+#include "gui_mode_mesh.hpp"
+#include "gui_mode_poly3.hpp"
+#include "gui_mode_progress.hpp"
+#include "gui_mode_result.hpp"
 
 namespace os2cx {
 
 GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     QMainWindow(nullptr),
-    current_scene(nullptr)
+    current_mode(nullptr)
 {
     project_runner = new GuiProjectRunner(this, scad_path);
     connect(project_runner, &GuiProjectRunner::project_updated,
-        this, &GuiMainWindow::refresh_combo_box_scenes);
+        this, &GuiMainWindow::refresh_combo_box_modes);
 
     QMenu *file_menu = menuBar()->addMenu(tr("File"));
     file_menu->addAction(tr("Open"),
@@ -39,13 +39,13 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     right_panel = new GuiOpenglWidget(this, project_runner->get_project());
     splitter->addWidget(right_panel);
 
-    combo_box_scenes = new GuiComboBoxScenes(left_panel);
-    left_panel_layout->addWidget(combo_box_scenes);
+    combo_box_modes = new GuiComboBoxModes(left_panel);
+    left_panel_layout->addWidget(combo_box_modes);
     connect(
-        combo_box_scenes,
-        &GuiComboBoxScenes::current_scene_changed,
-        this, &GuiMainWindow::set_current_scene);
-    refresh_combo_box_scenes();
+        combo_box_modes,
+        &GuiComboBoxModes::current_mode_changed,
+        this, &GuiMainWindow::set_current_mode);
+    refresh_combo_box_modes();
 
     left_panel_layout->addStretch(1);
 
@@ -55,101 +55,101 @@ void GuiMainWindow::menu_file_open() {
     std::cout << "menu_file_open() not implemented yet" << std::endl;
 }
 
-void GuiMainWindow::refresh_combo_box_scenes() {
+void GuiMainWindow::refresh_combo_box_modes() {
     const Project *project = project_runner->get_project();
 
-    GuiComboBoxScenes::SceneVector scenes;
+    GuiComboBoxModes::ModeVector modes;
 
-    scenes.push_back({
+    modes.push_back({
         tr("Progress"),
         [this]() {
-            GuiSceneProgress *scene = new GuiSceneProgress(
+            GuiModeProgress *mode = new GuiModeProgress(
                 left_panel,
                 project_runner->get_project());
             connect(
                 project_runner, &GuiProjectRunner::project_updated,
-                scene, &GuiSceneProgress::update_progress
+                mode, &GuiModeProgress::update_progress
             );
             connect(
-                scene, &GuiSceneProgress::see_results,
+                mode, &GuiModeProgress::see_results,
                 [this]() {
-                    combo_box_scenes->set_current_scene(
-                        first_result_scene_name);
+                    combo_box_modes->set_current_mode(
+                        first_result_mode_name);
                 }
             );
-            return scene;
+            return mode;
         }
     });
 
     if (project->progress >= Project::Progress::PolyAttrsDone) {
-        scenes.push_back({
+        modes.push_back({
             tr("Pre-mesh geometry"),
             [this]() {
-                return new GuiScenePoly3(
+                return new GuiModePoly3(
                     left_panel,
                     project_runner->get_project());
             }
         });
     } else {
-        scenes.push_back({tr("Pre-mesh geometry"), nullptr});
+        modes.push_back({tr("Pre-mesh geometry"), nullptr});
     }
 
     if (project->progress >= Project::Progress::MeshAttrsDone) {
-        scenes.push_back({
+        modes.push_back({
             tr("Mesh geometry"),
             [this]() {
-                return new GuiSceneMesh(
+                return new GuiModeMesh(
                     left_panel,
                     project_runner->get_project());
             }
         });
     } else {
-        scenes.push_back({tr("Mesh geometry"), nullptr});
+        modes.push_back({tr("Mesh geometry"), nullptr});
     }
 
     if (project->progress < Project::Progress::ResultsDone) {
-        scenes.push_back({tr("Results..."), nullptr});
+        modes.push_back({tr("Results..."), nullptr});
     } else {
-        first_result_scene_name = QString();
+        first_result_mode_name = QString();
         for (const auto &pair : project->results->static_steps) {
             std::string result_name = pair.first;
             QString name = tr("Result ") + QString(result_name.c_str());
-            scenes.push_back({
+            modes.push_back({
                 name,
                 [this, result_name]() {
-                    return new GuiSceneResultStatic(
+                    return new GuiModeResultStatic(
                         left_panel,
                         project_runner->get_project(),
                         result_name);
                 }
             });
-            if (first_result_scene_name.isNull()) {
-                first_result_scene_name = name;
+            if (first_result_mode_name.isNull()) {
+                first_result_mode_name = name;
             }
         }
     }
 
-    combo_box_scenes->set_scenes(scenes);
+    combo_box_modes->set_modes(modes);
 }
 
-void GuiMainWindow::set_current_scene(GuiSceneAbstract *new_scene) {
-    GuiSceneAbstract *old_scene = current_scene;
-    current_scene = new_scene;
+void GuiMainWindow::set_current_mode(GuiModeAbstract *new_mode) {
+    GuiModeAbstract *old_mode = current_mode;
+    current_mode = new_mode;
 
-    if (old_scene != nullptr) {
-        left_panel_layout->removeWidget(old_scene);
-        old_scene->hide();
-        disconnect(old_scene, nullptr, right_panel, nullptr);
+    if (old_mode != nullptr) {
+        left_panel_layout->removeWidget(old_mode);
+        old_mode->hide();
+        disconnect(old_mode, nullptr, right_panel, nullptr);
     }
 
-    if (new_scene != nullptr) {
-        left_panel_layout->insertWidget(1, new_scene);
-        new_scene->show();
-        connect(new_scene, &GuiSceneAbstract::refresh_scene,
+    if (new_mode != nullptr) {
+        left_panel_layout->insertWidget(1, new_mode);
+        new_mode->show();
+        connect(new_mode, &GuiModeAbstract::refresh_scene,
             right_panel, &GuiOpenglWidget::refresh_scene);
     }
 
-    right_panel->set_scene(new_scene);
+    right_panel->set_mode(new_mode);
 }
 
 QSize GuiMainWindow::sizeHint() const {

@@ -1,11 +1,11 @@
-#include "gui_scene_result.hpp"
+#include "gui_mode_result.hpp"
 
 namespace os2cx {
 
-GuiSceneResultStatic::GuiSceneResultStatic(
+GuiModeResultStatic::GuiModeResultStatic(
     QWidget *parent, const Project *project, const std::string &result_name_
 ) :
-    GuiSceneMesh(parent, project), result_name(result_name_)
+    GuiModeMesh(parent, project), result_name(result_name_)
 {
     const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
@@ -50,7 +50,7 @@ GuiSceneResultStatic::GuiSceneResultStatic(
     set_color_variable(step.datasets.begin()->first);
 }
 
-double GuiSceneResultStatic::subvariable_value(
+double GuiModeResultStatic::subvariable_value(
     const Results::Dataset &dataset,
     SubVariable subvar,
     NodeId node_id
@@ -80,7 +80,7 @@ double GuiSceneResultStatic::subvariable_value(
     }
 }
 
-void GuiSceneResultStatic::construct_combo_box_disp_scale() {
+void GuiModeResultStatic::construct_combo_box_disp_scale() {
     create_widget_label(tr("Scale displacement"));
     combo_box_disp_scale = new QComboBox(this);
     layout->addWidget(combo_box_disp_scale);
@@ -154,7 +154,7 @@ void GuiSceneResultStatic::construct_combo_box_disp_scale() {
     });
 }
 
-void GuiSceneResultStatic::set_color_variable(const std::string &new_var) {
+void GuiModeResultStatic::set_color_variable(const std::string &new_var) {
     color_variable = new_var;
 
     const Results::StaticStep &step =
@@ -190,7 +190,7 @@ void GuiSceneResultStatic::set_color_variable(const std::string &new_var) {
     emit refresh_scene();
 }
 
-void GuiSceneResultStatic::calculate_attributes(
+void GuiModeResultStatic::calculate_attributes(
     ElementId element_id,
     int face_index,
     NodeId node_id,

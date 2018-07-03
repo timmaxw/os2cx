@@ -38,19 +38,19 @@ void GuiOpenglTriangles::add_line(const Point *points) {
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent, const Project *project_) :
     QOpenGLWidget(parent),
     project(project_),
-    scene(nullptr),
+    mode(nullptr),
     yaw(20),
     pitch(40)
 { }
 
-void GuiOpenglWidget::set_scene(GuiSceneAbstract *new_scene) {
-    scene = new_scene;
+void GuiOpenglWidget::set_mode(GuiModeAbstract *new_mode) {
+    mode = new_mode;
     refresh_scene();
 }
 
 void GuiOpenglWidget::refresh_scene() {
-    if (scene != nullptr) {
-        triangles = scene->make_triangles();
+    if (mode != nullptr) {
+        triangles = mode->make_triangles();
     } else {
         triangles = nullptr;
     }

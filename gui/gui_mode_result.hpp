@@ -1,17 +1,17 @@
-#ifndef OS2CX_GUI_SCENE_RESULT_HPP_
-#define OS2CX_GUI_SCENE_RESULT_HPP_
+#ifndef OS2CX_GUI_MODE_RESULT_HPP_
+#define OS2CX_GUI_MODE_RESULT_HPP_
 
 #include <QComboBox>
 
 #include "gui_color_scale.hpp"
-#include "gui_scene_mesh.hpp"
+#include "gui_mode_mesh.hpp"
 
 namespace os2cx {
 
-class GuiSceneResultStatic : public GuiSceneMesh
+class GuiModeResultStatic : public GuiModeMesh
 {
 public:
-    GuiSceneResultStatic(
+    GuiModeResultStatic(
         QWidget *parent,
         const Project *project,
         const std::string &result_name);
@@ -54,4 +54,4 @@ private:
 
 } /* namespace os2cx */
 
-#endif /* OS2CX_GUI_SCENE_RESULT_HPP_ */
+#endif /* OS2CX_GUI_MODE_RESULT_HPP_ */

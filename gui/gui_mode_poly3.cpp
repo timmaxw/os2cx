@@ -1,10 +1,10 @@
-#include "gui_scene_poly3.hpp"
+#include "gui_mode_poly3.hpp"
 
 #include "gui_opengl_widget.hpp"
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglTriangles> GuiScenePoly3::make_triangles() {
+std::shared_ptr<const GuiOpenglTriangles> GuiModePoly3::make_triangles() {
     GuiOpenglTriangles triangles;
     for (const auto &pair : project->mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();

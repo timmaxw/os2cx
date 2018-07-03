@@ -1,14 +1,14 @@
-#ifndef OS2CX_GUI_SCENE_MESH_HPP_
-#define OS2CX_GUI_SCENE_MESH_HPP_
+#ifndef OS2CX_GUI_MODE_MESH_HPP_
+#define OS2CX_GUI_MODE_MESH_HPP_
 
-#include "gui_scene_abstract.hpp"
+#include "gui_mode_abstract.hpp"
 
 namespace os2cx {
 
-class GuiSceneMesh : public GuiSceneAbstract
+class GuiModeMesh : public GuiModeAbstract
 {
 public:
-    using GuiSceneAbstract::GuiSceneAbstract;
+    using GuiModeAbstract::GuiModeAbstract;
 
 protected:
     std::shared_ptr<const GuiOpenglTriangles> make_triangles();
@@ -23,4 +23,4 @@ protected:
 
 } /* namespace os2cx */
 
-#endif /* OS2CX_GUI_SCENE_MESH_HPP_ */
+#endif /* OS2CX_GUI_MODE_MESH_HPP_ */

@@ -1,10 +1,10 @@
-#include "gui_scene_mesh.hpp"
+#include "gui_mode_mesh.hpp"
 
 #include "gui_opengl_widget.hpp"
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglTriangles> GuiSceneMesh::make_triangles() {
+std::shared_ptr<const GuiOpenglTriangles> GuiModeMesh::make_triangles() {
     GuiOpenglTriangles triangles;
     for (const FaceId &fi : project->mesh_index->unmatched_faces) {
         const Element3 &element = project->mesh->elements[fi.element_id];
@@ -43,7 +43,7 @@ std::shared_ptr<const GuiOpenglTriangles> GuiSceneMesh::make_triangles() {
     return std::make_shared<GuiOpenglTriangles>(std::move(triangles));
 }
 
-void GuiSceneMesh::calculate_attributes(
+void GuiModeMesh::calculate_attributes(
     ElementId element_id,
     int face_index,
     NodeId node_id,

@@ -6,10 +6,10 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 
-#include "gui_combo_box_scenes.hpp"
+#include "gui_combo_box_modes.hpp"
 #include "gui_opengl_widget.hpp"
 #include "gui_project_runner.hpp"
-#include "gui_scene_abstract.hpp"
+#include "gui_mode_abstract.hpp"
 #include "project.hpp"
 
 namespace os2cx {
@@ -23,8 +23,8 @@ public:
 
 public slots:
     void menu_file_open();
-    void refresh_combo_box_scenes();
-    void set_current_scene(GuiSceneAbstract *new_controls);
+    void refresh_combo_box_modes();
+    void set_current_mode(GuiModeAbstract *new_mode);
 
 private:
     QSize sizeHint() const;
@@ -36,9 +36,9 @@ private:
     QVBoxLayout *left_panel_layout;
     GuiOpenglWidget *right_panel;
 
-    GuiComboBoxScenes *combo_box_scenes;
-    GuiSceneAbstract *current_scene;
-    QString first_result_scene_name;
+    GuiComboBoxModes *combo_box_modes;
+    GuiModeAbstract *current_mode;
+    QString first_result_mode_name;
 };
 
 } /* namespace os2cx */

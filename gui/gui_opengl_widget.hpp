@@ -4,7 +4,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_1_1>
 
-#include "gui_scene_abstract.hpp"
+#include "gui_mode_abstract.hpp"
 
 namespace os2cx {
 
@@ -31,7 +31,7 @@ class GuiOpenglWidget :
 public:
     GuiOpenglWidget(QWidget *parent, const Project *project);
 
-    void set_scene(GuiSceneAbstract *scene);
+    void set_mode(GuiModeAbstract *mode);
 
 public slots:
     void refresh_scene();
@@ -45,7 +45,7 @@ private:
     void mouseMoveEvent(QMouseEvent *event);
 
     const Project *project;
-    GuiSceneAbstract *scene;
+    GuiModeAbstract *mode;
     std::shared_ptr<const GuiOpenglTriangles> triangles;
     int mouse_last_x, mouse_last_y;
     float yaw, pitch; /* in degrees */

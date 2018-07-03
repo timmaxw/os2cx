@@ -1,5 +1,5 @@
-#ifndef OS2CX_GUI_ABSTRACT_OPENGL_WIDGET_HPP_
-#define OS2CX_GUI_ABSTRACT_OPENGL_WIDGET_HPP_
+#ifndef OS2CX_GUI_MODE_ABSTRACT_HPP_
+#define OS2CX_GUI_MODE_ABSTRACT_HPP_
 
 #include <QOpenGLFunctions_1_1>
 #include <QVBoxLayout>
@@ -11,11 +11,11 @@ namespace os2cx {
 
 class GuiOpenglTriangles;
 
-class GuiSceneAbstract : public QWidget
+class GuiModeAbstract : public QWidget
 {
     Q_OBJECT
 public:
-    GuiSceneAbstract(QWidget *parent, const Project *project);
+    GuiModeAbstract(QWidget *parent, const Project *project);
 
     virtual std::shared_ptr<const GuiOpenglTriangles> make_triangles() = 0;
 
@@ -32,7 +32,6 @@ protected:
     QVBoxLayout *layout;
 };
 
-
 } /* namespace os2cx */
 
-#endif
+#endif /* OS2CX_GUI_MODE_ABSTRACT_HPP_ */

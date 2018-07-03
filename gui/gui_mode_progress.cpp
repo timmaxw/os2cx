@@ -1,11 +1,11 @@
-#include "gui_scene_progress.hpp"
+#include "gui_mode_progress.hpp"
 
 #include "gui_opengl_widget.hpp"
 
 namespace os2cx {
 
-GuiSceneProgress::GuiSceneProgress(QWidget *parent, const Project *project) :
-    GuiSceneAbstract(parent, project)
+GuiModeProgress::GuiModeProgress(QWidget *parent, const Project *project) :
+    GuiModeAbstract(parent, project)
 {
     create_widget_label(tr("Calculating..."));
     progress_bar = new QProgressBar(this);
@@ -23,13 +23,13 @@ GuiSceneProgress::GuiSceneProgress(QWidget *parent, const Project *project) :
     update_progress();
 }
 
-void GuiSceneProgress::update_progress() {
+void GuiModeProgress::update_progress() {
     progress_bar->setValue(static_cast<int>(project->progress));
     button_results->setEnabled(
         project->progress == Project::Progress::ResultsDone);
 }
 
-std::shared_ptr<const GuiOpenglTriangles> GuiSceneProgress::make_triangles() {
+std::shared_ptr<const GuiOpenglTriangles> GuiModeProgress::make_triangles() {
     /* do nothing, show a blank page. TODO: do better */
     return std::make_shared<GuiOpenglTriangles>();
 }

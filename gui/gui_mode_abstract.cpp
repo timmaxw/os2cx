@@ -1,10 +1,10 @@
-#include "gui_scene_abstract.hpp"
+#include "gui_mode_abstract.hpp"
 
 #include <QLabel>
 
 namespace os2cx {
 
-GuiSceneAbstract::GuiSceneAbstract(QWidget *parent, const Project *project_) :
+GuiModeAbstract::GuiModeAbstract(QWidget *parent, const Project *project_) :
     QWidget(parent), project(project_)
 {
     layout = new QVBoxLayout(this);
@@ -16,7 +16,7 @@ GuiSceneAbstract::GuiSceneAbstract(QWidget *parent, const Project *project_) :
     layout->setContentsMargins(0, 0, 0, 0);
 }
 
-void GuiSceneAbstract::create_widget_label(const QString &text) {
+void GuiModeAbstract::create_widget_label(const QString &text) {
     layout->addSpacing(10);
     QLabel *label = new QLabel(text, this);
     layout->addWidget(label);
