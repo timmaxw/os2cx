@@ -30,6 +30,7 @@ private:
     void construct_combo_box_disp_scale();
 
     void set_color_variable(const std::string &new_var);
+    void set_color_subvariable(SubVariable new_subvar);
 
     void calculate_attributes(
         ElementId element_id,
@@ -47,6 +48,7 @@ private:
     QComboBox *combo_box_color_variable;
     std::string color_variable;
 
+    QComboBox *combo_box_color_subvariable;
     SubVariable color_subvariable;
 
     GuiColorScale *color_scale;

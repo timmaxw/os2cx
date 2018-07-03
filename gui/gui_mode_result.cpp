@@ -43,6 +43,16 @@ GuiModeResultStatic::GuiModeResultStatic(
             combo_box_color_variable->itemText(new_index).toStdString());
     });
 
+    create_widget_label(tr("Color by subvariable"));
+    combo_box_color_subvariable = new QComboBox(this);
+    layout->addWidget(combo_box_color_subvariable);
+    connect(combo_box_color_subvariable,
+        QOverload<int>::of(&QComboBox::activated),
+    [this](int new_index) {
+        set_color_subvariable(static_cast<SubVariable>(
+            combo_box_color_subvariable->itemData(new_index).value<int>()));
+    });
+
     create_widget_label(tr("Color scale"));
     color_scale = new GuiColorScale(this);
     layout->addWidget(color_scale);
@@ -161,11 +171,52 @@ void GuiModeResultStatic::set_color_variable(const std::string &new_var) {
         project->results->static_steps.at(result_name);
     const Results::Dataset &dataset =
         step.datasets.at(color_variable);
+
+    combo_box_color_subvariable->clear();
     if (dataset.node_vector) {
-        color_subvariable = SubVariable::VectorMagnitude;
+        combo_box_color_subvariable->addItem(tr("Magnitude"),
+            QVariant(static_cast<int>(SubVariable::VectorMagnitude)));
+        combo_box_color_subvariable->addItem(tr("X Component"),
+            QVariant(static_cast<int>(SubVariable::VectorX)));
+        combo_box_color_subvariable->addItem(tr("Y Component"),
+            QVariant(static_cast<int>(SubVariable::VectorY)));
+        combo_box_color_subvariable->addItem(tr("Z Component"),
+            QVariant(static_cast<int>(SubVariable::VectorZ)));
     } else {
-        color_subvariable = SubVariable::MatrixXX;
+        combo_box_color_subvariable->addItem(tr("XX Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixXX)));
+        combo_box_color_subvariable->addItem(tr("YY Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixYY)));
+        combo_box_color_subvariable->addItem(tr("ZZ Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixZZ)));
+        combo_box_color_subvariable->addItem(tr("XY Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixXY)));
+        combo_box_color_subvariable->addItem(tr("YZ Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixYZ)));
+        combo_box_color_subvariable->addItem(tr("ZX Component"),
+            QVariant(static_cast<int>(SubVariable::MatrixZX)));
     }
+
+    combo_box_color_subvariable->setCurrentIndex(0);
+    for (int i = 0; i < combo_box_color_subvariable->count(); ++i) {
+        SubVariable i_subvar = static_cast<SubVariable>(
+            combo_box_color_subvariable->itemData(i).value<int>());
+        if (i_subvar == color_subvariable) {
+            combo_box_color_subvariable->setCurrentIndex(i);
+            break;
+        }
+    }
+    set_color_subvariable(static_cast<SubVariable>(
+        combo_box_color_subvariable->currentData().value<int>()));
+}
+
+void GuiModeResultStatic::set_color_subvariable(SubVariable new_subvar) {
+    color_subvariable = new_subvar;
+
+    const Results::StaticStep &step =
+        project->results->static_steps.at(result_name);
+    const Results::Dataset &dataset =
+        step.datasets.at(color_variable);
 
     double min_datum = std::numeric_limits<double>::max();
     double max_datum = std::numeric_limits<double>::min();
