@@ -230,14 +230,11 @@ void GuiModeResultStatic::set_color_subvariable(SubVariable new_subvar) {
         max_datum = std::max(max_datum, value);
     }
 
-    GuiColorScale::Anchor anchor;
     if (color_subvariable == SubVariable::VectorMagnitude) {
-        anchor = GuiColorScale::Anchor::Zero;
-    } else {
-        anchor = GuiColorScale::Anchor::Balanced;
+        min_datum = 0;
     }
 
-    color_scale->set_range(anchor, min_datum, max_datum);
+    color_scale->set_range(min_datum, max_datum);
     emit refresh_scene();
 }
 
