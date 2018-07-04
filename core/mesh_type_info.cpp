@@ -186,5 +186,11 @@ const ElementTypeInfo &element_type_c3d10() {
     return info;
 }
 
+void element_shape_precompute_functions() {
+    /* Trigger initialization of static variables */
+    element_type_c3d4();
+    element_type_c3d10();
+}
+
 } /* namespace os2cx */
 

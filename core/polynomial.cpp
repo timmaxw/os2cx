@@ -2,22 +2,126 @@
 
 #include <math.h>
 
+#include <algorithm>
 #include <vector>
 
 namespace os2cx {
+
+inline Polynomial::Key::Key() {
+    for (int i = 0; i < Polynomial::max_order; ++i) {
+        vars[i] = Variable::invalid();
+    }
+}
+
+inline bool Polynomial::Key::operator==(Key other) const {
+    for (int i = 0; i < Polynomial::max_order; ++i) {
+        if (vars[i] != other.vars[i]) return false;
+    }
+    return true;
+}
+
+inline bool Polynomial::Key::operator!=(Key other) const {
+    return !(*this == other);
+}
+
+inline bool Polynomial::Key::operator<(Key other) const {
+    for (int i = 0; i < Polynomial::max_order; ++i) {
+        if (vars[i] < other.vars[i]) return true;
+        if (other.vars[i] < vars[i]) return false;
+    }
+    return false;
+}
+
+inline int Polynomial::Key::count(Variable var) const {
+    int c = 0;
+    for (int i = 0; i < Polynomial::max_order; ++i) {
+        if (vars[i] == var) {
+            ++c;
+        }
+    }
+    return c;
+}
+
+inline Polynomial::Key Polynomial::Key::insert(Variable var) const {
+    assert(vars[Polynomial::max_order - 1] == Variable::invalid());
+    Key res;
+    int this_ix = 0, res_ix = 0;
+    for (; this_ix < Polynomial::max_order; ++this_ix, ++res_ix) {
+        if (var < vars[this_ix]) {
+            break;
+        } else {
+            res.vars[res_ix] = vars[this_ix];
+        }
+    }
+    res.vars[res_ix++] = var;
+    for (; this_ix < Polynomial::max_order; ++this_ix, ++res_ix) {
+        if (vars[this_ix] == Variable::invalid()) {
+            break;
+        }
+        res.vars[res_ix] = vars[this_ix];
+    }
+    return res;
+}
+
+inline Polynomial::Key Polynomial::Key::merge(Key other) const {
+    Key res;
+    int this_ix = 0, other_ix = 0, res_ix = 0;
+    while (true) {
+        Variable this_var = (this_ix == Polynomial::max_order)
+            ? Variable::invalid() : vars[this_ix];
+        Variable other_var = (other_ix == Polynomial::max_order)
+            ? Variable::invalid() : other.vars[other_ix];
+        if (this_var == Variable::invalid() &&
+                other_var == Variable::invalid()) {
+            break;
+        }
+        assert(res_ix < Polynomial::max_order);
+        if (this_var < other_var) {
+            res.vars[res_ix++] = this_var;
+            ++this_ix;
+        } else {
+            res.vars[res_ix++] = other_var;
+            ++other_ix;
+        }
+    }
+    return res;
+}
+
+inline Polynomial::Key Polynomial::Key::erase_one(Variable var) const {
+    Key res;
+    int res_ix = 0;
+    for (int this_ix = 0; this_ix < Polynomial::max_order; ++this_ix) {
+        if (vars[this_ix] != var || this_ix != res_ix) {
+            res.vars[res_ix++] = vars[this_ix];
+        }
+    }
+    return res;
+}
+
+inline Polynomial::Key Polynomial::Key::erase_all(Variable var) const {
+    Key res;
+    int res_ix = 0;
+    for (int this_ix = 0; this_ix < Polynomial::max_order; ++this_ix) {
+        if (vars[this_ix] != var) {
+            res.vars[res_ix++] = vars[this_ix];
+        }
+    }
+    return res;
+}
 
 Polynomial::Polynomial()
 {
 }
 
 Polynomial::Polynomial(double coeff) {
-    terms[std::multiset<Variable>()] = coeff;
+    terms[Key()] = coeff;
     prune_zero_terms();
 }
 
 Polynomial::Polynomial(Variable var) {
-    std::multiset<Variable> key;
-    key.insert(var);
+    assert(var != Variable::invalid());
+    Key key;
+    key.vars[0] = var;
     add_term(key, 1.0);
 }
 
@@ -54,12 +158,11 @@ Polynomial &Polynomial::operator/=(double right) {
 }
 
 Polynomial Polynomial::evaluate_partial(Variable var, const Polynomial &value) const {
+    assert(var != Variable::invalid());
     Polynomial result;
     for (const auto &pair : terms) {
-        std::multiset<Variable> x_key = pair.first;
-        x_key.erase(var);
         Polynomial x;
-        x.add_term(x_key, pair.second);
+        x.add_term(pair.first.erase_all(var), pair.second);
 
         Polynomial y = pow(value, pair.first.count(var));
 
@@ -76,14 +179,10 @@ Polynomial Polynomial::evaluate_partial(Variable var, const Polynomial &value) c
 Polynomial Polynomial::differentiate(Variable var) const {
     Polynomial result;
     for (const auto &pair : terms) {
-        std::multiset<Variable> new_key = pair.first;
-        auto it = new_key.find(var);
-        if (it == new_key.end()) {
-            continue;
-        }
-        double new_value = pair.second * new_key.count(var);
-        new_key.erase(it);
-        result.add_term(new_key, new_value);
+        int c = pair.first.count(var);
+        if (c == 0) continue;
+        double new_value = pair.second * c;
+        result.add_term(pair.first.erase_one(var), new_value);
     }
     return result;
 }
@@ -91,8 +190,7 @@ Polynomial Polynomial::differentiate(Variable var) const {
 Polynomial Polynomial::antidifferentiate(Variable var) const {
     Polynomial result;
     for (const auto &pair : terms) {
-        std::multiset<Variable> new_key = pair.first;
-        new_key.insert(var);
+        Key new_key = pair.first.insert(var);
         double new_value = pair.second / new_key.count(var);
         result.add_term(new_key, new_value);
     }
@@ -123,6 +221,7 @@ Polynomial Polynomial::integrate(
     Polynomial result;
     for (const auto &pair : terms) {
         int var_power = pair.first.count(var);
+        Key new_key = pair.first.erase_all(var);
         for (int from_or_to = 0; from_or_to <= 1; ++from_or_to) {
             /* Populate the 'pows' cache */
             while (static_cast<int>(pows[from_or_to].size()) <= var_power + 1) {
@@ -131,12 +230,7 @@ Polynomial Polynomial::integrate(
             }
 
             for (const auto &pair2 : pows[from_or_to][var_power + 1].terms) {
-                std::multiset<Variable> key = pair2.first;
-                for (Variable v : pair.first) {
-                    if (v != var) {
-                        key.insert(v);
-                    }
-                }
+                Key key = pair2.first.merge(new_key);
                 double coeff = pair.second * pair2.second / (var_power + 1);
                 if (from_or_to == 0) {
                     coeff = -coeff;
@@ -151,7 +245,7 @@ Polynomial Polynomial::integrate(
     return result;
 }
 
-void Polynomial::add_term(const std::multiset<Variable> key, double value) {
+void Polynomial::add_term(Key key, double value) {
     auto iterator_and_inserted = terms.insert(std::make_pair(key, value));
     if (!iterator_and_inserted.second) {
         iterator_and_inserted.first->second += value;
@@ -185,8 +279,7 @@ Polynomial operator*(const Polynomial &left, const Polynomial &right) {
     Polynomial result;
     for (const auto &lpair : left.terms) {
         for (const auto &rpair : right.terms) {
-            std::multiset<Polynomial::Variable> new_key = lpair.first;
-            new_key.insert(rpair.first.begin(), rpair.first.end());
+            Polynomial::Key new_key = lpair.first.merge(rpair.first);
             result.add_term(new_key, lpair.second * rpair.second);
         }
     }
@@ -253,7 +346,11 @@ std::ostream &operator<<(std::ostream &stream, const Polynomial &poly) {
             stream << fabs(pair.second);
             is_first_factor = false;
         }
-        for (Polynomial::Variable var : pair.first) {
+        for (int i = 0; i < Polynomial::max_order; ++i) {
+            Polynomial::Variable var = pair.first.vars[i];
+            if (var == Polynomial::Variable::invalid()) {
+                break;
+            }
             if (!is_first_factor) {
                 stream << "*";
             }

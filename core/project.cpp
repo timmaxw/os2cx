@@ -12,6 +12,8 @@
 namespace os2cx {
 
 void project_run(Project *p, ProjectRunCallbacks *callbacks) {
+    element_shape_precompute_functions();
+
     maybe_create_directory(p->temp_dir);
     openscad_extract_inventory(p);
     p->progress = Project::Progress::InventoryDone;

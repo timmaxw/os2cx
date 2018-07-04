@@ -22,7 +22,7 @@ inline Polynomial::Variable v() { return Polynomial::Variable { -2 }; }
 inline Polynomial::Variable w() { return Polynomial::Variable { -3 }; }
 
 inline Polynomial::Variable coord(int vertex, int dimension) {
-    return Polynomial::Variable { vertex << 2 | dimension };
+    return Polynomial::Variable::from_index(vertex << 2 | dimension);
 }
 inline int coord_to_vertex(Polynomial::Variable var) {
     return var.index >> 2;
@@ -77,6 +77,11 @@ protected:
 
 const ElementShapeInfo &element_shape_tetrahedron4();
 const ElementShapeInfo &element_shape_tetrahedron10();
+
+/* Pre-caches element shape functions, which can take ~seconds to calculate. If
+this is not called, they will be computed on the first call to
+element_shape_*(). */
+void element_shape_precompute_functions();
 
 enum class ElementType {
     C3D4 = 3,
