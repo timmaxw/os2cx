@@ -85,6 +85,9 @@ TEST(PolynomialTest, Antidifferentiate) {
 TEST(PolynomialTest, Integrate) {
     Polynomial result = (p(v1)*p(v1)).integrate(v1, p(0), p(1));
     EXPECT_EQ(p(1/3.0), result);
+
+    EXPECT_EQ(p(-123 + 1.0 / 3), p2.integrate(v2, p(0), p(1)));
+    EXPECT_EQ(p(-246 + 8.0 / 3), p2.integrate(v2, p(0), p(2)));
 }
 
 } /* namespace os2cx */

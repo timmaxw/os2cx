@@ -20,6 +20,9 @@ public:
         bool operator==(Variable other) const {
             return index == other.index;
         }
+        bool operator!=(Variable other) const {
+            return index != other.index;
+        }
         int index;
     };
 
