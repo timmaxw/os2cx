@@ -31,9 +31,6 @@ inline int coord_to_dimension(Polynomial::Variable var) {
     return var.index & 3;
 }
 
-inline Polynomial p(Polynomial::Variable v) { return Polynomial(v); }
-inline Polynomial p(double v) { return Polynomial(v); }
-
 } /* namespace shape_function_variables */
 
 class ElementShapeInfo {
@@ -79,9 +76,11 @@ protected:
 };
 
 const ElementShapeInfo &element_shape_tetrahedron4();
+const ElementShapeInfo &element_shape_tetrahedron10();
 
 enum class ElementType {
     C3D4 = 3,
+    C3D10 = 6
 };
 
 bool valid_element_type(ElementType);
@@ -97,6 +96,7 @@ public:
 };
 
 const ElementTypeInfo &element_type_c3d4();
+const ElementTypeInfo &element_type_c3d10();
 
 } /* namespace os2cx */
 

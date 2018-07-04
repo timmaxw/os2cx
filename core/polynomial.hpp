@@ -20,6 +20,9 @@ public:
         bool operator==(Variable other) const {
             return index == other.index;
         }
+        bool operator!=(Variable other) const {
+            return index != other.index;
+        }
         int index;
     };
 
@@ -53,6 +56,8 @@ public:
         }
         return sum;
     }
+
+    int num_terms() const { return terms.size(); }
 
 private:
     friend Polynomial operator*(

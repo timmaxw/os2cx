@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+#include <vector>
+
 namespace os2cx {
 
 Polynomial::Polynomial()
@@ -61,7 +63,11 @@ Polynomial Polynomial::evaluate_partial(Variable var, const Polynomial &value) c
 
         Polynomial y = pow(value, pair.first.count(var));
 
-        result += x * y;
+        /* This is essentially 'result += x * y', but we defer calling
+        prune_zero_terms() to avoid quadratic blowup */
+        for (const auto &pair : (x * y).terms) {
+            result.add_term(pair.first, pair.second);
+        }
     }
     result.prune_zero_terms();
     return result;
@@ -98,10 +104,51 @@ Polynomial Polynomial::integrate(
     const Polynomial &from_value,
     const Polynomial &to_value
 ) const {
-    Polynomial antiderivative = antidifferentiate(var);
-    Polynomial res = antiderivative.evaluate_partial(var, to_value) -
-        antiderivative.evaluate_partial(var, from_value);
-    return res;
+    /* This function was originally implemented as:
+        Polynomial antiderivative = antidifferentiate(var);
+        Polynomial res = antiderivative.evaluate_partial(var, to_value) -
+            antiderivative.evaluate_partial(var, from_value);
+        return res;
+    However, this turned out to be too slow, so here's an optimized version that
+    constructs a lot fewer temporaries. */
+
+    /* Cache powers of 'from_value' and 'to_value'. Specifically,
+    pows[0][n] = pow(from_value, n) and pows[1][n] = pow(to_value, n). */
+    std::vector<Polynomial> pows[2];
+    pows[0].push_back(Polynomial(1));
+    pows[0].push_back(from_value);
+    pows[1].push_back(Polynomial(1));
+    pows[1].push_back(to_value);
+
+    Polynomial result;
+    for (const auto &pair : terms) {
+        int var_power = pair.first.count(var);
+        for (int from_or_to = 0; from_or_to <= 1; ++from_or_to) {
+            /* Populate the 'pows' cache */
+            while (static_cast<int>(pows[from_or_to].size()) <= var_power + 1) {
+                pows[from_or_to].push_back(
+                    pows[from_or_to].back() * pows[from_or_to][1]);
+            }
+
+            for (const auto &pair2 : pows[from_or_to][var_power + 1].terms) {
+                std::multiset<Variable> key = pair2.first;
+                for (Variable v : pair.first) {
+                    if (v != var) {
+                        key.insert(v);
+                    }
+                }
+                double coeff = pair.second * pair2.second / (var_power + 1);
+                if (from_or_to == 0) {
+                    coeff = -coeff;
+                }
+                result.add_term(key, coeff);
+            }
+        }
+    }
+
+    result.prune_zero_terms();
+
+    return result;
 }
 
 void Polynomial::add_term(const std::multiset<Variable> key, double value) {

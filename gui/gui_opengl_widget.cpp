@@ -144,7 +144,7 @@ void GuiOpenglWidget::paintGL() {
             glColor3f(0, 0, 0);
             glEnable(GL_VERTEX_ARRAY);
             glVertexPointer(3, GL_FLOAT, 0, scene->line_vertices.data());
-            glDrawArrays(GL_LINES, 0, 2 * scene->num_triangles);
+            glDrawArrays(GL_LINES, 0, 2 * scene->num_lines);
             glDisable(GL_VERTEX_ARRAY);
         }
     }
