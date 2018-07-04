@@ -34,6 +34,11 @@ TEST(PolynomialTest, Subtraction) {
     EXPECT_EQ(answer, p1_copy);
 }
 
+TEST(PolynomialTest, SubtractionCancellation) {
+    Polynomial zero = p(v1) * p(v1) * p(v1) - p(v1) * p(v1) * p(v1);
+    EXPECT_EQ(p(0), zero);
+}
+
 TEST(PolynomialTest, Multiplication) {
     Polynomial answer =
         p(-15129) +

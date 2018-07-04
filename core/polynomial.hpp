@@ -54,6 +54,8 @@ public:
         return sum;
     }
 
+    int num_terms() const { return terms.size(); }
+
 private:
     friend Polynomial operator*(
         const Polynomial &left, const Polynomial &right);

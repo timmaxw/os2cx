@@ -72,6 +72,8 @@ Mesh3 convert_output(tetgenio *tetgen) {
         Element3 element;
         if (tetgen->numberofcorners == 4) {
             element.type = ElementType::C3D4;
+        } else if (tetgen->numberofcorners == 10) {
+            element.type = ElementType::C3D10;
         } else {
             assert(false);
         }
@@ -99,7 +101,7 @@ Mesh3 mesher_tetgen(const Plc3 &plc) {
     convert_input(plc, &tetgen_input);
 
     tetgenio tetgen_output;
-    tetrahedralize(const_cast<char *>("pq1.414a0.1Q"), &tetgen_input, &tetgen_output);
+    tetrahedralize(const_cast<char *>("pq1.414a0.1Qo2"), &tetgen_input, &tetgen_output);
 
     return convert_output(&tetgen_output);
 }

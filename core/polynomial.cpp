@@ -61,7 +61,11 @@ Polynomial Polynomial::evaluate_partial(Variable var, const Polynomial &value) c
 
         Polynomial y = pow(value, pair.first.count(var));
 
-        result += x * y;
+        /* This is essentially 'result += x * y', but we defer calling
+        prune_zero_terms() to avoid quadratic blowup */
+        for (const auto &pair : (x * y).terms) {
+            result.add_term(pair.first, pair.second);
+        }
     }
     result.prune_zero_terms();
     return result;

@@ -19,6 +19,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+# valgrind doesn't support some of the float rounding modes that CGAL needs,
+# causing CGAL to crash with an assertion on startup. Disable the check in
+# profiling mode.
+DEFINES += CGAL_DISABLE_ROUNDING_MATH_CHECK=ON
+
 SOURCES += \
     attrs.cpp \
     calc.cpp \
