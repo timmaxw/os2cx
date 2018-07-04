@@ -40,7 +40,6 @@ private:
         Vector *displacement_out);
 
     std::string result_name;
-    std::map<std::string, double> variable_maxima;
 
     QComboBox *combo_box_disp_scale;
     double disp_scale;

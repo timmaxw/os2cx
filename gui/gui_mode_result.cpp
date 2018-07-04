@@ -10,22 +10,6 @@ GuiModeResultStatic::GuiModeResultStatic(
     const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
 
-    for (const auto &pair : step.datasets) {
-        double maximum = 0;
-        if (pair.second.node_vector) {
-            const ContiguousMap<NodeId, Vector> &nv = *pair.second.node_vector;
-            for (NodeId ni = nv.key_begin(); ni != nv.key_end(); ++ni) {
-                maximum = std::max(maximum, nv[ni].magnitude());
-            }
-        } else if (pair.second.node_matrix) {
-            const ContiguousMap<NodeId, Matrix> &nm = *pair.second.node_matrix;
-            for (NodeId ni = nm.key_begin(); ni != nm.key_end(); ++ni) {
-                maximum = std::max(maximum, std::abs(nm[ni].cols[0].z));
-            }
-        }
-        variable_maxima[pair.first] = maximum;
-    }
-
     if (!step.disp_key.empty()) {
         construct_combo_box_disp_scale();
     }
@@ -99,7 +83,7 @@ void GuiModeResultStatic::construct_combo_box_disp_scale() {
         project->results->static_steps.at(result_name);
     const ContiguousMap<NodeId, Vector> &disp =
         *step.datasets.at(step.disp_key).node_vector;
-    double max_disp;
+    double max_disp = 0;
     for (NodeId ni = disp.key_begin(); ni != disp.key_end(); ++ni) {
         max_disp = std::max(max_disp, disp[ni].magnitude());
     }
