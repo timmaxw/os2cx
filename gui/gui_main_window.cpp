@@ -29,8 +29,10 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     setCentralWidget(splitter);
 
     left_panel = new QWidget(nullptr);
-    left_panel->setMinimumWidth(200);
+    left_panel->setMinimumWidth(250);
     left_panel->setMaximumWidth(400);
+    left_panel->setSizePolicy(
+        QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
     left_panel_layout = new QVBoxLayout(left_panel);
     left_panel->setLayout(left_panel_layout);
     splitter->addWidget(left_panel);
@@ -38,6 +40,7 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
 
     right_panel = new GuiOpenglWidget(this, project_runner->get_project());
     splitter->addWidget(right_panel);
+    splitter->setStretchFactor(1, 1);
 
     combo_box_modes = new GuiComboBoxModes(left_panel);
     left_panel_layout->addWidget(combo_box_modes);
