@@ -7,9 +7,6 @@
 
 namespace os2cx {
 
-std::string unit_name(int m, int kg, int s);
-std::string unit_abbreviation(int m, int kg, int s);
-
 typedef double Length;
 typedef double Volume;
 

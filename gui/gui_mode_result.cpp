@@ -101,7 +101,7 @@ void GuiModeResultStatic::construct_combo_box_disp_scale() {
     exaggeration_nums.insert(0);
 
     combo_box_disp_scale->addItem(
-        tr("0\u00D7 (undisplaced shape)"), QVariant(static_cast<double>(0)));
+        tr(u8"0\u00D7 (undisplaced shape)"), QVariant(static_cast<double>(0)));
 
     /* Default to not exaggerating, to avoid misleading novice users */
     disp_scale = 1.0;
@@ -121,13 +121,13 @@ void GuiModeResultStatic::construct_combo_box_disp_scale() {
 
         QString text;
         if (exaggeration_num == 0) {
-            text = tr("1\u00D7 (actual displacement)");
+            text = tr(u8"1\u00D7 (actual displacement)");
         } else if (exp_part >= 0) {
-            text = tr("%1%2\u00D7")
+            text = tr(u8"%1%2\u00D7")
                 .arg(digit)
                 .arg(QString("0").repeated(exp_part));
         } else {
-            text = tr(".%1%2\u00D7")
+            text = tr(u8".%1%2\u00D7")
                 .arg(QString("0").repeated(-exp_part - 1))
                 .arg(digit);
         }
