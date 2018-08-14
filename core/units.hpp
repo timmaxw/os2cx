@@ -8,6 +8,8 @@
 namespace os2cx {
 
 enum class UnitType {
+    Dimensionless,
+
     Length,
     Mass,
     Time,

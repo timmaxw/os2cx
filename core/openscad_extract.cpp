@@ -103,7 +103,7 @@ void do_analysis_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 1, "analysis");
+    check_arg_count(args, 2, "analysis");
 
     if (!project->calculix_deck.empty()) {
         throw UsageError("Can't have multiple os2cx_analysis_...() directives "
@@ -116,6 +116,18 @@ void do_analysis_directive(
         throw BadEchoError("empty analysis_directive");
     }
     project->calculix_deck = std::move(deck);
+
+    std::vector<std::string> units =
+        check_vector<std::string>(args[1], &check_string);
+    if (units.size() != 3) {
+        throw BadEchoError("bad unit system in analysis_directive");
+    }
+    try {
+        project->unit_system = UnitSystem(units[0], units[1], units[2]);
+    } catch (const UnitParseError &e) {
+        throw UsageError("Invalid unit system in analysis directive: " +
+            std::string(e.what()));
+    }
 }
 
 void do_mesh_directive(

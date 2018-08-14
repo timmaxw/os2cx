@@ -8,6 +8,9 @@
 
 namespace os2cx {
 
+Unit unit_dimensionless() {
+    return Unit("", UnitType::Dimensionless, 1, Unit::MetricAndImperial);
+}
 Unit unit_m() {
     return Unit("m", UnitType::Length, 1, Unit::Metric);
 }
@@ -139,6 +142,9 @@ bool parse_unit_ratio(
 Unit Unit::from_name(UnitType type, const std::string &name) {
     Unit output;
     switch (type) {
+    case UnitType::Dimensionless:
+        if (name == "") return unit_dimensionless();
+        throw UnitParseError("Use an empty string for dimensionless units.");
     case UnitType::Length:
         if (parse_unit_si_prefixed(name, unit_m(), &output)) return output;
         if (name == "in") return unit_in();
@@ -274,6 +280,8 @@ Unit UnitSystem::suggest_unit(
     double si_value_for_scale =
         std::abs(system_value_for_scale * units_in_si.at(type));
     switch (type) {
+    case UnitType::Dimensionless:
+        return unit_dimensionless();
     case UnitType::Length:
         if (style == Unit::Metric) {
             return suggest_unit_si_prefixed(unit_m(), si_value_for_scale);

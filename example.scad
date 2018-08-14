@@ -31,4 +31,4 @@ os2cx_analysis_custom([
     "*EL FILE, Elset=Ecantilever",
     "S",
     "*END STEP"
-]);
+], units=["m", "kg", "s"]);

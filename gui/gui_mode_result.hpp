@@ -26,6 +26,7 @@ private:
         const Results::Dataset &dataset,
         SubVariable subvar,
         NodeId node_id);
+    static UnitType guess_unit_type(const std::string &dataset_name);
 
     void construct_combo_box_disp_scale();
 

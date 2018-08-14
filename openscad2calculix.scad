@@ -39,14 +39,18 @@ module __os2cx_beacon() {
     );
 }
 
-module os2cx_analysis_custom(lines) {
+module os2cx_analysis_custom(lines, units=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_array_strings(lines)) {
             echo("ERROR: os2cx_analysis_custom() parameter must be an " +
                 "array of strings");
         }
+        if (!__os2cx_is_array_strings(units) || len(units) != 3) {
+            echo("ERROR: os2cx_analysis_custom() 'units' parameter must be " +
+                "an array of three strings.");
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "analysis_directive", lines);
+        echo("__openscad2calculix", "analysis_directive", lines, units);
     }
 }
 

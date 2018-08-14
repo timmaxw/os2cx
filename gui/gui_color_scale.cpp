@@ -4,14 +4,22 @@
 
 #include <QPainter>
 
+namespace os2cx {
+
 GuiColorScale::GuiColorScale(QWidget *parent) :
     QWidget(parent)
 {
-    set_range(0.0, 1.0);
+    static const UnitSystem si_system("m", "kg", "s"); /* placeholder */
+    set_range(0.0, 1.0, &si_system, UnitType::Dimensionless);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 }
 
-void GuiColorScale::set_range(double val_min, double val_max) {
+void GuiColorScale::set_range(
+    double val_min,
+    double val_max,
+    const UnitSystem *new_unit_system,
+    UnitType new_unit_type
+) {
     assert(val_min <= val_max);
     range_min = val_min;
     range_max = val_max;
@@ -22,6 +30,10 @@ void GuiColorScale::set_range(double val_min, double val_max) {
     colors[0]          = QColor::fromHsl(120, 0x00, 0xEE);
     colors[scale / 3]  = QColor::fromHsl( 60, 0xEE, 0x99);
     colors[scale]      = QColor::fromHsl(  0, 0xFF, 0x66);
+
+    unit_system = new_unit_system;
+    unit_type = new_unit_type;
+
     update();
 }
 
@@ -54,11 +66,17 @@ QSize GuiColorScale::sizeHint() const {
 void GuiColorScale::paintEvent(QPaintEvent *) {
     QPainter painter(this);
 
+    Unit unit = unit_system->suggest_unit(
+        unit_type,
+        std::max(std::abs(range_min), std::abs(range_max)));
+    double range_min_in_unit = unit_system->system_to_unit(unit, range_min);
+    double range_max_in_unit = unit_system->system_to_unit(unit, range_max);
+
     QRect label_rect(0, 0, width(), fontMetrics().height());
     painter.drawText(label_rect, Qt::AlignLeft|Qt::AlignBottom,
-        QString("%1").arg(range_min));
+        QString("%1%2").arg(range_min_in_unit).arg(unit.name.c_str()));
     painter.drawText(label_rect, Qt::AlignRight|Qt::AlignBottom,
-        QString("%1").arg(range_max));
+        QString("%1%2").arg(range_max_in_unit).arg(unit.name.c_str()));
 
     /* Draw the main color gradient */
     QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);
@@ -81,3 +99,5 @@ void GuiColorScale::paintEvent(QPaintEvent *) {
     painter.setBrush(vgradient);
     painter.drawRoundedRect(bar_rect, bar_size_px / 10, bar_size_px / 10);
 }
+
+} /* namespace os2cx */

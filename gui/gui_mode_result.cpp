@@ -74,6 +74,21 @@ double GuiModeResultStatic::subvariable_value(
     }
 }
 
+UnitType GuiModeResultStatic::guess_unit_type(
+    const std::string &dataset_name
+) {
+    if (dataset_name == "DISP") {
+        return UnitType::Length;
+    } else if (dataset_name == "STRESS") {
+        return UnitType::Pressure;
+    } else {
+        /* This is a sane fallback for values of any unit type, because they
+        will simply be printed unscaled (i.e. in the project's unit system) with
+        no unit label attached */
+        return UnitType::Dimensionless;
+    }
+}
+
 void GuiModeResultStatic::construct_combo_box_disp_scale() {
     create_widget_label(tr("Scale displacement"));
     combo_box_disp_scale = new QComboBox(this);
@@ -218,7 +233,12 @@ void GuiModeResultStatic::set_color_subvariable(SubVariable new_subvar) {
         min_datum = 0;
     }
 
-    color_scale->set_range(min_datum, max_datum);
+    color_scale->set_range(
+        min_datum,
+        max_datum,
+        &project->unit_system,
+        guess_unit_type(color_variable));
+
     emit refresh_scene();
 }
 

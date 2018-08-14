@@ -11,6 +11,7 @@
 #include "plc_nef.hpp"
 #include "plc_index.hpp"
 #include "result.hpp"
+#include "units.hpp"
 
 namespace os2cx {
 
@@ -41,6 +42,8 @@ public:
     std::string temp_dir;
 
     std::vector<std::string> inventory_errors;
+
+    UnitSystem unit_system;
 
     std::vector<std::string> calculix_deck;
 
