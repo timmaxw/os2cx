@@ -41,11 +41,32 @@ std::string check_string(const OpenscadValue &value) {
     return value.string_value;
 }
 
+Unit check_unit(const OpenscadValue &value, UnitType unit_type) {
+    try {
+        return Unit::from_name(unit_type, check_string(value));
+    } catch (const UnitParseError &e) {
+        throw UsageError(e.what());
+    }
+}
+
 double check_number(const OpenscadValue &value) {
     if (value.type != OpenscadValue::Type::Number) {
         throw BadEchoError("expected number");
     }
     return value.number_value;
+}
+
+WithUnit<double> check_number_with_unit(
+    const OpenscadValue &value,
+    UnitType unit_type
+) {
+    if (value.type != OpenscadValue::Type::Vector ||
+            value.vector_value.size() != 2) {
+        throw BadEchoError("expected vector of [number, string]");
+    }
+    return WithUnit<double>(
+        check_number(value.vector_value[0]),
+        check_unit(value.vector_value[1], unit_type));
 }
 
 std::string check_name_new(
@@ -97,6 +118,19 @@ Vector check_vector_3(const OpenscadValue &value) {
         throw BadEchoError("expected vector to have 3 elements");
     }
     return Vector(parts[0], parts[1], parts[2]);
+}
+
+WithUnit<Vector> check_vector_3_with_unit(
+    const OpenscadValue &value,
+    UnitType unit_type
+) {
+    if (value.type != OpenscadValue::Type::Vector ||
+            value.vector_value.size() != 2) {
+        throw BadEchoError("expected vector of [vector, string]");
+    }
+    return WithUnit<Vector>(
+        check_vector_3(value.vector_value[0]),
+        check_unit(value.vector_value[1], unit_type));
 }
 
 void do_analysis_directive(
@@ -199,8 +233,8 @@ void do_load_volume_directive(
     }
     project->load_objects[name].volume = volume;
 
-    Vector force_density(0, 0, check_number(args[2]));
-    project->load_objects[name].force_density = force_density;
+    project->load_objects[name].force_density =
+        check_vector_3_with_unit(args[2], UnitType::ForceDensity);
 }
 
 void openscad_extract_inventory(Project *project) {

@@ -5,8 +5,22 @@ __openscad2calculix_mode = ["preview"];
 
 function __os2cx_is_string(arg) = (str(arg) == arg);
 function __os2cx_is_number(arg) = (arg != undef) && (arg + 0 == arg);
+function __os2cx_is_vector_3(arg) =
+    len(arg) == 3
+    && __os2cx_is_number(arg[0])
+    && __os2cx_is_number(arg[1])
+    && __os2cx_is_number(arg[2]);
 function __os2cx_is_array_strings(arg) =
     all([for (item = arg) __os2cx_is_string(item)]);
+function __os2cx_is_number_with_unit(arg) =
+    len(arg) == 2
+    && __os2cx_is_number(arg[0])
+    && __os2cx_is_string(arg[1]);
+function __os2cx_is_vector_with_unit(arg) =
+    len(arg) == 2
+    && __os2cx_is_vector(arg[0])
+    && __os2cx_is_string(arg[1]);
+
 
 module __os2cx_beacon() {
     origin_coords   = [0,   0,   0  ];
@@ -39,18 +53,18 @@ module __os2cx_beacon() {
     );
 }
 
-module os2cx_analysis_custom(lines, units=undef) {
+module os2cx_analysis_custom(lines, unit_system=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_array_strings(lines)) {
             echo("ERROR: os2cx_analysis_custom() parameter must be an " +
                 "array of strings");
         }
-        if (!__os2cx_is_array_strings(units) || len(units) != 3) {
-            echo("ERROR: os2cx_analysis_custom() 'units' parameter must be " +
-                "an array of three strings.");
+        if (!__os2cx_is_array_strings(unit_system) || len(units) != 3) {
+            echo("ERROR: os2cx_analysis_custom() 'unit_system' parameter " +
+                "must be an array of three strings.");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "analysis_directive", lines, units);
+        echo("__openscad2calculix", "analysis_directive", lines, unit_system);
     }
 }
 
@@ -96,7 +110,7 @@ module os2cx_select_surface(name, direction_vector, direction_angle_tolerance) {
     }
 }
 
-module os2cx_load_volume(name, volume, magnitude) {
+module os2cx_load_volume(name, volume, force_density) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_load_volume() first parameter must be a string");
@@ -104,15 +118,15 @@ module os2cx_load_volume(name, volume, magnitude) {
         if (!__os2cx_is_string(volume)) {
             echo("ERROR: os2cx_load_volume() second parameter must be a string");
         }
-        if (!__os2cx_is_number(magnitude)) {
+        if (!__os2cx_is_vector_3_with_unit(force_density)) {
             echo("ERROR: os2cx_load_volume() third parameter must be a " +
-                "number");
+                "[vector, unit] pair.");
         }
         if (num_children() != 0) {
             echo("ERROR: os2cx_load_volume() shouldn't have any children");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "load_volume_directive",
-            name, volume, magnitude);
+            name, volume, force_density);
     }
 }

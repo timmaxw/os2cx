@@ -30,24 +30,25 @@ TEST(UnitsTest, ParsePressureRatio) {
 TEST(UnitsTest, ConvertSystem) {
     UnitSystem sys("cm", "g", "s");
     double inch_to_cm = sys.unit_to_system(
-        Unit::from_name(UnitType::Length, "in"), 1.0);
+        WithUnit<double>(1.0, Unit::from_name(UnitType::Length, "in")));
     EXPECT_FLOAT_EQ(2.54, inch_to_cm);
-    double back_to_inch = sys.system_to_unit(
+    WithUnit<double> back_to_inch = sys.system_to_unit(
         Unit::from_name(UnitType::Length, "in"), 2.54);
-    EXPECT_FLOAT_EQ(1.0, back_to_inch);
+    EXPECT_FLOAT_EQ(1.0, back_to_inch.value_in_unit);
+    EXPECT_EQ("in", back_to_inch.unit.name);
 }
 
 TEST(UnitsTest, SystemMassOrForce) {
     UnitSystem mass_system("cm", "g", "s");
     EXPECT_FLOAT_EQ(1.0e5, mass_system.unit_to_system(
-        Unit::from_name(UnitType::Force, "N"), 1.0));
+        WithUnit<double>(1.0, Unit::from_name(UnitType::Force, "N"))));
     EXPECT_FLOAT_EQ(1.0e3, mass_system.unit_to_system(
-        Unit::from_name(UnitType::Mass, "kg"), 1.0));
+        WithUnit<double>(1.0, Unit::from_name(UnitType::Mass, "kg"))));
     UnitSystem force_system("cm", "N", "s");
     EXPECT_FLOAT_EQ(1.0, force_system.unit_to_system(
-        Unit::from_name(UnitType::Force, "N"), 1.0));
+        WithUnit<double>(1.0, Unit::from_name(UnitType::Force, "N"))));
     EXPECT_FLOAT_EQ(1.0e-2, force_system.unit_to_system(
-        Unit::from_name(UnitType::Mass, "kg"), 1.0));
+        WithUnit<double>(1.0, Unit::from_name(UnitType::Mass, "kg"))));
 }
 
 void expect_suggestion(
@@ -88,8 +89,14 @@ TEST(UnitsTest, SuggestUnit) {
     expect_suggestion(metric_system, UnitType::Force, 1.0, "N");
     expect_suggestion(imperial_system, UnitType::Force, 1.0, "lbf");
 
+    expect_suggestion(metric_system, UnitType::ForceDensity, 1.0, "N/m^3");
+    expect_suggestion(imperial_system, UnitType::ForceDensity, 1.0, "lbf/in^3");
+
     expect_suggestion(metric_system, UnitType::Pressure, 1.0, "Pa");
     expect_suggestion(imperial_system, UnitType::Pressure, 1.0, "lbf/in^2");
+
+    expect_suggestion(metric_system, UnitType::Volume, 1.0, "m^3");
+    expect_suggestion(imperial_system, UnitType::Volume, 1.0, "in^3");
 }
 
 } /* namespace os2cx */

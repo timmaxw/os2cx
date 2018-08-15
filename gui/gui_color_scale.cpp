@@ -69,14 +69,14 @@ void GuiColorScale::paintEvent(QPaintEvent *) {
     Unit unit = unit_system->suggest_unit(
         unit_type,
         std::max(std::abs(range_min), std::abs(range_max)));
-    double range_min_in_unit = unit_system->system_to_unit(unit, range_min);
-    double range_max_in_unit = unit_system->system_to_unit(unit, range_max);
+    WithUnit<double> range_min2 = unit_system->system_to_unit(unit, range_min);
+    WithUnit<double> range_max2 = unit_system->system_to_unit(unit, range_max);
 
     QRect label_rect(0, 0, width(), fontMetrics().height());
     painter.drawText(label_rect, Qt::AlignLeft|Qt::AlignBottom,
-        QString("%1%2").arg(range_min_in_unit).arg(unit.name.c_str()));
+        QString("%1%2").arg(range_min2.value_in_unit).arg(unit.name.c_str()));
     painter.drawText(label_rect, Qt::AlignRight|Qt::AlignBottom,
-        QString("%1%2").arg(range_max_in_unit).arg(unit.name.c_str()));
+        QString("%1%2").arg(range_max2.value_in_unit).arg(unit.name.c_str()));
 
     /* Draw the main color gradient */
     QRect bar_rect(0, label_rect.bottom(), width(), bar_size_px);

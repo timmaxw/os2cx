@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "calc.hpp"
+
 namespace os2cx {
 
 enum class UnitType {
@@ -16,7 +18,9 @@ enum class UnitType {
 
     Area,
     Force,
-    Pressure
+    ForceDensity, /* force per unit volume */
+    Pressure,
+    Volume
 };
 
 class UnitParseError : public std::invalid_argument {
@@ -50,6 +54,32 @@ public:
     Style style;
 };
 
+/* Every project has a UnitSystem. Physical quantities in the project are
+normally stored as 'doubles' or a variety of other types, which are to be
+interpreted according to the unit system. For example, in a Nef polyhedron, the
+coordinates are denominated in the unit system. The same unit system is used in
+the CalculiX calculation. So the only unit conversions take place when inputting
+a value with an explicit unit from the OpenSCAD file, or when outputting a value
+with an explicit unit in the GUI. */
+
+/* In the rare cases when we work with values not in the normal unit system, we
+wrap them in WithUnit<T> to avoid confusion. 'T' can be 'double', 'Vector', etc.
+*/
+template<class T>
+class WithUnit {
+public:
+    WithUnit() { }
+    WithUnit(const WithUnit &) = default;
+    WithUnit(T viu, const Unit &u) : value_in_unit(viu), unit(u) { }
+
+    /* 'x.value_in_unit' is in units of 'unit'. If you actually want the value
+    in the project's unit system, instead call 'unit_system->unit_to_system(x)'.
+    */
+    T value_in_unit;
+
+    Unit unit;
+};
+
 class UnitSystem {
 public:
     UnitSystem() { }
@@ -57,8 +87,13 @@ public:
         const std::string &length_name,
         const std::string &mass_or_force_name,
         const std::string &time_name);
-    double unit_to_system(const Unit &unit, double unit_value) const;
-    double system_to_unit(const Unit &unit, double system_value) const;
+
+    double unit_to_system(const WithUnit<double> &value_with_unit) const;
+    Vector unit_to_system(const WithUnit<Vector> &value_with_unit) const;
+
+    WithUnit<double> system_to_unit(const Unit &unit, double value) const;
+    WithUnit<Vector> system_to_unit(const Unit &unit, Vector value) const;
+
     Unit suggest_unit(UnitType type, double system_value_for_scale) const;
 
 private:

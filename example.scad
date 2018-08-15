@@ -11,7 +11,7 @@ os2cx_select_surface("boundary", [-1, 0, 0], 45) {
 os2cx_select_volume("load_volume") {
     translate([5, 0, 0]) cube([4, 3, 3], center=true);
 }
-os2cx_load_volume("load", "load_volume", 1000);
+os2cx_load_volume("load", "load_volume", [[0, 0, -1000], "N/m^3"]);
 
 os2cx_analysis_custom([
     "*INCLUDE, INPUT=cantilever.msh",
@@ -31,4 +31,4 @@ os2cx_analysis_custom([
     "*EL FILE, Elset=Ecantilever",
     "S",
     "*END STEP"
-], units=["m", "kg", "s"]);
+], unit_system=["m", "kg", "s"]);

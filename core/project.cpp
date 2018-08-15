@@ -153,7 +153,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_load_from_element_set(
                 *p->mesh,
                 element_set,
-                pair.second.force_density)
+                p->unit_system.unit_to_system(pair.second.force_density))
         ));
         callbacks->project_run_checkpoint();
     }

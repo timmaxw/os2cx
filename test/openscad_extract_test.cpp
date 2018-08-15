@@ -15,7 +15,7 @@ TEST(OpenscadExtractTest, OpenscadExtractInventory) {
     FilePath scad_path = temp_dir.path() + "/test.scad";
     std::ofstream stream(scad_path);
     stream << "use <../openscad2calculix.scad>;" << std::endl;
-    stream << "os2cx_analysis_custom([\"a\",\"b\"]);" << std::endl;
+    stream << "os2cx_analysis_custom([\"a\",\"b\"], unit_system=[\"m\",\"kg\",\"s\"]);" << std::endl;
     stream.close();
 
     Project project(scad_path, temp_dir.path());

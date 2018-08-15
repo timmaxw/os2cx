@@ -84,7 +84,7 @@ UnitType GuiModeResultStatic::guess_unit_type(
     } else {
         /* This is a sane fallback for values of any unit type, because they
         will simply be printed unscaled (i.e. in the project's unit system) with
-        no unit label attached */
+        no unit label attached, which is guaranteed correct, even if vague. */
         return UnitType::Dimensionless;
     }
 }

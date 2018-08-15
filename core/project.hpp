@@ -117,7 +117,7 @@ public:
     class LoadObject {
     public:
         VolumeObjectName volume;
-        Vector force_density;
+        WithUnit<Vector> force_density;
         std::shared_ptr<const ConcentratedLoad> load;
     };
 

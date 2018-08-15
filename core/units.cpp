@@ -41,6 +41,9 @@ Unit unit_lbf() {
 Unit unit_Pa() {
     return Unit("Pa", UnitType::Pressure, 1, Unit::Metric);
 }
+Unit unit_L() {
+    return Unit("L", UnitType::Volume, 1e-3, Unit::Metric);
+}
 
 Unit unit_power(const Unit &base, int power, UnitType type) {
     return Unit(
@@ -135,6 +138,10 @@ bool parse_unit_ratio(
     }
     double unit_in_si = num.unit_in_si / denom.unit_in_si;
     Unit::Style style = static_cast<Unit::Style>(num.style & denom.style);
+    if (style == Unit::InvalidStyle) {
+        throw UnitParseError("'" + name + "' mixes metric and " \
+            "imperial units. Please don't mix metric and imperial.");
+    }
     *output = Unit(name, output_type, unit_in_si, style);
     return true;
 }
@@ -145,22 +152,26 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
     case UnitType::Dimensionless:
         if (name == "") return unit_dimensionless();
         throw UnitParseError("Use an empty string for dimensionless units.");
+
     case UnitType::Length:
         if (parse_unit_si_prefixed(name, unit_m(), &output)) return output;
         if (name == "in") return unit_in();
         throw UnitParseError("'" + name + "' is not a valid length unit. " \
             "Valid length units are 'm' (with optional prefix) or 'in'.");
+
     case UnitType::Mass:
         if (parse_unit_si_prefixed(name, unit_g(), &output)) return output;
         if (name == "lbm") return unit_lbm();
         throw UnitParseError("'" + name + "' is not a valid mass unit. " \
             "Valid mass units are 'g' (with optional prefix) or 'lbm'.");
+
     case UnitType::Time:
         if (parse_unit_si_prefixed(name, unit_s(), &output)) return output;
         if (name == "min") return unit_min();
         if (name == "h") return unit_h();
         throw UnitParseError("'" + name + "' is not a valid time unit. " \
             "Valid time units are 's' (with optional prefix), 'min', or 'h'.");
+
     case UnitType::Area:
         if (parse_unit_power(
                 name,
@@ -172,11 +183,24 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
         }
         throw UnitParseError("'" + name + "' is not a valid area unit. " \
             "Valid area units are of the form '<length>^2'.");
+
     case UnitType::Force:
         if (parse_unit_si_prefixed(name, unit_N(), &output)) return output;
         if (name == "lbf") return unit_lbf();
         throw UnitParseError("'" + name + "' is not a valid force unit. " \
             "Valid force units are 'N' (with optional prefix) or 'lbf'.");
+
+    case UnitType::ForceDensity:
+        if (parse_unit_ratio(
+                name,
+                UnitType::Force,
+                UnitType::Volume,
+                UnitType::ForceDensity,
+                &output)) return output;
+        throw UnitParseError("'" + name + "' is not a valid force density " \
+            "unit. Valid force density units are of the form " \
+            "'<force>/<volume>'.");
+
     case UnitType::Pressure:
         if (parse_unit_si_prefixed(name, unit_Pa(), &output)) return output;
         if (parse_unit_ratio(
@@ -184,16 +208,22 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
                 UnitType::Force,
                 UnitType::Area,
                 UnitType::Pressure,
-                &output)) {
-            if (output.style == Unit::InvalidStyle) {
-                throw UnitParseError("'" + name + "' mixes metric and " \
-                    "imperial units. Please don't mix metric and imperial.");
-            }
-            return output;
-        }
+                &output)) return output;
         throw UnitParseError("'" + name + "' is not a valid pressure unit. " \
             "Valid pressure units are 'Pa' (with optional prefix), or " \
-            "compound units of the form '<force>/<length>^2'.");
+            "units of the form '<force>/<length>^2'.");
+
+    case UnitType::Volume:
+        if (parse_unit_si_prefixed(name, unit_L(), &output)) return output;
+        if (parse_unit_power(
+                name,
+                UnitType::Length,
+                3,
+                UnitType::Volume,
+                &output)) return output;
+        throw UnitParseError("'" + name + "' is not a valid volume unit. " \
+            "Valid volume units are 'L' (with optional prefix), or " \
+            "units of the form '<length>^3'.");
     }
     assert(false);
 }
@@ -233,20 +263,41 @@ UnitSystem::UnitSystem(
     }
 
     units_in_si[UnitType::Area] = pow(length_unit.unit_in_si, 2);
+    units_in_si[UnitType::Volume] = pow(length_unit.unit_in_si, 3);
     units_in_si[UnitType::Pressure] =
         units_in_si[UnitType::Force] / units_in_si[UnitType::Area];
+    units_in_si[UnitType::ForceDensity] =
+        units_in_si[UnitType::Force] / units_in_si[UnitType::Volume];
 }
 
-double UnitSystem::unit_to_system(const Unit &unit, double unit_value) const {
-    double si_value = unit_value * unit.unit_in_si;
-    double system_value = si_value / units_in_si.at(unit.type);
+double UnitSystem::unit_to_system(const WithUnit<double> &vwu) const {
+    double si_value = vwu.value_in_unit * vwu.unit.unit_in_si;
+    double system_value = si_value / units_in_si.at(vwu.unit.type);
     return system_value;
 }
 
-double UnitSystem::system_to_unit(const Unit &unit, double system_value) const {
+Vector UnitSystem::unit_to_system(const WithUnit<Vector> &vwu) const {
+    Vector si_value = vwu.value_in_unit * vwu.unit.unit_in_si;
+    Vector system_value = si_value / units_in_si.at(vwu.unit.type);
+    return system_value;
+}
+
+WithUnit<double> UnitSystem::system_to_unit(
+    const Unit &unit,
+    double system_value
+) const {
     double si_value = system_value * units_in_si.at(unit.type);
     double unit_value = si_value / unit.unit_in_si;
-    return unit_value;
+    return WithUnit<double>(unit_value, unit);
+}
+
+WithUnit<Vector> UnitSystem::system_to_unit(
+    const Unit &unit,
+    Vector system_value
+) const {
+    Vector si_value = system_value * units_in_si.at(unit.type);
+    Vector unit_value = si_value / unit.unit_in_si;
+    return WithUnit<Vector>(unit_value, unit);
 }
 
 Unit suggest_unit_si_prefixed(const Unit &base, double si_value_for_scale) {
@@ -310,6 +361,15 @@ Unit UnitSystem::suggest_unit(
         } else {
             return unit_lbf();
         }
+    case UnitType::ForceDensity: {
+        Unit volume_unit = unit_power(length_unit, 3, UnitType::Volume);
+        return unit_ratio(
+            suggest_unit(
+                UnitType::Force,
+                si_value_for_scale * volume_unit.unit_in_si),
+            volume_unit,
+            UnitType::ForceDensity);
+    }
     case UnitType::Pressure:
         if (style == Unit::Metric) {
             return suggest_unit_si_prefixed(unit_Pa(), si_value_for_scale);
@@ -319,6 +379,8 @@ Unit UnitSystem::suggest_unit(
                 unit_power(unit_in(), 2, UnitType::Area),
                 UnitType::Pressure);
         }
+    case UnitType::Volume:
+        return unit_power(length_unit, 3, UnitType::Volume);
     default:
         assert(false);
     }
