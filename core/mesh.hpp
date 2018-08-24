@@ -38,7 +38,7 @@ public:
     }
 
     ElementType type;
-    NodeId nodes[20];
+    NodeId nodes[ElementShapeInfo::max_vertices_per_element];
 };
 
 class ElementId {

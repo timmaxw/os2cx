@@ -14,7 +14,7 @@ TEST(AttrsTest, LoadVolume) {
         &solid_nef, Poly3::box(0, 0, 1, 1, 1, 3), bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
-    Mesh3 mesh = mesher_tetgen(plc);
+    Mesh3 mesh = mesher_tetgen(plc, 0.1);
     ElementSet element_set = compute_element_set_from_plc_bit(
         plc_index,
         mesh,

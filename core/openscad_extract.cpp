@@ -168,14 +168,19 @@ void do_mesh_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 1, "mesh");
+    check_arg_count(args, 2, "mesh");
 
     Project::MeshObjectName name = check_name_new(args[0], "mesh", project);
 
-    project->mesh_objects.insert(std::make_pair(
-        name,
-        Project::MeshObject()
-    ));
+    Project::MeshObject object;
+
+    if (args[1].type == OpenscadValue::Type::Undefined) {
+        object.max_tet_volume = Project::MeshObject::suggest_max_tet_volume;
+    } else {
+        object.max_tet_volume = check_number(args[1]);
+    }
+
+    project->mesh_objects.insert(std::make_pair(name, object));
 }
 
 void do_select_volume_directive(

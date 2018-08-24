@@ -52,16 +52,16 @@ double Mesh3::evaluate_polynomial(
     const Element3 &element,
     const Polynomial &poly
 ) const {
+    double vars[shape_function_variables::coord_max_var_plus_one];
+    for (int node = 0; node < element.num_nodes(); ++node) {
+        Point point = nodes[element.nodes[node]].point;
+        vars[shape_function_variables::coord(node, 0).index] = point.x;
+        vars[shape_function_variables::coord(node, 1).index] = point.y;
+        vars[shape_function_variables::coord(node, 2).index] = point.z;
+    }
     return poly.evaluate(
         [&](Polynomial::Variable var) {
-            int vertex = shape_function_variables::coord_to_vertex(var);
-            Point point = nodes[element.nodes[vertex]].point;
-            switch (shape_function_variables::coord_to_dimension(var)) {
-            case 0: return point.x;
-            case 1: return point.y;
-            case 2: return point.z;
-            default: assert(false);
-            }
+            return vars[var.index];
         }
     );
 }

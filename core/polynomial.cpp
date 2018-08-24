@@ -256,7 +256,7 @@ void Polynomial::prune_zero_terms() {
     for (auto it = terms.begin(); it != terms.end();) {
         auto jt = it;
         ++jt;
-        if (it->second == 0) {
+        if (fabs(it->second) < precision) {
             terms.erase(it);
         }
         it = jt;
@@ -354,7 +354,7 @@ std::ostream &operator<<(std::ostream &stream, const Polynomial &poly) {
             if (!is_first_factor) {
                 stream << "*";
             }
-            stream << "[" << var.index << "]";
+            stream << "[" << static_cast<int>(var.index) << "]";
             is_first_factor = false;
         }
         if (is_first_factor) {

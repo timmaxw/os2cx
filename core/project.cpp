@@ -69,7 +69,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
-        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc);
+        double max_tet_volume = pair.second.max_tet_volume;
+        if (max_tet_volume == Project::MeshObject::suggest_max_tet_volume) {
+            max_tet_volume = suggest_max_tet_volume(*pair.second.plc);
+        }
+        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_tet_volume);
         pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
         callbacks->project_run_checkpoint();
     }

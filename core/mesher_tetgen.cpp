@@ -96,14 +96,56 @@ Mesh3 convert_output(tetgenio *tetgen) {
     return mesh;
 }
 
-Mesh3 mesher_tetgen(const Plc3 &plc) {
+Mesh3 mesher_tetgen(
+    const Plc3 &plc,
+    double max_tet_volume
+) {
     tetgenio tetgen_input;
     convert_input(plc, &tetgen_input);
 
+    std::string flags;
+    flags += "p";
+    flags += "q1.414";
+    flags += "a" + std::to_string(max_tet_volume);
+    flags += "Q";
+    flags += "o2";
+
     tetgenio tetgen_output;
-    tetrahedralize(const_cast<char *>("pq1.414a0.1Qo2"), &tetgen_input, &tetgen_output);
+    tetrahedralize(
+        const_cast<char *>(flags.c_str()),
+        &tetgen_input,
+        &tetgen_output);
 
     return convert_output(&tetgen_output);
+}
+
+double suggest_max_tet_volume(const Plc3 &plc) {
+    double xmin, xmax, ymin, ymax, zmin, zmax;
+    xmin = ymin = zmin = std::numeric_limits<double>::max();
+    xmax = ymax = zmax = std::numeric_limits<double>::min();
+    for (const Plc3::Vertex &v : plc.vertices) {
+        xmax = std::max(xmax, v.point.x);
+        xmin = std::min(xmin, v.point.x);
+        ymax = std::max(ymax, v.point.y);
+        ymin = std::min(ymin, v.point.y);
+        zmax = std::max(zmax, v.point.z);
+        zmin = std::min(zmin, v.point.z);
+    }
+    double bbox_volume = (xmax - xmin) * (ymax - ymin) * (zmax - zmin);
+
+    /* Simulating 10,000 second-order tetrahedra takes a few seconds of CPU
+    time and a less than a gigabyte of RAM, which makes it a safe default. */
+    static const int default_max_tets = 10000;
+
+    /* In practice, tetgen seems to produce tets with an average volume of about
+    half of max_tet_volume, in bulk. So apply a fudge factor. */
+    static constexpr double fudge_factor = 0.5;
+
+    /* Choose max_tet_volume such that at most default_max_tets can fit in the
+    bounding box. In practice the shape won't completely fill the bounding box,
+    so we'll end up with fewer than default_max_tets (often far fewer), but it's
+    an OK approximation. */
+    return bbox_volume / default_max_tets / fudge_factor;
 }
 
 } /* namespace os2cx */

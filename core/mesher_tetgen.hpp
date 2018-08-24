@@ -6,7 +6,11 @@
 
 namespace os2cx {
 
-Mesh3 mesher_tetgen(const Plc3 &plc);
+Mesh3 mesher_tetgen(
+    const Plc3 &plc,
+    double max_tet_volume);
+
+double suggest_max_tet_volume(const Plc3 &plc);
 
 } /* namespace os2cx */
 

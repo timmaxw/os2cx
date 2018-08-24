@@ -30,6 +30,7 @@ inline int coord_to_vertex(Polynomial::Variable var) {
 inline int coord_to_dimension(Polynomial::Variable var) {
     return var.index & 3;
 }
+constexpr int coord_max_var_plus_one = 20 * 4;
 
 } /* namespace shape_function_variables */
 

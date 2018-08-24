@@ -41,6 +41,9 @@ public:
 
     static const int max_order = 16;
 
+    /* Terms that differ from zero by less than this amount will be dropped */
+    static constexpr double precision = 1e-10;
+
     Polynomial();
     explicit Polynomial(double coeff);
     explicit Polynomial(Variable var);
@@ -66,9 +69,10 @@ public:
             double product = pair.second;
             for (int i = 0; i < Polynomial::max_order; ++i) {
                 Variable var = pair.first.vars[i];
-                if (var != Variable::invalid()) {
-                    product *= evaluator(var);
+                if (var == Variable::invalid()) {
+                    break;
                 }
+                product *= evaluator(var);
             }
             sum += product;
         }
