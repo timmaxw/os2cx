@@ -12,19 +12,21 @@
 
 namespace os2cx {
 
-GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
+GuiMainWindow::GuiMainWindow(const std::string &scad_path_) :
     QMainWindow(nullptr),
+    scad_path(scad_path_),
     current_mode(nullptr)
 {
-    project_runner = new GuiProjectRunner(this, scad_path);
-    connect(project_runner, &GuiProjectRunner::project_updated,
-        this, &GuiMainWindow::refresh_combo_box_modes);
-
     QMenu *file_menu = menuBar()->addMenu(tr("File"));
     file_menu->addAction(tr("Open"),
-        this, &GuiMainWindow::menu_file_open);
-    file_menu->addAction(tr("Interrupt calculation"),
-        this, &GuiMainWindow::menu_file_interrupt);
+        this, &GuiMainWindow::menu_file_open,
+        QKeySequence::Open);
+    file_menu->addAction(tr("Reload"),
+        this, &GuiMainWindow::menu_file_reload,
+        QKeySequence::Refresh);
+    file_menu->addAction(tr("Interrupt"),
+        this, &GuiMainWindow::menu_file_interrupt,
+        QKeySequence::Cancel);
 
     splitter = new QSplitter(this);
     splitter->setChildrenCollapsible(false);
@@ -40,7 +42,7 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     splitter->addWidget(left_panel);
     splitter->setStretchFactor(0, 0);
 
-    right_panel = new GuiOpenglWidget(this, project_runner->get_project());
+    right_panel = new GuiOpenglWidget(this);
     splitter->addWidget(right_panel);
     splitter->setStretchFactor(1, 1);
 
@@ -50,14 +52,32 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
         combo_box_modes,
         &GuiComboBoxModes::current_mode_changed,
         this, &GuiMainWindow::set_current_mode);
-    refresh_combo_box_modes();
 
     left_panel_layout->addStretch(1);
 
+    initialize();
 }
 
 void GuiMainWindow::menu_file_open() {
     std::cout << "menu_file_open() not implemented yet" << std::endl;
+}
+
+void GuiMainWindow::menu_file_reload() {
+    GuiProjectRunner::Status status = project_runner->status();
+    if (status == GuiProjectRunner::Status::Running ||
+            status == GuiProjectRunner::Status::Interrupting) {
+        /* Wait for the project runner to stop before we reinitialize, but we
+        can interrupt it so it stops sooner. */
+        connect(project_runner.get(), &GuiProjectRunner::status_changed,
+        [this](GuiProjectRunner::Status new_status) {
+            if (new_status == GuiProjectRunner::Status::Interrupted) {
+                initialize();
+            }
+        });
+        project_runner->interrupt();
+    } else {
+        initialize();
+    }
 }
 
 void GuiMainWindow::menu_file_interrupt() {
@@ -155,6 +175,18 @@ void GuiMainWindow::set_current_mode(GuiModeAbstract *new_mode) {
     }
 
     right_panel->set_mode(new_mode);
+}
+
+void GuiMainWindow::initialize() {
+    /* erase all existing modes in the combo box (because they can hold
+    references to the old project) */
+    combo_box_modes->clear();
+
+    project_runner.reset(new GuiProjectRunner(this, scad_path));
+    connect(project_runner.get(), &GuiProjectRunner::project_updated,
+        this, &GuiMainWindow::refresh_combo_box_modes);
+
+    refresh_combo_box_modes();
 }
 
 QSize GuiMainWindow::sizeHint() const {

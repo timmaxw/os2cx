@@ -23,14 +23,20 @@ public:
 
 public slots:
     void menu_file_open();
+    void menu_file_reload();
     void menu_file_interrupt();
     void refresh_combo_box_modes();
     void set_current_mode(GuiModeAbstract *new_mode);
 
 private:
+    /* This is called when we first start, and again when reloading. */
+    void initialize();
+
     QSize sizeHint() const;
 
-    GuiProjectRunner *project_runner;
+    const std::string scad_path;
+
+    std::shared_ptr<GuiProjectRunner> project_runner;
 
     QSplitter *splitter;
     QWidget *left_panel;

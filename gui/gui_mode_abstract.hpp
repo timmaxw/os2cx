@@ -20,6 +20,8 @@ public:
 
     virtual std::shared_ptr<const GuiOpenglScene> make_scene() = 0;
 
+    const std::shared_ptr<const Project> project;
+
 signals:
     void refresh_scene();
 
@@ -27,8 +29,6 @@ public slots:
 
 protected:
     QLabel *create_widget_label(const QString &label);
-
-    const std::shared_ptr<const Project> project;
 
     QVBoxLayout *layout;
 };

@@ -35,12 +35,8 @@ void GuiOpenglScene::add_line(const Point *points) {
     }
 }
 
-GuiOpenglWidget::GuiOpenglWidget(
-    QWidget *parent,
-    std::shared_ptr<const Project> project_
-) :
+GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
     QOpenGLWidget(parent),
-    project(project_),
     mode(nullptr),
     yaw(20),
     pitch(40)
@@ -120,8 +116,9 @@ void GuiOpenglWidget::paintGL() {
     glLightfv(GL_LIGHT0, GL_POSITION, light_dir);
 
     /* Position camera such that entire project is visible */
+    double approx_scale = mode ? mode->project->approx_scale : 1.0;
     float fov_slop_factor = 1.5;
-    Length dist = project->approx_scale / fov_slope_min * fov_slop_factor;
+    Length dist = approx_scale / fov_slope_min * fov_slop_factor;
     glTranslatef(0, 0, -dist);
 
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);

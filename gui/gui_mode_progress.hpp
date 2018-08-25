@@ -14,7 +14,9 @@ class GuiModeProgress : public GuiModeAbstract
 {
     Q_OBJECT
 public:
-    GuiModeProgress(QWidget *parent, const GuiProjectRunner *project_runner);
+    GuiModeProgress(
+        QWidget *parent,
+        std::shared_ptr<const GuiProjectRunner> project_runner);
 
 signals:
     void see_results();
@@ -25,7 +27,7 @@ public slots:
 private:
     std::shared_ptr<const GuiOpenglScene> make_scene();
 
-    const GuiProjectRunner *project_runner;
+    std::shared_ptr<const GuiProjectRunner> project_runner;
 
     QLabel *label;
     QProgressBar *progress_bar;

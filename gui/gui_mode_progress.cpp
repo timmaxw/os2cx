@@ -6,7 +6,7 @@ namespace os2cx {
 
 GuiModeProgress::GuiModeProgress(
     QWidget *parent,
-    const GuiProjectRunner *project_runner
+    std::shared_ptr<const GuiProjectRunner> project_runner
 ) :
     GuiModeAbstract(parent, project_runner->get_project()),
     project_runner(project_runner)
@@ -26,16 +26,17 @@ GuiModeProgress::GuiModeProgress(
     layout->addWidget(button_results, 0, Qt::AlignRight);
 
     connect(
-        project_runner, &GuiProjectRunner::project_updated,
+        project_runner.get(), &GuiProjectRunner::project_updated,
         this, &GuiModeProgress::update_progress);
     connect(
-        project_runner, &GuiProjectRunner::status_changed,
+        project_runner.get(), &GuiProjectRunner::status_changed,
         this, &GuiModeProgress::update_progress);
     update_progress();
 }
 
 void GuiModeProgress::update_progress() {
     GuiProjectRunner::Status status = project_runner->status();
+
     switch (status) {
     case GuiProjectRunner::Status::Running:
         switch (project->progress) {
