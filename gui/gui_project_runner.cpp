@@ -13,7 +13,11 @@ GuiProjectRunnerWorkerThread::GuiProjectRunnerWorkerThread(
 
 void GuiProjectRunnerWorkerThread::run() {
     mutex.lock();
-    project_run(project_on_worker_thread.get(), this);
+    try {
+        project_run(project_on_worker_thread.get(), this);
+    } catch (const ProjectInterruptedException &) {
+        /* Do nothing. */
+    }
     mutex.unlock();
 }
 
@@ -29,13 +33,19 @@ void GuiProjectRunnerWorkerThread::project_run_checkpoint() {
         wait_condition.wait(&mutex);
     }
     assert(!checkpoint_active);
+
+    if (isInterruptionRequested()) {
+        throw ProjectInterruptedException();
+    }
 }
 
 GuiProjectRunner::GuiProjectRunner(
         QObject *parent,
         const std::string &scad_path) :
     QObject(parent),
-    project_on_application_thread(new Project(scad_path, "os2cx_temp"))
+    project_on_application_thread(new Project(scad_path, "os2cx_temp")),
+    interrupted(false),
+    last_emitted_status(Status::Running)
 {
     worker_thread.reset(new GuiProjectRunnerWorkerThread(
         this,
@@ -44,7 +54,46 @@ GuiProjectRunner::GuiProjectRunner(
     connect(
         worker_thread.get(), &GuiProjectRunnerWorkerThread::checkpoint_signal,
         this, &GuiProjectRunner::checkpoint_slot);
+    connect(
+        worker_thread.get(), &QThread::finished,
+        this, &GuiProjectRunner::maybe_emit_status_changed);
     worker_thread->start();
+}
+
+GuiProjectRunner::Status GuiProjectRunner::status() const {
+    if (interrupted) {
+        if (worker_thread->isFinished()) {
+            return Status::Interrupted;
+        } else {
+            return Status::Interrupting;
+        }
+    } else {
+        /* Don't rely on worker_thread->isFinished() because it might change to
+        true before we receive the final update, and it would be weird if status
+        was Status::Done while the project progress wasn't yet
+        Progress::AllDone. To avoid confusion, check project progress directly.
+        */
+        if (project_on_application_thread->progress ==
+                Project::Progress::AllDone) {
+            return Status::Done;
+        } else {
+            return Status::Running;
+        }
+    }
+}
+
+void GuiProjectRunner::interrupt() {
+    worker_thread->requestInterruption();
+    interrupted = true;
+    maybe_emit_status_changed();
+}
+
+void GuiProjectRunner::maybe_emit_status_changed() {
+    Status new_status = status();
+    if (new_status != last_emitted_status) {
+        last_emitted_status = new_status;
+        emit status_changed(new_status);
+    }
 }
 
 void GuiProjectRunner::checkpoint_slot() {
@@ -55,7 +104,9 @@ void GuiProjectRunner::checkpoint_slot() {
         worker_thread->checkpoint_active = false;
         worker_thread->wait_condition.wakeAll();
     }
+
     emit project_updated();
+    maybe_emit_status_changed();
 }
 
 } /* namespace os2cx */

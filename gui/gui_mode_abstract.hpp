@@ -1,6 +1,7 @@
 #ifndef OS2CX_GUI_MODE_ABSTRACT_HPP_
 #define OS2CX_GUI_MODE_ABSTRACT_HPP_
 
+#include <QLabel>
 #include <QOpenGLFunctions_1_1>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -25,7 +26,7 @@ signals:
 public slots:
 
 protected:
-    void create_widget_label(const QString &label);
+    QLabel *create_widget_label(const QString &label);
 
     const std::shared_ptr<const Project> project;
 

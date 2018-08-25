@@ -38,7 +38,6 @@ SOURCES += \
     openscad_extract.cpp \
     openscad_run.cpp \
     openscad_value.cpp \
-    project.cpp \
     util.cpp \
     polynomial.cpp \
     poly.cpp \
@@ -49,7 +48,8 @@ SOURCES += \
     plc_nef_to_plc.cpp \
     plc_index.cpp \
     result.cpp \
-    units.cpp
+    units.cpp \
+    project_run.cpp
 
 HEADERS += \
     attrs.hpp \
@@ -77,7 +77,8 @@ HEADERS += \
     plc.hpp \
     plc_nef_to_plc.hpp \
     plc_index.hpp \
-    units.hpp
+    units.hpp \
+    project_run.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.

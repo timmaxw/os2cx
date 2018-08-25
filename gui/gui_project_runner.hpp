@@ -6,7 +6,7 @@
 #include <QThread>
 #include <QWaitCondition>
 
-#include "project.hpp"
+#include "project_run.hpp"
 
 namespace os2cx {
 
@@ -24,12 +24,13 @@ public:
 
     void run();
 
-    /* project_on_worker_thread is normally only accessed from the worker
-    thread, but may be accessed from the application thread during
+    /* These variables are normally only accessed from the worker thread, but
+    may be accessed from the application thread during
     project_run_checkpoint(). */
     std::unique_ptr<Project> project_on_worker_thread;
+    bool should_interrupt;
 
-    /* mutex controls access to project_on_worker_thread and checkpoint_active.
+    /* mutex controls access to the above variables and checkpoint_active.
     The application thread uses wait_condition and checkpoint_active to notify
     the worker thread when it's OK to continue. checkpoint_active is used to
     avoid spurious wakeups. */
@@ -54,8 +55,17 @@ public:
         return std::shared_ptr<const Project>(project_on_application_thread);
     }
 
+    enum class Status {Running, Done, Interrupting, Interrupted};
+    Status status() const;
+
+    /* Cancels running the project. Cancelling takes some time, so it happens
+    asynchronously. interrupt() returns immediately, and then some time later
+    we emit project_updated(true). */
+    void interrupt();
+
 signals:
     void project_updated();
+    void status_changed(Status new_status);
 
 public slots:
 
@@ -65,6 +75,11 @@ private:
     std::shared_ptr<Project> project_on_application_thread;
 
     std::unique_ptr<GuiProjectRunnerWorkerThread> worker_thread;
+
+    bool interrupted;
+
+    Status last_emitted_status;
+    void maybe_emit_status_changed();
 
 private slots:
     void checkpoint_slot();

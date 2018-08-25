@@ -6,6 +6,7 @@
 #include <QWidget>
 
 #include "gui_mode_abstract.hpp"
+#include "gui_project_runner.hpp"
 
 namespace os2cx {
 
@@ -13,7 +14,7 @@ class GuiModeProgress : public GuiModeAbstract
 {
     Q_OBJECT
 public:
-    GuiModeProgress(QWidget *parent, std::shared_ptr<const Project> project);
+    GuiModeProgress(QWidget *parent, const GuiProjectRunner *project_runner);
 
 signals:
     void see_results();
@@ -24,6 +25,9 @@ public slots:
 private:
     std::shared_ptr<const GuiOpenglScene> make_scene();
 
+    const GuiProjectRunner *project_runner;
+
+    QLabel *label;
     QProgressBar *progress_bar;
     QPushButton *button_results;
 };

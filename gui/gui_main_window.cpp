@@ -23,6 +23,8 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path) :
     QMenu *file_menu = menuBar()->addMenu(tr("File"));
     file_menu->addAction(tr("Open"),
         this, &GuiMainWindow::menu_file_open);
+    file_menu->addAction(tr("Interrupt calculation"),
+        this, &GuiMainWindow::menu_file_interrupt);
 
     splitter = new QSplitter(this);
     splitter->setChildrenCollapsible(false);
@@ -58,6 +60,10 @@ void GuiMainWindow::menu_file_open() {
     std::cout << "menu_file_open() not implemented yet" << std::endl;
 }
 
+void GuiMainWindow::menu_file_interrupt() {
+    project_runner->interrupt();
+}
+
 void GuiMainWindow::refresh_combo_box_modes() {
     std::shared_ptr<const Project> project = project_runner->get_project();
 
@@ -68,11 +74,7 @@ void GuiMainWindow::refresh_combo_box_modes() {
         [this]() {
             GuiModeProgress *mode = new GuiModeProgress(
                 left_panel,
-                project_runner->get_project());
-            connect(
-                project_runner, &GuiProjectRunner::project_updated,
-                mode, &GuiModeProgress::update_progress
-            );
+                project_runner);
             connect(
                 mode, &GuiModeProgress::see_results,
                 [this]() {

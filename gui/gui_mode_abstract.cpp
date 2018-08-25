@@ -1,7 +1,5 @@
 #include "gui_mode_abstract.hpp"
 
-#include <QLabel>
-
 namespace os2cx {
 
 GuiModeAbstract::GuiModeAbstract(
@@ -19,10 +17,11 @@ GuiModeAbstract::GuiModeAbstract(
     layout->setContentsMargins(0, 0, 0, 0);
 }
 
-void GuiModeAbstract::create_widget_label(const QString &text) {
+QLabel *GuiModeAbstract::create_widget_label(const QString &text) {
     layout->addSpacing(10);
     QLabel *label = new QLabel(text, this);
     layout->addWidget(label);
+    return label;
 }
 
 } /* namespace os2cx */

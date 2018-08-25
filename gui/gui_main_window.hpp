@@ -23,6 +23,7 @@ public:
 
 public slots:
     void menu_file_open();
+    void menu_file_interrupt();
     void refresh_combo_box_modes();
     void set_current_mode(GuiModeAbstract *new_mode);
 
