@@ -16,11 +16,9 @@ HEADERS = $$CORE_HEADERS \
     gui_mode_progress.hpp \
     gui_mode_result.hpp \
     gui_combo_box_modes.hpp \
-    gui_mode_inspect_poly3.hpp \
-    gui_mode_inspect_mesh.hpp \
-    gui_mode_inspect_abstract.hpp \
     gui_opengl_mesh.hpp \
-    gui_opengl_poly3.hpp
+    gui_opengl_poly3.hpp \
+    gui_mode_inspect.hpp
 
 SOURCES = $$CORE_SOURCES \
     gui_project_runner.cpp \
@@ -32,8 +30,6 @@ SOURCES = $$CORE_SOURCES \
     gui_mode_progress.cpp \
     gui_mode_result.cpp \
     gui_combo_box_modes.cpp \
-    gui_mode_inspect_mesh.cpp \
-    gui_mode_inspect_poly3.cpp \
-    gui_mode_inspect_abstract.cpp \
     gui_opengl_mesh.cpp \
-    gui_opengl_poly3.cpp
+    gui_opengl_poly3.cpp \
+    gui_mode_inspect.cpp

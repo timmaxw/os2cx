@@ -5,8 +5,7 @@
 #include <QMenu>
 #include <QMenuBar>
 
-#include "gui_mode_inspect_mesh.hpp"
-#include "gui_mode_inspect_poly3.hpp"
+#include "gui_mode_inspect.hpp"
 #include "gui_mode_progress.hpp"
 #include "gui_mode_result.hpp"
 
@@ -105,30 +104,21 @@ void GuiMainWindow::refresh_combo_box_modes() {
         }
     });
 
-    if (project->progress >= Project::Progress::PolyAttrsDone) {
+    if (project->progress < Project::Progress::InventoryDone) {
+        modes.push_back({tr("Inspect setup"), nullptr});
+    } else {
         modes.push_back({
-            tr("Pre-mesh geometry"),
+            tr("Inspect setup"),
             [this, project]() {
-                return new GuiModeInspectPoly3(
+                GuiModeInspect *mode = new GuiModeInspect(
                     left_panel,
                     project);
+                connect(
+                    project_runner.get(), &GuiProjectRunner::project_updated,
+                    mode, &GuiModeInspect::project_updated);
+                return mode;
             }
         });
-    } else {
-        modes.push_back({tr("Pre-mesh geometry"), nullptr});
-    }
-
-    if (project->progress >= Project::Progress::MeshAttrsDone) {
-        modes.push_back({
-            tr("Mesh geometry"),
-            [this, project]() {
-                return new GuiModeInspectMesh(
-                    left_panel,
-                    project);
-            }
-        });
-    } else {
-        modes.push_back({tr("Mesh geometry"), nullptr});
     }
 
     if (project->progress < Project::Progress::ResultsDone) {

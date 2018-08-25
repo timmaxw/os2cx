@@ -69,6 +69,8 @@ public:
         fi.face = 0;
         return fi;
     }
+    FaceId() { }
+    FaceId(ElementId ei, int f) : element_id(ei), face(f) { }
     int to_int() {
         return element_id.to_int() * ElementShapeInfo::max_faces_per_element
             + face;
