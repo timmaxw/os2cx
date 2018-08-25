@@ -90,36 +90,43 @@ void GuiOpenglWidget::initializeGL() {
 static const float fov_slope_min = 0.5;
 
 void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
-    glViewport(0, 0, viewport_width, viewport_height);
+    (void)viewport_width;
+    (void)viewport_height;
+}
+
+void GuiOpenglWidget::paintGL() {
+    glViewport(0, 0, size().width(), size().height());
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     float slope_x, slope_y;
-    if (viewport_width > viewport_height) {
+    if (size().width() > size().height()) {
         slope_y = fov_slope_min;
-        slope_x = slope_y / viewport_height * viewport_width;
+        slope_x = slope_y / size().height() * size().width();
     } else {
         slope_x = fov_slope_min;
-        slope_y = slope_x / viewport_width * viewport_height;
+        slope_y = slope_x / size().width() * size().height();
     }
-    float z_near = 0.1, z_far = 200;
+
+    /* Position camera such that entire project is visible */
+    double approx_scale = mode ? mode->project->approx_scale : 1.0;
+    float fov_slop_factor = 1.5;
+    Length camera_dist = approx_scale / fov_slope_min * fov_slop_factor;
+
+    float z_near = approx_scale / 1e3;
+    float z_far = camera_dist + approx_scale;
+
     glFrustum(
         -slope_x * z_near, slope_x * z_near,
         -slope_y * z_near, slope_y * z_near,
         z_near, z_far);
-}
 
-void GuiOpenglWidget::paintGL() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     GLfloat light_dir[4] = {1, 1, 1, 0};
     glLightfv(GL_LIGHT0, GL_POSITION, light_dir);
 
-    /* Position camera such that entire project is visible */
-    double approx_scale = mode ? mode->project->approx_scale : 1.0;
-    float fov_slop_factor = 1.5;
-    Length dist = approx_scale / fov_slope_min * fov_slop_factor;
-    glTranslatef(0, 0, -dist);
+    glTranslatef(0, 0, -camera_dist);
 
     glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);
     glRotatef(-yaw, 0.0f, 0.0f, 1.0f);

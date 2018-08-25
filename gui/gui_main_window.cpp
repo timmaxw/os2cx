@@ -25,8 +25,7 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path_) :
         this, &GuiMainWindow::menu_file_reload,
         QKeySequence::Refresh);
     file_menu->addAction(tr("Interrupt"),
-        this, &GuiMainWindow::menu_file_interrupt,
-        QKeySequence::Cancel);
+        this, &GuiMainWindow::menu_file_interrupt);
 
     splitter = new QSplitter(this);
     splitter->setChildrenCollapsible(false);
