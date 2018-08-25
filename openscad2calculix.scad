@@ -11,14 +11,14 @@ function __os2cx_is_vector_3(arg) =
     && __os2cx_is_number(arg[1])
     && __os2cx_is_number(arg[2]);
 function __os2cx_is_array_strings(arg) =
-    all([for (item = arg) __os2cx_is_string(item)]);
+    [for (item = arg) if (!__os2cx_is_string(item)) false] == [];
 function __os2cx_is_number_with_unit(arg) =
     len(arg) == 2
     && __os2cx_is_number(arg[0])
     && __os2cx_is_string(arg[1]);
-function __os2cx_is_vector_with_unit(arg) =
+function __os2cx_is_vector_3_with_unit(arg) =
     len(arg) == 2
-    && __os2cx_is_vector(arg[0])
+    && __os2cx_is_vector_3(arg[0])
     && __os2cx_is_string(arg[1]);
 
 
@@ -59,7 +59,7 @@ module os2cx_analysis_custom(lines, unit_system=undef) {
             echo("ERROR: os2cx_analysis_custom() parameter must be an " +
                 "array of strings");
         }
-        if (!__os2cx_is_array_strings(unit_system) || len(units) != 3) {
+        if (!__os2cx_is_array_strings(unit_system) || len(unit_system) != 3) {
             echo("ERROR: os2cx_analysis_custom() 'unit_system' parameter " +
                 "must be an array of three strings.");
         }
@@ -125,7 +125,7 @@ module os2cx_load_volume(name, volume, force_density) {
             echo("ERROR: os2cx_load_volume() third parameter must be a " +
                 "[vector, unit] pair.");
         }
-        if (num_children() != 0) {
+        if ($children != 0) {
             echo("ERROR: os2cx_load_volume() shouldn't have any children");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
