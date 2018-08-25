@@ -59,7 +59,7 @@ void GuiMainWindow::menu_file_open() {
 }
 
 void GuiMainWindow::refresh_combo_box_modes() {
-    const Project *project = project_runner->get_project();
+    std::shared_ptr<const Project> project = project_runner->get_project();
 
     GuiComboBoxModes::ModeVector modes;
 
@@ -87,10 +87,10 @@ void GuiMainWindow::refresh_combo_box_modes() {
     if (project->progress >= Project::Progress::PolyAttrsDone) {
         modes.push_back({
             tr("Pre-mesh geometry"),
-            [this]() {
+            [this, project]() {
                 return new GuiModePoly3(
                     left_panel,
-                    project_runner->get_project());
+                    project);
             }
         });
     } else {
@@ -100,10 +100,10 @@ void GuiMainWindow::refresh_combo_box_modes() {
     if (project->progress >= Project::Progress::MeshAttrsDone) {
         modes.push_back({
             tr("Mesh geometry"),
-            [this]() {
+            [this, project]() {
                 return new GuiModeMesh(
                     left_panel,
-                    project_runner->get_project());
+                    project);
             }
         });
     } else {
@@ -119,10 +119,10 @@ void GuiMainWindow::refresh_combo_box_modes() {
             QString name = tr("Result ") + QString(result_name.c_str());
             modes.push_back({
                 name,
-                [this, result_name]() {
+                [this, project, result_name]() {
                     return new GuiModeResultStatic(
                         left_panel,
-                        project_runner->get_project(),
+                        project,
                         result_name);
                 }
             });

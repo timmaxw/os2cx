@@ -29,7 +29,7 @@ class GuiOpenglWidget :
 {
     Q_OBJECT
 public:
-    GuiOpenglWidget(QWidget *parent, const Project *project);
+    GuiOpenglWidget(QWidget *parent, std::shared_ptr<const Project> project);
 
     void set_mode(GuiModeAbstract *mode);
 
@@ -44,7 +44,7 @@ private:
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 
-    const Project *project;
+    const std::shared_ptr<const Project> project;
     GuiModeAbstract *mode;
     std::shared_ptr<const GuiOpenglScene> scene;
     int mouse_last_x, mouse_last_y;

@@ -13,7 +13,7 @@ class GuiModeProgress : public GuiModeAbstract
 {
     Q_OBJECT
 public:
-    GuiModeProgress(QWidget *parent, const Project *project);
+    GuiModeProgress(QWidget *parent, std::shared_ptr<const Project> project);
 
 signals:
     void see_results();

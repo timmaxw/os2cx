@@ -3,7 +3,9 @@
 namespace os2cx {
 
 GuiModeResultStatic::GuiModeResultStatic(
-    QWidget *parent, const Project *project, const std::string &result_name_
+    QWidget *parent,
+    std::shared_ptr<const Project> project,
+    const std::string &result_name_
 ) :
     GuiModeMesh(parent, project), result_name(result_name_)
 {

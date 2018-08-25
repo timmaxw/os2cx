@@ -13,7 +13,7 @@ class GuiModeResultStatic : public GuiModeMesh
 public:
     GuiModeResultStatic(
         QWidget *parent,
-        const Project *project,
+        std::shared_ptr<const Project> project,
         const std::string &result_name);
 
 private:

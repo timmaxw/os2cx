@@ -4,7 +4,10 @@
 
 namespace os2cx {
 
-GuiModeAbstract::GuiModeAbstract(QWidget *parent, const Project *project_) :
+GuiModeAbstract::GuiModeAbstract(
+    QWidget *parent,
+    std::shared_ptr<const Project> project_
+) :
     QWidget(parent), project(project_)
 {
     layout = new QVBoxLayout(this);

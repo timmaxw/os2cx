@@ -4,7 +4,10 @@
 
 namespace os2cx {
 
-GuiModeProgress::GuiModeProgress(QWidget *parent, const Project *project) :
+GuiModeProgress::GuiModeProgress(
+    QWidget *parent,
+    std::shared_ptr<const Project> project
+) :
     GuiModeAbstract(parent, project)
 {
     create_widget_label(tr("Calculating..."));

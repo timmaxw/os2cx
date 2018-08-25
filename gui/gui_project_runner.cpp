@@ -35,11 +35,11 @@ GuiProjectRunner::GuiProjectRunner(
         QObject *parent,
         const std::string &scad_path) :
     QObject(parent),
-    project_on_application_thread(scad_path, "os2cx_temp")
+    project_on_application_thread(new Project(scad_path, "os2cx_temp"))
 {
     worker_thread.reset(new GuiProjectRunnerWorkerThread(
         this,
-        project_on_application_thread
+        *project_on_application_thread
     ));
     connect(
         worker_thread.get(), &GuiProjectRunnerWorkerThread::checkpoint_signal,
@@ -50,7 +50,7 @@ GuiProjectRunner::GuiProjectRunner(
 void GuiProjectRunner::checkpoint_slot() {
     {
         QMutexLocker mutex_locker(&worker_thread->mutex);
-        project_on_application_thread =
+        *project_on_application_thread =
             *worker_thread->project_on_worker_thread;
         worker_thread->checkpoint_active = false;
         worker_thread->wait_condition.wakeAll();

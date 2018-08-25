@@ -15,7 +15,7 @@ class GuiModeAbstract : public QWidget
 {
     Q_OBJECT
 public:
-    GuiModeAbstract(QWidget *parent, const Project *project);
+    GuiModeAbstract(QWidget *parent, std::shared_ptr<const Project> project);
 
     virtual std::shared_ptr<const GuiOpenglScene> make_scene() = 0;
 
@@ -27,7 +27,7 @@ public slots:
 protected:
     void create_widget_label(const QString &label);
 
-    const Project *const project;
+    const std::shared_ptr<const Project> project;
 
     QVBoxLayout *layout;
 };

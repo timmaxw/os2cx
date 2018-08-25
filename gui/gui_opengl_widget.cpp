@@ -35,7 +35,10 @@ void GuiOpenglScene::add_line(const Point *points) {
     }
 }
 
-GuiOpenglWidget::GuiOpenglWidget(QWidget *parent, const Project *project_) :
+GuiOpenglWidget::GuiOpenglWidget(
+    QWidget *parent,
+    std::shared_ptr<const Project> project_
+) :
     QOpenGLWidget(parent),
     project(project_),
     mode(nullptr),
