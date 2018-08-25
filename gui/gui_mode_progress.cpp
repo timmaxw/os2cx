@@ -81,11 +81,42 @@ void GuiModeProgress::update_progress() {
             status == GuiProjectRunner::Status::Done);
 
     button_results->setEnabled(status == GuiProjectRunner::Status::Done);
+
+    emit refresh_scene();
+}
+
+void GuiModeProgress::calculate_attributes(
+    const std::string &mesh_object_name,
+    Plc3::SurfaceId surface_id,
+    QColor *color_out
+) const {
+    (void)mesh_object_name;
+    (void)surface_id;
+    *color_out = QColor(0x80, 0x80, 0x80);
+}
+
+void GuiModeProgress::calculate_attributes(
+    ElementId element_id,
+    int face_index,
+    NodeId node_id,
+    QColor *color_out,
+    Vector *displacement_out
+) const {
+    (void)element_id;
+    (void)face_index;
+    (void)node_id;
+    *color_out = QColor(0x80, 0x80, 0x80);
+    *displacement_out = Vector::zero();
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {
-    /* do nothing, show a blank page. TODO: do better */
-    return std::make_shared<GuiOpenglScene>();
+    if (project->progress < Project::Progress::PolyAttrsDone) {
+        return std::make_shared<const GuiOpenglScene>();
+    } else if (project->progress < Project::Progress::MeshAttrsDone) {
+        return gui_opengl_scene_poly3(*project, this);
+    } else {
+        return gui_opengl_scene_mesh(*project, this);
+    }
 }
 
 } /* namespace os2cx */

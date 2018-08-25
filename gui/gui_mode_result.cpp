@@ -7,7 +7,7 @@ GuiModeResultStatic::GuiModeResultStatic(
     std::shared_ptr<const Project> project,
     const std::string &result_name_
 ) :
-    GuiModeMesh(parent, project), result_name(result_name_)
+    GuiModeAbstract(parent, project), result_name(result_name_)
 {
     const Results::StaticStep &step =
         project->results->static_steps.at(result_name);
@@ -250,7 +250,7 @@ void GuiModeResultStatic::calculate_attributes(
     NodeId node_id,
     QColor *color_out,
     Vector *displacement_out
-) {
+) const {
     (void)element_id;
     (void)face_index;
 
@@ -267,6 +267,10 @@ void GuiModeResultStatic::calculate_attributes(
     } else {
         *displacement_out = Vector(0, 0, 0);
     }
+}
+
+std::shared_ptr<const GuiOpenglScene> GuiModeResultStatic::make_scene() {
+    return gui_opengl_scene_mesh(*project, this);
 }
 
 } /* namespace os2cx */

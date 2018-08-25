@@ -1,12 +1,13 @@
-#include "gui_mode_poly3.hpp"
-
-#include "gui_opengl_widget.hpp"
+#include "gui_opengl_poly3.hpp"
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglScene> GuiModePoly3::make_scene() {
+std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
+    const Project &project,
+    const GuiOpenglPoly3Callback *callback
+) {
     GuiOpenglScene scene;
-    for (const auto &pair : project->mesh_objects) {
+    for (const auto &pair : project.mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();
         if (plc == nullptr) {
             continue;
@@ -24,7 +25,9 @@ std::shared_ptr<const GuiOpenglScene> GuiModePoly3::make_scene() {
                 continue;
             }
 
-            QColor color(0x80, 0x80, 0x80);
+            QColor color;
+            callback->calculate_attributes(pair.first, sid, &color);
+
             QColor colors[3] = {color, color, color};
 
             for (const Plc3::Surface::Triangle &tri : surface.triangles) {
@@ -39,7 +42,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModePoly3::make_scene() {
             }
         }
     }
-    return std::make_shared<GuiOpenglScene>(std::move(scene));
+    return std::make_shared<const GuiOpenglScene>(std::move(scene));
 }
 
 } /* namespace os2cx */

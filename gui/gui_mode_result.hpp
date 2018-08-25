@@ -4,11 +4,14 @@
 #include <QComboBox>
 
 #include "gui_color_scale.hpp"
-#include "gui_mode_mesh.hpp"
+#include "gui_mode_abstract.hpp"
+#include "gui_opengl_mesh.hpp"
 
 namespace os2cx {
 
-class GuiModeResultStatic : public GuiModeMesh
+class GuiModeResultStatic :
+    public GuiModeAbstract,
+    private GuiOpenglMeshCallback
 {
 public:
     GuiModeResultStatic(
@@ -38,7 +41,9 @@ private:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        Vector *displacement_out);
+        Vector *displacement_out) const;
+
+    std::shared_ptr<const GuiOpenglScene> make_scene();
 
     std::string result_name;
 

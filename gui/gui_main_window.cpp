@@ -5,8 +5,8 @@
 #include <QMenu>
 #include <QMenuBar>
 
-#include "gui_mode_mesh.hpp"
-#include "gui_mode_poly3.hpp"
+#include "gui_mode_inspect_mesh.hpp"
+#include "gui_mode_inspect_poly3.hpp"
 #include "gui_mode_progress.hpp"
 #include "gui_mode_result.hpp"
 
@@ -109,7 +109,7 @@ void GuiMainWindow::refresh_combo_box_modes() {
         modes.push_back({
             tr("Pre-mesh geometry"),
             [this, project]() {
-                return new GuiModePoly3(
+                return new GuiModeInspectPoly3(
                     left_panel,
                     project);
             }
@@ -122,7 +122,7 @@ void GuiMainWindow::refresh_combo_box_modes() {
         modes.push_back({
             tr("Mesh geometry"),
             [this, project]() {
-                return new GuiModeMesh(
+                return new GuiModeInspectMesh(
                     left_panel,
                     project);
             }

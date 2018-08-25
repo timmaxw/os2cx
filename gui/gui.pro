@@ -13,11 +13,14 @@ HEADERS = $$CORE_HEADERS \
     gui_opengl_widget.hpp \
     gui_color_scale.hpp \
     gui_mode_abstract.hpp \
-    gui_mode_mesh.hpp \
-    gui_mode_poly3.hpp \
     gui_mode_progress.hpp \
     gui_mode_result.hpp \
-    gui_combo_box_modes.hpp
+    gui_combo_box_modes.hpp \
+    gui_mode_inspect_poly3.hpp \
+    gui_mode_inspect_mesh.hpp \
+    gui_mode_inspect_abstract.hpp \
+    gui_opengl_mesh.hpp \
+    gui_opengl_poly3.hpp
 
 SOURCES = $$CORE_SOURCES \
     gui_project_runner.cpp \
@@ -26,8 +29,11 @@ SOURCES = $$CORE_SOURCES \
     gui_opengl_widget.cpp \
     gui_color_scale.cpp \
     gui_mode_abstract.cpp \
-    gui_mode_mesh.cpp \
-    gui_mode_poly3.cpp \
     gui_mode_progress.cpp \
     gui_mode_result.cpp \
-    gui_combo_box_modes.cpp
+    gui_combo_box_modes.cpp \
+    gui_mode_inspect_mesh.cpp \
+    gui_mode_inspect_poly3.cpp \
+    gui_mode_inspect_abstract.cpp \
+    gui_opengl_mesh.cpp \
+    gui_opengl_poly3.cpp

@@ -1,13 +1,14 @@
-#include "gui_mode_mesh.hpp"
-
-#include "gui_opengl_widget.hpp"
+#include "gui_opengl_mesh.hpp"
 
 namespace os2cx {
 
-std::shared_ptr<const GuiOpenglScene> GuiModeMesh::make_scene() {
+std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
+    const Project &project,
+    const GuiOpenglMeshCallback *callback
+) {
     GuiOpenglScene scene;
-    for (const FaceId &fi : project->mesh_index->unmatched_faces) {
-        const Element3 &element = project->mesh->elements[fi.element_id];
+    for (const FaceId &fi : project.mesh_index->unmatched_faces) {
+        const Element3 &element = project.mesh->elements[fi.element_id];
         const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
         NodeId node_ids[ElementShapeInfo::max_vertices_per_face];
         const ElementShapeInfo::Face &face = type.shape->faces[fi.face];
@@ -18,9 +19,9 @@ std::shared_ptr<const GuiOpenglScene> GuiModeMesh::make_scene() {
         Point ps[ElementShapeInfo::max_vertices_per_face];
         QColor cs[ElementShapeInfo::max_vertices_per_face];
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
-            ps[i] = project->mesh->nodes[node_ids[i]].point;
+            ps[i] = project.mesh->nodes[node_ids[i]].point;
             Vector disp;
-            calculate_attributes(
+            callback->calculate_attributes(
                 fi.element_id, fi.face, node_ids[i], &cs[i], &disp);
             ps[i] += disp;
         }
@@ -51,21 +52,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModeMesh::make_scene() {
             }
         }
     }
-    return std::make_shared<GuiOpenglScene>(std::move(scene));
-}
-
-void GuiModeMesh::calculate_attributes(
-    ElementId element_id,
-    int face_index,
-    NodeId node_id,
-    QColor *color_out,
-    Vector *displacement_out
-) {
-    (void)element_id;
-    (void)face_index;
-    (void)node_id;
-    *color_out = QColor(0x80, 0x80, 0x80);
-    *displacement_out = Vector::zero();
+    return std::make_shared<const GuiOpenglScene>(std::move(scene));
 }
 
 } /* namespace os2cx */
