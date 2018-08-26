@@ -39,9 +39,11 @@ public:
     bool checkpoint_active;
 
 signals:
+    void log_signal(const QString &msg);
     void checkpoint_signal();
 
 private:
+    void project_run_log(const std::string &);
     void project_run_checkpoint();
 };
 
@@ -55,6 +57,8 @@ public:
         return std::shared_ptr<const Project>(project_on_application_thread);
     }
 
+    std::vector<QString> logs;
+
     enum class Status {Running, Done, Interrupting, Interrupted};
     Status status() const;
 
@@ -64,6 +68,7 @@ public:
     void interrupt();
 
 signals:
+    void project_logged();
     void project_updated();
     void status_changed(Status new_status);
 
@@ -82,6 +87,7 @@ private:
     void maybe_emit_status_changed();
 
 private slots:
+    void log_slot(const QString &);
     void checkpoint_slot();
 };
 

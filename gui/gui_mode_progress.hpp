@@ -3,6 +3,7 @@
 
 #include <QProgressBar>
 #include <QPushButton>
+#include <QTextEdit>
 #include <QWidget>
 
 #include "gui_mode_abstract.hpp"
@@ -26,8 +27,9 @@ public:
 signals:
     void see_results();
 
-public slots:
-    void update_progress();
+private slots:
+    void project_logged();
+    void project_updated();
 
 private:
     void calculate_attributes(
@@ -46,7 +48,9 @@ private:
 
     std::shared_ptr<const GuiProjectRunner> project_runner;
 
-    QLabel *label;
+    int last_log_line;
+    QTextEdit *log_text;
+
     QProgressBar *progress_bar;
     QPushButton *button_results;
 };

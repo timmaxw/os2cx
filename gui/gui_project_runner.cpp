@@ -21,6 +21,12 @@ void GuiProjectRunnerWorkerThread::run() {
     mutex.unlock();
 }
 
+/* project_run() calls project_run_log() on the worker thread. */
+void GuiProjectRunnerWorkerThread::project_run_log(const std::string &msg) {
+    emit log_signal(QString::fromStdString(msg));
+}
+
+
 /* project_run() calls project_run_checkpoint() on the worker thread */
 void GuiProjectRunnerWorkerThread::project_run_checkpoint() {
     checkpoint_active = true;
@@ -51,6 +57,9 @@ GuiProjectRunner::GuiProjectRunner(
         this,
         *project_on_application_thread
     ));
+    connect(
+        worker_thread.get(), &GuiProjectRunnerWorkerThread::log_signal,
+        this, &GuiProjectRunner::log_slot);
     connect(
         worker_thread.get(), &GuiProjectRunnerWorkerThread::checkpoint_signal,
         this, &GuiProjectRunner::checkpoint_slot);
@@ -83,17 +92,28 @@ GuiProjectRunner::Status GuiProjectRunner::status() const {
 }
 
 void GuiProjectRunner::interrupt() {
-    worker_thread->requestInterruption();
-    interrupted = true;
-    maybe_emit_status_changed();
+    if (!interrupted) {
+        worker_thread->requestInterruption();
+        interrupted = true;
+        log_slot(tr("Interrupting calculation..."));
+        maybe_emit_status_changed();
+    }
 }
 
 void GuiProjectRunner::maybe_emit_status_changed() {
     Status new_status = status();
     if (new_status != last_emitted_status) {
         last_emitted_status = new_status;
+        if (new_status == Status::Interrupted) {
+            log_slot(tr("Interrupted calculation."));
+        }
         emit status_changed(new_status);
     }
+}
+
+void GuiProjectRunner::log_slot(const QString &msg) {
+    logs.push_back(msg);
+    emit project_logged();
 }
 
 void GuiProjectRunner::checkpoint_slot() {

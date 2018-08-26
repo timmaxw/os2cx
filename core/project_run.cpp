@@ -15,21 +15,26 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     element_shape_precompute_functions();
 
     maybe_create_directory(p->temp_dir);
+
+    callbacks->project_run_log("Scanning OpenSCAD file...");
     openscad_extract_inventory(p);
     p->progress = Project::Progress::InventoryDone;
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
+        callbacks->project_run_log("Loading mesh '" + pair.first + "'...");
         pair.second.solid = openscad_extract_poly3(
             p, "mesh", pair.first);
         callbacks->project_run_checkpoint();
     }
     for (auto &pair : p->select_volume_objects) {
+        callbacks->project_run_log("Loading volume '" + pair.first + "'...");
         pair.second.mask = openscad_extract_poly3(
             p, "select_volume", pair.first);
         callbacks->project_run_checkpoint();
     }
     for (auto &pair : p->select_surface_objects) {
+        callbacks->project_run_log("Loading surface '" + pair.first + "'...");
         pair.second.mask = openscad_extract_poly3(
             p, "select_surface", pair.first);
         callbacks->project_run_checkpoint();
@@ -38,6 +43,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
+        callbacks->project_run_log(
+            "Preprocessing mesh '" + pair.first + "'...");
         PlcNef3 solid_nef = compute_plc_nef_for_solid(*pair.second.solid);
         for (auto &select_volume_pair : p->select_volume_objects) {
             compute_plc_nef_select_volume(
@@ -69,9 +76,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     callbacks->project_run_checkpoint();
 
     for (auto &pair : p->mesh_objects) {
+        callbacks->project_run_log("Meshing '" + pair.first + "'...");
         double max_tet_volume = pair.second.max_tet_volume;
         if (max_tet_volume == Project::MeshObject::suggest_max_tet_volume) {
             max_tet_volume = suggest_max_tet_volume(*pair.second.plc);
+            callbacks->project_run_log( "Automatically chose max_tet_volume=" +
+                std::to_string(max_tet_volume));
         }
         Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_tet_volume);
         pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
@@ -79,6 +89,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     {
+        callbacks->project_run_log("Merging meshes...");
         Mesh3 combined_mesh;
         for (auto &pair : p->mesh_objects) {
             combined_mesh.append_mesh(
@@ -105,6 +116,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->select_volume_objects) {
+        callbacks->project_run_log("Computing volume '" + pair.first + "'...");
         ElementSet element_set;
         for (auto &mesh_pair : p->mesh_objects) {
             ElementSet partial_element_set = compute_element_set_from_plc_bit(
@@ -128,6 +140,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->select_surface_objects) {
+        callbacks->project_run_log("Computing surface '" + pair.first + "'...");
         FaceSet face_set;
         for (auto &mesh_pair : p->mesh_objects) {
             FaceSet partial_face_set = compute_face_set_from_plc_bit(
@@ -151,6 +164,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     for (auto &pair : p->load_objects) {
+        callbacks->project_run_log("Computing load '" + pair.first + "'...");
         const ElementSet &element_set =
             *p->find_volume_object(pair.second.volume)->element_set;
         pair.second.load.reset(new ConcentratedLoad(
@@ -165,11 +179,13 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     p->progress = Project::Progress::MeshAttrsDone;
     callbacks->project_run_checkpoint();
 
+    callbacks->project_run_log("Writing CalculiX input files...");
     write_calculix_job(p->temp_dir, "main", *p);
     callbacks->project_run_checkpoint();
 
     run_calculix(p->temp_dir, "main");
 
+    callbacks->project_run_log("Reading CalculiX output files...");
     std::ifstream frd_stream(p->temp_dir + "/main.frd");
     std::vector<FrdAnalysis> frd_analyses;
     read_calculix_frd(
@@ -182,6 +198,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     results_from_frd_analyses(frd_analyses, &results);
     p->results.reset(new Results(std::move(results)));
     p->progress = Project::Progress::ResultsDone;
+    callbacks->project_run_log("Done.");
     callbacks->project_run_checkpoint();
 }
 
