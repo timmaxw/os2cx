@@ -14,17 +14,24 @@ public:
     static const int max_vertices_per_face = 8;
     static const int max_vertices_per_element = 20;
 
+    /* ShapeVector and ShapePoint represent vectors and points in the shape's
+    local (U, V, W) coordinate system, as opposed to the global (X, Y, Z)
+    coordinate system. But it's still the same underlying type, so you have to
+    write "shape_vector.x" when you want the U-coordinate, and so on. */
+    typedef Vector ShapeVector;
+    typedef Point ShapePoint;
+
     class Vertex {
     public:
         enum class Type { Corner, Edge };
 
         Vertex() { }
-        Vertex(Type ty, double su, double sv, double sw) :
-            type(ty), shape_uvw { su, sv, sw }
+        Vertex(Type ty, double u, double v, double w) :
+            type(ty), uvw(u, v, w)
         { }
 
         Type type;
-        double shape_uvw[3];
+        ShapePoint uvw;
     };
     std::vector<Vertex> vertices;
 
@@ -38,24 +45,24 @@ public:
     class IntegrationPoint {
     public:
         IntegrationPoint() { }
-        IntegrationPoint(double su, double sv, double sw, double w) :
-            shape_uvw {su, sv, sw}, weight(w) { }
-        double shape_uvw[3];
+        IntegrationPoint(double u, double v, double w, double we) :
+            uvw(u, v, w), weight(we) { }
+        ShapePoint uvw;
         double weight;
     };
     std::vector<IntegrationPoint> integration_points;
 
     virtual void shape_functions(
-        const double *uvw,
+        ShapePoint uvw,
         /* sf_out[i] will be the shape function for vertex 'i' */
         double *sf_out
     ) const = 0;
     virtual void shape_function_derivatives(
-        const double *uvw,
-        /* sf_d_uvw_out[i*3+j] will be the derivative of the shape function for
-        vertex 'i' with respect to 'u' (if j=0), 'v' (if j=1), or 'w' (if j=2).
-        */
-        double *sf_d_uvw_out
+        ShapePoint uvw,
+        /* sf_d_uvw_out[i].x will be the derivative of the shape function for
+        vertex 'i' with respect to 'u'. Similarly, '.y' is the derivative with
+        respect to 'v', and '.z' is the derivative with respect to 'w'. */
+        ShapeVector *sf_d_uvw_out
     ) const = 0;
 };
 

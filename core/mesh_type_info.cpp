@@ -26,34 +26,22 @@ public:
         integration_points[0] = IntegrationPoint(0.25, 0.25, 0.25, 1/6.0);
     }
 
-    void shape_functions(const double *uvw, double *sf_out) const {
-        sf_out[0] = 1.0 - uvw[0] - uvw[1] - uvw[2];
-        sf_out[1] = uvw[0];
-        sf_out[2] = uvw[1];
-        sf_out[3] = uvw[2];
+    void shape_functions(ShapePoint uvw, double *sf_out) const {
+        sf_out[0] = 1.0 - uvw.x - uvw.y - uvw.z;
+        sf_out[1] = uvw.x;
+        sf_out[2] = uvw.y;
+        sf_out[3] = uvw.z;
     }
 
     void shape_function_derivatives(
-        const double *uvw,
-        double *sf_d_uvw_out
+        ShapePoint uvw,
+        ShapeVector *sf_d_uvw_out
     ) const {
         (void)uvw;
-
-        sf_d_uvw_out[0 * 3 + 0] = -1;
-        sf_d_uvw_out[0 * 3 + 1] = -1;
-        sf_d_uvw_out[0 * 3 + 2] = -1;
-
-        sf_d_uvw_out[1 * 3 + 0] = 1;
-        sf_d_uvw_out[1 * 3 + 1] = 0;
-        sf_d_uvw_out[1 * 3 + 2] = 0;
-
-        sf_d_uvw_out[2 * 3 + 0] = 0;
-        sf_d_uvw_out[2 * 3 + 1] = 1;
-        sf_d_uvw_out[2 * 3 + 2] = 0;
-
-        sf_d_uvw_out[3 * 3 + 0] = 0;
-        sf_d_uvw_out[3 * 3 + 1] = 0;
-        sf_d_uvw_out[3 * 3 + 2] = 1;
+        sf_d_uvw_out[0] = ShapeVector(-1, -1, -1);
+        sf_d_uvw_out[1] = ShapeVector( 1,  0,  0);
+        sf_d_uvw_out[2] = ShapeVector( 0,  1,  0);
+        sf_d_uvw_out[3] = ShapeVector( 0,  0,  1);
     }
 };
 
@@ -93,8 +81,8 @@ public:
         integration_points[3] = IntegrationPoint(a, a, b, 1/24.0);
     }
 
-    void shape_functions(const double *uvw, double *sf_out) const {
-        double u = uvw[0], v = uvw[1], w = uvw[2];
+    void shape_functions(ShapePoint uvw, double *sf_out) const {
+        double u = uvw.x, v = uvw.y, w = uvw.z;
         double t = 1.0 - u - v - w;
         sf_out[0] = t * (2 * t - 1);
         sf_out[1] = u * (2 * u - 1);
@@ -109,51 +97,22 @@ public:
     }
 
     void shape_function_derivatives(
-        const double *uvw,
-        double *sf_d_uvw_out
+        ShapePoint uvw,
+        ShapeVector *sf_d_uvw_out
     ) const {
-        double u = uvw[0], v = uvw[1], w = uvw[2];
+        double u = uvw.x, v = uvw.y, w = uvw.z;
         double t = 1.0 - u - v - w;
 
-        sf_d_uvw_out[0 * 3 + 0] = -4 * t + 1;
-        sf_d_uvw_out[0 * 3 + 1] = -4 * t + 1;
-        sf_d_uvw_out[0 * 3 + 2] = -4 * t + 1;
-
-        sf_d_uvw_out[1 * 3 + 0] = 4 * u - 1;
-        sf_d_uvw_out[1 * 3 + 1] = 0;
-        sf_d_uvw_out[1 * 3 + 2] = 0;
-
-        sf_d_uvw_out[2 * 3 + 0] = 0;
-        sf_d_uvw_out[2 * 3 + 1] = 4 * v - 1;
-        sf_d_uvw_out[2 * 3 + 2] = 0;
-
-        sf_d_uvw_out[3 * 3 + 0] = 0;
-        sf_d_uvw_out[3 * 3 + 1] = 0;
-        sf_d_uvw_out[3 * 3 + 2] = 4 * w - 1;
-
-        sf_d_uvw_out[4 * 3 + 0] = -4 * u + 4 * t;
-        sf_d_uvw_out[4 * 3 + 1] = -4 * u;
-        sf_d_uvw_out[4 * 3 + 2] = -4 * u;
-
-        sf_d_uvw_out[5 * 3 + 0] = 4 * v;
-        sf_d_uvw_out[5 * 3 + 1] = 4 * u;
-        sf_d_uvw_out[5 * 3 + 2] = 0;
-
-        sf_d_uvw_out[6 * 3 + 0] = -4 * v;
-        sf_d_uvw_out[6 * 3 + 1] = -4 * v + 4 * t;
-        sf_d_uvw_out[6 * 3 + 2] = -4 * v;
-
-        sf_d_uvw_out[7 * 3 + 0] = -4 * w;
-        sf_d_uvw_out[7 * 3 + 1] = -4 * w;
-        sf_d_uvw_out[7 * 3 + 2] = -4 * w + 4 * t;
-
-        sf_d_uvw_out[8 * 3 + 0] = 4 * w;
-        sf_d_uvw_out[8 * 3 + 1] = 0;
-        sf_d_uvw_out[8 * 3 + 2] = 4 * u;
-
-        sf_d_uvw_out[9 * 3 + 0] = 0;
-        sf_d_uvw_out[9 * 3 + 1] = 4 * w;
-        sf_d_uvw_out[9 * 3 + 2] = 4 * v;
+        sf_d_uvw_out[0] = ShapeVector(  -4*t+1,   -4*t+1,   -4*t+1);
+        sf_d_uvw_out[1] = ShapeVector(   4*u-1,        0,        0);
+        sf_d_uvw_out[2] = ShapeVector(       0,    4*v-1,        0);
+        sf_d_uvw_out[3] = ShapeVector(       0,        0,    4*w-1);
+        sf_d_uvw_out[4] = ShapeVector(-4*u+4*t,     -4*u,     -4*u);
+        sf_d_uvw_out[5] = ShapeVector(     4*v,      4*u,        0);
+        sf_d_uvw_out[6] = ShapeVector(    -4*v, -4*v+4*t,     -4*v);
+        sf_d_uvw_out[7] = ShapeVector(    -4*w,     -4*w, -4*w+4*t);
+        sf_d_uvw_out[8] = ShapeVector(     4*w,        0,      4*u);
+        sf_d_uvw_out[9] = ShapeVector(       0,      4*w,      4*v);
     }
 };
 

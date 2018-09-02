@@ -32,28 +32,22 @@ void Mesh3::append_mesh(
     *new_element_end_out = elements.key_end();
 }
 
-double Mesh3::jacobian_determinant(
+Matrix Mesh3::jacobian(
     const Element3 &element,
-    const double *uvw
+    ElementShapeInfo::ShapePoint uvw
 ) const {
     const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
-    double sf_d_uvw[ElementShapeInfo::max_vertices_per_element * 3];
+    ElementShapeInfo::ShapeVector sf_d_uvw[
+        ElementShapeInfo::max_vertices_per_element];
     shape.shape_function_derivatives(uvw, sf_d_uvw);
-    double jacobian[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+    Matrix jacobian = Matrix::zero();
     for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
-        Point point = nodes[element.nodes[i]].point;
-        for (int j = 0; j < 3; ++j) {
-            jacobian[0][j] += point.x * sf_d_uvw[i * 3 + j];
-            jacobian[1][j] += point.y * sf_d_uvw[i * 3 + j];
-            jacobian[2][j] += point.z * sf_d_uvw[i * 3 + j];
-        }
+        Vector point = nodes[element.nodes[i]].point - Point::origin();
+        jacobian.cols[0] += point * sf_d_uvw[i].x;
+        jacobian.cols[1] += point * sf_d_uvw[i].y;
+        jacobian.cols[2] += point * sf_d_uvw[i].z;
     }
-    return jacobian[0][0] * jacobian[1][1] * jacobian[2][2]
-         + jacobian[1][0] * jacobian[2][1] * jacobian[0][2]
-         + jacobian[2][0] * jacobian[0][1] * jacobian[1][2]
-         - jacobian[0][0] * jacobian[2][1] * jacobian[1][2]
-         - jacobian[1][0] * jacobian[0][1] * jacobian[2][2]
-         - jacobian[2][0] * jacobian[1][1] * jacobian[0][2];
+    return jacobian;
 }
 
 Volume Mesh3::volume(const Element3 &element) const {
@@ -61,7 +55,8 @@ Volume Mesh3::volume(const Element3 &element) const {
     double total_volume = 0;
     for (const ElementShapeInfo::IntegrationPoint &ip :
             shape.integration_points) {
-        total_volume += ip.weight * jacobian_determinant(element, ip.shape_uvw);
+        total_volume += ip.weight *
+            jacobian(element, ip.uvw).determinant();
     }
     return Volume(total_volume);
 }
@@ -77,9 +72,9 @@ void Mesh3::volumes_for_nodes(
     }
     for (const ElementShapeInfo::IntegrationPoint &ip :
             shape.integration_points) {
-        double weight = ip.weight * jacobian_determinant(element, ip.shape_uvw);
+        double weight = ip.weight * jacobian(element, ip.uvw).determinant();
         double sf[ElementShapeInfo::max_vertices_per_element];
-        shape.shape_functions(ip.shape_uvw, sf);
+        shape.shape_functions(ip.uvw, sf);
         for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
             volumes_out[i] += weight * sf[i];
         }

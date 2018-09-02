@@ -143,6 +143,8 @@ public:
         return v.x * cols[0] + v.y * cols[1] + v.z * cols[2];
     }
 
+    double determinant() const;
+
     Vector cols[3];
 };
 

@@ -69,4 +69,8 @@ Matrix Matrix::scale(double xs, double ys, double zs) {
     return m;
 }
 
+double Matrix::determinant() const {
+    return cols[0].cross(cols[1]).dot(cols[2]);
+}
+
 } /* namespace os2cx */
