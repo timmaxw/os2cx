@@ -223,9 +223,11 @@ ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,
     for (ElementId element_id : element_set.elements) {
         const Element3 &element = mesh.elements[element_id];
         int num_nodes = element.num_nodes();
+        Volume volumes_for_nodes[ElementShapeInfo::max_vertices_per_element];
+        mesh.volumes_for_nodes(element, volumes_for_nodes);
         for (int i = 0; i < num_nodes; ++i) {
-            Volume vol = mesh.volume_for_node(element, i);
-            load.loads[element.nodes[i]].force += vol * force_density;
+            load.loads[element.nodes[i]].force +=
+                volumes_for_nodes[i] * force_density;
         }
     }
     return load;

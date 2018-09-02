@@ -17,10 +17,6 @@ polluting the os2cx namespace. */
 
 namespace shape_function_variables {
 
-inline Polynomial::Variable u() { return Polynomial::Variable { -1 }; }
-inline Polynomial::Variable v() { return Polynomial::Variable { -2 }; }
-inline Polynomial::Variable w() { return Polynomial::Variable { -3 }; }
-
 inline Polynomial::Variable coord(int vertex, int dimension) {
     return Polynomial::Variable::from_index(vertex << 2 | dimension);
 }
@@ -30,59 +26,64 @@ inline int coord_to_vertex(Polynomial::Variable var) {
 inline int coord_to_dimension(Polynomial::Variable var) {
     return var.index & 3;
 }
-constexpr int coord_max_var_plus_one = 20 * 4;
+
+inline Polynomial::Variable u() { return Polynomial::Variable { 20 * 4 + 0 }; }
+inline Polynomial::Variable v() { return Polynomial::Variable { 20 * 4 + 1 }; }
+inline Polynomial::Variable w() { return Polynomial::Variable { 20 * 4 + 2 }; }
+
+constexpr int max_var_plus_one = 20 * 4 + 3;
 
 } /* namespace shape_function_variables */
 
 class ElementShapeInfo {
 public:
+    static const int max_faces_per_element = 6;
+    static const int max_vertices_per_face = 8;
+    static const int max_vertices_per_element = 20;
+
     class Vertex {
     public:
         enum class Type { Corner, Edge };
 
         Vertex() { }
-        Vertex(Type t, double su, double sv, double sw, Polynomial sf) :
-            type(t), shape_u(su), shape_v(sv), shape_w(sw), shape_function(sf)
+        Vertex(Type ty, double su, double sv, double sw, Polynomial sf) :
+            type(ty), shape_uvw { su, sv, sw }, shape_function(sf)
         { }
 
         Type type;
-        double shape_u, shape_v, shape_w;
+        double shape_uvw[3];
         Polynomial shape_function;
-        Polynomial volume_function;
     };
+    std::vector<Vertex> vertices;
+
     class Face {
     public:
         /* vertex indices in counterclockwise order looking from outside */
         std::vector<int> vertices;
     };
-
-    static const int max_faces_per_element = 6;
-    static const int max_vertices_per_face = 8;
-    static const int max_vertices_per_element = 20;
-
-    std::vector<Vertex> vertices;
     std::vector<Face> faces;
 
-    Polynomial volume_function;
+    class IntegrationPoint {
+    public:
+        IntegrationPoint() { }
+        IntegrationPoint(double su, double sv, double sw, double w) :
+            shape_uvw {su, sv, sw}, weight(w) { }
+        double shape_uvw[3];
+        double weight;
+    };
+    std::vector<IntegrationPoint> integration_points;
+
+    Polynomial shape_xyz[3];
+    Polynomial jacobian[3][3];
 
 protected:
-    /* Subclass constructor must set up everything except for
-    Vertex::volume_function and ElementShapeInfo::volume_function, then call
-    precompute_functions() to calculate those */
+    /* Subclass constructor must set up everything except for 'shape_{x,y,z}'
+    and 'jacobian', then call precompute_functions() to calculate those */
     void precompute_functions();
-
-    /* Given a polynomial in terms of u, v, w, and possibly some other
-    variables, integrates u, v, and w over the volume of the shape. */
-    virtual Polynomial integrate_uvw(const Polynomial &poly) const = 0;
 };
 
 const ElementShapeInfo &element_shape_tetrahedron4();
 const ElementShapeInfo &element_shape_tetrahedron10();
-
-/* Pre-caches element shape functions, which can take ~seconds to calculate. If
-this is not called, they will be computed on the first call to
-element_shape_*(). */
-void element_shape_precompute_functions();
 
 enum class ElementType {
     C3D4 = 3,

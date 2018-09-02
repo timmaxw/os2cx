@@ -132,13 +132,6 @@ Polynomial operator*(const Polynomial &left, const Polynomial &right);
 Polynomial operator/(const Polynomial &left, double right);
 Polynomial pow(const Polynomial &left, int power);
 
-void jacobian(
-    Polynomial (*const values)[3],
-    Polynomial::Variable variables[3],
-    Polynomial (*matrix_out)[3][3]);
-Polynomial determinant(
-    Polynomial (*const matrix)[3][3]);
-
 bool operator==(const Polynomial &left, const Polynomial &right);
 bool operator!=(const Polynomial &left, const Polynomial &right);
 

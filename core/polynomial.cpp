@@ -301,30 +301,6 @@ Polynomial pow(const Polynomial &left, int power) {
     return result;
 }
 
-void jacobian(
-    Polynomial (*const values)[3],
-    Polynomial::Variable variables[3],
-    Polynomial (*matrix_out)[3][3]
-) {
-    for (int value_index = 0; value_index < 3; ++value_index) {
-        for (int variable_index = 0; variable_index < 3; ++variable_index) {
-            (*matrix_out)[value_index][variable_index] =
-                (*values)[value_index].differentiate(variables[variable_index]);
-        }
-    }
-}
-
-Polynomial determinant(
-    Polynomial (*const matrix)[3][3]
-) {
-    return (*matrix)[0][0] * (*matrix)[1][1] * (*matrix)[2][2]
-         - (*matrix)[0][0] * (*matrix)[1][2] * (*matrix)[2][1]
-         + (*matrix)[0][1] * (*matrix)[1][2] * (*matrix)[2][0]
-         - (*matrix)[0][1] * (*matrix)[1][0] * (*matrix)[2][2]
-         + (*matrix)[0][2] * (*matrix)[1][0] * (*matrix)[2][1]
-         - (*matrix)[0][2] * (*matrix)[1][1] * (*matrix)[2][0];
-}
-
 bool operator==(const Polynomial &left, const Polynomial &right) {
     return left.terms == right.terms;
 }

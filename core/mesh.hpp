@@ -112,18 +112,10 @@ public:
         ElementId *new_element_end_out);
 
     Volume volume(const Element3 &element) const;
-    Volume volume_for_node(const Element3 &element, int which) const;
+    void volumes_for_nodes(const Element3 &element, Volume *volumes_out) const;
 
     ContiguousMap<NodeId, Node3> nodes;
     ContiguousMap<ElementId, Element3> elements;
-
-private:
-    /* Plugs the coordinates of the element's vertices into the given
-    polynomial, whose variables are all of the form
-    shape_function_variables::coord. */
-    double evaluate_polynomial(
-        const Element3 &element,
-        const Polynomial &poly) const;
 };
 
 } /* namespace os2cx */

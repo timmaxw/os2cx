@@ -12,8 +12,6 @@
 namespace os2cx {
 
 void project_run(Project *p, ProjectRunCallbacks *callbacks) {
-    element_shape_precompute_functions();
-
     maybe_create_directory(p->temp_dir);
 
     callbacks->project_run_log("Scanning OpenSCAD file...");

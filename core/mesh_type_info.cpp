@@ -22,53 +22,17 @@ double ts() {
 }
 
 void ElementShapeInfo::precompute_functions() {
-    std::cerr << ts() << " precompute_functions()" << std::endl;
-
-    /* xyz[0] is a polynomial in terms of (u, v, w), and the x-coordinates of
-    the vertices, which computes the x-coordinate of the point at element
-    coordinates (u, v, w). Similarly with xyz[1] for the y-coordinate and xyz[2]
-    for the z-coordinate. */
-    Polynomial xyz[3];
     for (int vertex = 0; vertex < static_cast<int>(vertices.size()); ++vertex) {
         for (int dimension = 0; dimension < 3; ++dimension) {
-            xyz[dimension] += Polynomial(coord(vertex, dimension)) *
+            shape_xyz[dimension] += Polynomial(coord(vertex, dimension)) *
                 vertices[vertex].shape_function;
         }
     }
 
-    std::cerr << ts() << " done with xyz" << std::endl;
-
-    /* jac is the Jacobian matrix for the transformation from (u, v, w)
-    coordinates to (x, y, z) coordinates. Each element is a polynomial in (u, v,
-    w) and the coordinates of the vertices. */
-    Polynomial jac[3][3];
-    Polynomial::Variable uvw[3] = {u(), v(), w()};
-    jacobian(&xyz, uvw, &jac);
-
-    std::cerr << ts() << " done with jacobian " << jac[0][0].num_terms() << std::endl;
-
-    /* jac_det is the determinant of the Jacobian, a polynomial in (u, v, w) and
-    the coordinates of the vertices. It is equal to the ratio between the
-    infinitesimal volume element dx*dy*dz and the infinitesimal volume element
-    du*dv*dw. */
-    Polynomial jac_det = determinant(&jac);
-
-    std::cerr << ts() << " done with jac_det " << jac_det.num_terms() << std::endl;
-
-    /* Integrating the determinant of the Jacobian over the (u, v, w) space
-    spanned by the element, gives the volume of the element in (x, y, z)
-    coordinates. This is a polynomial in the coordinates of the vertices and not
-    in (u, v, w). */
-    volume_function = integrate_uvw(jac_det);
-
-    std::cerr << ts() << " done with vf " << volume_function.num_terms() << std::endl;
-
-    /* Integrating (jac_det * shape_function) over the (u, v, w) space gives the
-    weighted volume of the part of the element influenced by that vertex. */
-    for (int vertex = 0; vertex < static_cast<int>(vertices.size()); ++vertex) {
-        vertices[vertex].volume_function = integrate_uvw(
-            vertices[vertex].shape_function * jac_det);
-        std::cerr << ts() << " done with vfn " << vertices[vertex].volume_function.num_terms() << std::endl;
+    for (int dimension = 0; dimension < 3; ++dimension) {
+        jacobian[dimension][0] = shape_xyz[dimension].differentiate(u());
+        jacobian[dimension][1] = shape_xyz[dimension].differentiate(v());
+        jacobian[dimension][2] = shape_xyz[dimension].differentiate(w());
     }
 }
 
@@ -88,14 +52,10 @@ public:
         faces[2].vertices = { 1, 2, 3 };
         faces[3].vertices = { 0, 3, 2 };
 
-        precompute_functions();
-    }
+        integration_points.resize(1);
+        integration_points[0] = IntegrationPoint(0.25, 0.25, 0.25, 1/6.0);
 
-    Polynomial integrate_uvw(const Polynomial &poly) const {
-        return poly
-            .integrate(u(), p(0), p(1) - pv - pw)
-            .integrate(v(), p(0), p(1) - pw)
-            .integrate(w(), p(0), p(1));
+        precompute_functions();
     }
 };
 
@@ -127,14 +87,14 @@ public:
         faces[2].vertices = { 1, 5, 2, 9, 3, 8 };
         faces[3].vertices = { 0, 7, 3, 9, 2, 6 };
 
-        precompute_functions();
-    }
+        integration_points.resize(4);
+        double a = (5 - sqrt(5)) / 20, b = (5 + 3 * sqrt(5)) / 20;
+        integration_points[0] = IntegrationPoint(a, a, a, 1/24.0);
+        integration_points[1] = IntegrationPoint(b, a, a, 1/24.0);
+        integration_points[2] = IntegrationPoint(a, b, a, 1/24.0);
+        integration_points[3] = IntegrationPoint(a, a, b, 1/24.0);
 
-    Polynomial integrate_uvw(const Polynomial &poly) const {
-        return poly
-            .integrate(u(), p(0), p(1) - pv - pw)
-            .integrate(v(), p(0), p(1) - pw)
-            .integrate(w(), p(0), p(1));
+        precompute_functions();
     }
 };
 
@@ -184,12 +144,6 @@ const ElementTypeInfo &element_type_c3d10() {
         &element_shape_tetrahedron10()
     };
     return info;
-}
-
-void element_shape_precompute_functions() {
-    /* Trigger initialization of static variables */
-    element_type_c3d4();
-    element_type_c3d10();
 }
 
 } /* namespace os2cx */
