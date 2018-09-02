@@ -5,35 +5,8 @@
 #include <vector>
 
 #include "calc.hpp"
-#include "polynomial.hpp"
 
 namespace os2cx {
-
-/* Shape functions are defined in terms of three variables u, v, and w. Volume
-functions are defined in terms of the x, y, and z coordinates of the vertices.
-shape_function_variables contains helper functions for working with these
-variables, bundled into a namespace so that they can have short names without
-polluting the os2cx namespace. */
-
-namespace shape_function_variables {
-
-inline Polynomial::Variable coord(int vertex, int dimension) {
-    return Polynomial::Variable::from_index(vertex << 2 | dimension);
-}
-inline int coord_to_vertex(Polynomial::Variable var) {
-    return var.index >> 2;
-}
-inline int coord_to_dimension(Polynomial::Variable var) {
-    return var.index & 3;
-}
-
-inline Polynomial::Variable u() { return Polynomial::Variable { 20 * 4 + 0 }; }
-inline Polynomial::Variable v() { return Polynomial::Variable { 20 * 4 + 1 }; }
-inline Polynomial::Variable w() { return Polynomial::Variable { 20 * 4 + 2 }; }
-
-constexpr int max_var_plus_one = 20 * 4 + 3;
-
-} /* namespace shape_function_variables */
 
 class ElementShapeInfo {
 public:
@@ -46,13 +19,12 @@ public:
         enum class Type { Corner, Edge };
 
         Vertex() { }
-        Vertex(Type ty, double su, double sv, double sw, Polynomial sf) :
-            type(ty), shape_uvw { su, sv, sw }, shape_function(sf)
+        Vertex(Type ty, double su, double sv, double sw) :
+            type(ty), shape_uvw { su, sv, sw }
         { }
 
         Type type;
         double shape_uvw[3];
-        Polynomial shape_function;
     };
     std::vector<Vertex> vertices;
 
@@ -73,13 +45,18 @@ public:
     };
     std::vector<IntegrationPoint> integration_points;
 
-    Polynomial shape_xyz[3];
-    Polynomial jacobian[3][3];
-
-protected:
-    /* Subclass constructor must set up everything except for 'shape_{x,y,z}'
-    and 'jacobian', then call precompute_functions() to calculate those */
-    void precompute_functions();
+    virtual void shape_functions(
+        const double *uvw,
+        /* sf_out[i] will be the shape function for vertex 'i' */
+        double *sf_out
+    ) const = 0;
+    virtual void shape_function_derivatives(
+        const double *uvw,
+        /* sf_d_uvw_out[i*3+j] will be the derivative of the shape function for
+        vertex 'i' with respect to 'u' (if j=0), 'v' (if j=1), or 'w' (if j=2).
+        */
+        double *sf_d_uvw_out
+    ) const = 0;
 };
 
 const ElementShapeInfo &element_shape_tetrahedron4();

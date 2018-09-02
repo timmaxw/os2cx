@@ -111,6 +111,10 @@ public:
         ElementId *new_element_begin_out,
         ElementId *new_element_end_out);
 
+    double jacobian_determinant(
+        const Element3 &element,
+        const double *uvw
+    ) const;
     Volume volume(const Element3 &element) const;
     void volumes_for_nodes(const Element3 &element, Volume *volumes_out) const;
 

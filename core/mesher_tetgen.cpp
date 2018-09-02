@@ -1,5 +1,7 @@
 #include "mesher_tetgen.hpp"
 
+#include <limits>
+
 #define TETLIBRARY
 #include <tetgen.h>
 

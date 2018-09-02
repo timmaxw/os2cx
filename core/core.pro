@@ -39,7 +39,6 @@ SOURCES += \
     openscad_run.cpp \
     openscad_value.cpp \
     util.cpp \
-    polynomial.cpp \
     poly.cpp \
     beacon.cpp \
     main_backend.cpp \
@@ -68,7 +67,6 @@ HEADERS += \
     project.hpp \
     result.hpp \
     util.hpp \
-    polynomial.hpp \
     poly.hpp \
     poly.internal.hpp \
     beacon.hpp \

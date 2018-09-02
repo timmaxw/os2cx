@@ -1,6 +1,8 @@
 #ifndef OS2CX_ATTRS_HPP_
 #define OS2CX_ATTRS_HPP_
 
+#include <map>
+
 #include "mesh.hpp"
 #include "mesh_index.hpp"
 #include "plc.hpp"

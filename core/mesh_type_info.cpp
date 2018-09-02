@@ -6,45 +6,15 @@
 
 namespace os2cx {
 
-using namespace shape_function_variables;
-
-/* Abbreviations for common polynomials terms built from shape functions
-variables, so that shape functions aren't horribly verbose */
-inline Polynomial p(double a) { return Polynomial(a); }
-const Polynomial pt =
-    p(1) - Polynomial(u()) - Polynomial(v()) - Polynomial(w());
-const Polynomial pu = Polynomial(u());
-const Polynomial pv = Polynomial(v());
-const Polynomial pw = Polynomial(w());
-
-double ts() {
-    return static_cast<double>(clock()) / CLOCKS_PER_SEC;
-}
-
-void ElementShapeInfo::precompute_functions() {
-    for (int vertex = 0; vertex < static_cast<int>(vertices.size()); ++vertex) {
-        for (int dimension = 0; dimension < 3; ++dimension) {
-            shape_xyz[dimension] += Polynomial(coord(vertex, dimension)) *
-                vertices[vertex].shape_function;
-        }
-    }
-
-    for (int dimension = 0; dimension < 3; ++dimension) {
-        jacobian[dimension][0] = shape_xyz[dimension].differentiate(u());
-        jacobian[dimension][1] = shape_xyz[dimension].differentiate(v());
-        jacobian[dimension][2] = shape_xyz[dimension].differentiate(w());
-    }
-}
-
 class ElementShapeInfoTetrahedron4 : public ElementShapeInfo {
 public:
     ElementShapeInfoTetrahedron4() {
         vertices.resize(4);
         Vertex::Type c = Vertex::Type::Corner;
-        vertices[0] = Vertex(c, 0, 0, 0, pt);
-        vertices[1] = Vertex(c, 1, 0, 0, pu);
-        vertices[2] = Vertex(c, 0, 1, 0, pv);
-        vertices[3] = Vertex(c, 0, 0, 1, pw);
+        vertices[0] = Vertex(c, 0, 0, 0);
+        vertices[1] = Vertex(c, 1, 0, 0);
+        vertices[2] = Vertex(c, 0, 1, 0);
+        vertices[3] = Vertex(c, 0, 0, 1);
 
         faces.resize(4);
         faces[0].vertices = { 0, 2, 1 };
@@ -54,8 +24,36 @@ public:
 
         integration_points.resize(1);
         integration_points[0] = IntegrationPoint(0.25, 0.25, 0.25, 1/6.0);
+    }
 
-        precompute_functions();
+    void shape_functions(const double *uvw, double *sf_out) const {
+        sf_out[0] = 1.0 - uvw[0] - uvw[1] - uvw[2];
+        sf_out[1] = uvw[0];
+        sf_out[2] = uvw[1];
+        sf_out[3] = uvw[2];
+    }
+
+    void shape_function_derivatives(
+        const double *uvw,
+        double *sf_d_uvw_out
+    ) const {
+        (void)uvw;
+
+        sf_d_uvw_out[0 * 3 + 0] = -1;
+        sf_d_uvw_out[0 * 3 + 1] = -1;
+        sf_d_uvw_out[0 * 3 + 2] = -1;
+
+        sf_d_uvw_out[1 * 3 + 0] = 1;
+        sf_d_uvw_out[1 * 3 + 1] = 0;
+        sf_d_uvw_out[1 * 3 + 2] = 0;
+
+        sf_d_uvw_out[2 * 3 + 0] = 0;
+        sf_d_uvw_out[2 * 3 + 1] = 1;
+        sf_d_uvw_out[2 * 3 + 2] = 0;
+
+        sf_d_uvw_out[3 * 3 + 0] = 0;
+        sf_d_uvw_out[3 * 3 + 1] = 0;
+        sf_d_uvw_out[3 * 3 + 2] = 1;
     }
 };
 
@@ -70,16 +68,16 @@ public:
         vertices.resize(10);
         Vertex::Type c = Vertex::Type::Corner;
         Vertex::Type e = Vertex::Type::Edge;
-        vertices[0] = Vertex(c, 0.0, 0.0, 0.0, pt * (p(2) * pt - p(1)));
-        vertices[1] = Vertex(c, 1.0, 0.0, 0.0, pu * (p(2) * pu - p(1)));
-        vertices[2] = Vertex(c, 0.0, 1.0, 0.0, pv * (p(2) * pv - p(1)));
-        vertices[3] = Vertex(c, 0.0, 0.0, 1.0, pw * (p(2) * pw - p(1)));
-        vertices[4] = Vertex(e, 0.5, 0.0, 0.0, p(4) * pt * pu);
-        vertices[5] = Vertex(e, 0.5, 0.5, 0.0, p(4) * pu * pv);
-        vertices[6] = Vertex(e, 0.0, 0.5, 0.0, p(4) * pt * pv);
-        vertices[7] = Vertex(e, 0.0, 0.0, 0.5, p(4) * pt * pw);
-        vertices[8] = Vertex(e, 0.5, 0.0, 0.5, p(4) * pw * pu);
-        vertices[9] = Vertex(e, 0.0, 0.5, 0.5, p(4) * pv * pw);
+        vertices[0] = Vertex(c, 0.0, 0.0, 0.0);
+        vertices[1] = Vertex(c, 1.0, 0.0, 0.0);
+        vertices[2] = Vertex(c, 0.0, 1.0, 0.0);
+        vertices[3] = Vertex(c, 0.0, 0.0, 1.0);
+        vertices[4] = Vertex(e, 0.5, 0.0, 0.0);
+        vertices[5] = Vertex(e, 0.5, 0.5, 0.0);
+        vertices[6] = Vertex(e, 0.0, 0.5, 0.0);
+        vertices[7] = Vertex(e, 0.0, 0.0, 0.5);
+        vertices[8] = Vertex(e, 0.5, 0.0, 0.5);
+        vertices[9] = Vertex(e, 0.0, 0.5, 0.5);
 
         faces.resize(4);
         faces[0].vertices = { 0, 6, 2, 5, 1, 4 };
@@ -93,8 +91,69 @@ public:
         integration_points[1] = IntegrationPoint(b, a, a, 1/24.0);
         integration_points[2] = IntegrationPoint(a, b, a, 1/24.0);
         integration_points[3] = IntegrationPoint(a, a, b, 1/24.0);
+    }
 
-        precompute_functions();
+    void shape_functions(const double *uvw, double *sf_out) const {
+        double u = uvw[0], v = uvw[1], w = uvw[2];
+        double t = 1.0 - u - v - w;
+        sf_out[0] = t * (2 * t - 1);
+        sf_out[1] = u * (2 * u - 1);
+        sf_out[2] = v * (2 * v - 1);
+        sf_out[3] = w * (2 * w - 1);
+        sf_out[4] = 4 * t * u;
+        sf_out[5] = 4 * u * v;
+        sf_out[6] = 4 * t * v;
+        sf_out[7] = 4 * t * w;
+        sf_out[8] = 4 * w * u;
+        sf_out[9] = 4 * v * w;
+    }
+
+    void shape_function_derivatives(
+        const double *uvw,
+        double *sf_d_uvw_out
+    ) const {
+        double u = uvw[0], v = uvw[1], w = uvw[2];
+        double t = 1.0 - u - v - w;
+
+        sf_d_uvw_out[0 * 3 + 0] = -4 * t + 1;
+        sf_d_uvw_out[0 * 3 + 1] = -4 * t + 1;
+        sf_d_uvw_out[0 * 3 + 2] = -4 * t + 1;
+
+        sf_d_uvw_out[1 * 3 + 0] = 4 * u - 1;
+        sf_d_uvw_out[1 * 3 + 1] = 0;
+        sf_d_uvw_out[1 * 3 + 2] = 0;
+
+        sf_d_uvw_out[2 * 3 + 0] = 0;
+        sf_d_uvw_out[2 * 3 + 1] = 4 * v - 1;
+        sf_d_uvw_out[2 * 3 + 2] = 0;
+
+        sf_d_uvw_out[3 * 3 + 0] = 0;
+        sf_d_uvw_out[3 * 3 + 1] = 0;
+        sf_d_uvw_out[3 * 3 + 2] = 4 * w - 1;
+
+        sf_d_uvw_out[4 * 3 + 0] = -4 * u + 4 * t;
+        sf_d_uvw_out[4 * 3 + 1] = -4 * u;
+        sf_d_uvw_out[4 * 3 + 2] = -4 * u;
+
+        sf_d_uvw_out[5 * 3 + 0] = 4 * v;
+        sf_d_uvw_out[5 * 3 + 1] = 4 * u;
+        sf_d_uvw_out[5 * 3 + 2] = 0;
+
+        sf_d_uvw_out[6 * 3 + 0] = -4 * v;
+        sf_d_uvw_out[6 * 3 + 1] = -4 * v + 4 * t;
+        sf_d_uvw_out[6 * 3 + 2] = -4 * v;
+
+        sf_d_uvw_out[7 * 3 + 0] = -4 * w;
+        sf_d_uvw_out[7 * 3 + 1] = -4 * w;
+        sf_d_uvw_out[7 * 3 + 2] = -4 * w + 4 * t;
+
+        sf_d_uvw_out[8 * 3 + 0] = 4 * w;
+        sf_d_uvw_out[8 * 3 + 1] = 0;
+        sf_d_uvw_out[8 * 3 + 2] = 4 * u;
+
+        sf_d_uvw_out[9 * 3 + 0] = 0;
+        sf_d_uvw_out[9 * 3 + 1] = 4 * w;
+        sf_d_uvw_out[9 * 3 + 2] = 4 * v;
     }
 };
 

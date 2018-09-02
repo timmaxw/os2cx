@@ -15,10 +15,10 @@ SOURCES = $$CORE_SOURCES \
     openscad_extract_test.cpp \
     openscad_run_test.cpp \
     openscad_value_test.cpp \
-    polynomial_test.cpp \
     poly_test.cpp \
     beacon_test.cpp \
     plc_nef_test.cpp \
     plc_test.cpp \
-    units_test.cpp
+    units_test.cpp \
+    mesh_test.cpp
 
