@@ -38,8 +38,10 @@ void GuiOpenglScene::add_line(const Point *points) {
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
     QOpenGLWidget(parent),
     mode(nullptr),
-    yaw(20),
-    pitch(40)
+    look_at(Point::origin()),
+    yaw(30),
+    pitch(30),
+    zoom(1)
 { }
 
 void GuiOpenglWidget::set_mode(GuiModeAbstract *new_mode) {
@@ -54,6 +56,24 @@ void GuiOpenglWidget::refresh_scene() {
         scene = nullptr;
     }
     update();
+}
+
+
+void GuiOpenglWidget::compute_fov() {
+    static const float fov_slope_min = 0.5;
+
+    /* Position camera such that entire project is visible */
+    static const float fov_slop_factor = 1.5;
+    approx_scale = mode ? mode->project->approx_scale : 1.0;
+    camera_dist = approx_scale / fov_slope_min * fov_slop_factor / zoom;
+
+    if (size().width() > size().height()) {
+        fov_slope_y = fov_slope_min;
+        fov_slope_x = fov_slope_y / size().height() * size().width();
+    } else {
+        fov_slope_x = fov_slope_min;
+        fov_slope_y = fov_slope_x / size().width() * size().height();
+    }
 }
 
 void GuiOpenglWidget::initializeGL() {
@@ -87,8 +107,6 @@ void GuiOpenglWidget::initializeGL() {
     /* TODO: Back-face culling */
 }
 
-static const float fov_slope_min = 0.5;
-
 void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
     (void)viewport_width;
     (void)viewport_height;
@@ -98,26 +116,14 @@ void GuiOpenglWidget::paintGL() {
     glViewport(0, 0, size().width(), size().height());
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    float slope_x, slope_y;
-    if (size().width() > size().height()) {
-        slope_y = fov_slope_min;
-        slope_x = slope_y / size().height() * size().width();
-    } else {
-        slope_x = fov_slope_min;
-        slope_y = slope_x / size().width() * size().height();
-    }
 
-    /* Position camera such that entire project is visible */
-    double approx_scale = mode ? mode->project->approx_scale : 1.0;
-    float fov_slop_factor = 1.5;
-    Length camera_dist = approx_scale / fov_slope_min * fov_slop_factor;
-
+    compute_fov();
     float z_near = approx_scale / 1e3;
     float z_far = camera_dist + approx_scale;
 
     glFrustum(
-        -slope_x * z_near, slope_x * z_near,
-        -slope_y * z_near, slope_y * z_near,
+        -fov_slope_x * z_near, fov_slope_x * z_near,
+        -fov_slope_y * z_near, fov_slope_y * z_near,
         z_near, z_far);
 
     glMatrixMode(GL_MODELVIEW);
@@ -127,9 +133,9 @@ void GuiOpenglWidget::paintGL() {
     glLightfv(GL_LIGHT0, GL_POSITION, light_dir);
 
     glTranslatef(0, 0, -camera_dist);
-
-    glRotatef(90 + pitch, 1.0f, 0.0f, 0.0f);
+    glRotatef(-90 + pitch, 1.0f, 0.0f, 0.0f);
     glRotatef(-yaw, 0.0f, 0.0f, 1.0f);
+    glTranslatef(look_at.x, look_at.y, look_at.z);
 
     if (scene != nullptr) {
         if (scene->num_triangles != 0) {
@@ -161,7 +167,7 @@ void GuiOpenglWidget::paintGL() {
 
 
 void GuiOpenglWidget::mousePressEvent(QMouseEvent *event) {
-    if (event->buttons() & Qt::LeftButton) {
+    if (event->buttons() != 0) {
         mouse_last_x = event->x();
         mouse_last_y = event->y();
     }
@@ -172,7 +178,7 @@ void GuiOpenglWidget::mouseMoveEvent(QMouseEvent *event) {
         /* This scaling factor is chosen such that dragging from the left side
         of the view to the right side will rotate the model 180 degrees. */
         double scale_factor = 180.0 / width();
-        yaw += (event->x() - mouse_last_x) * scale_factor;
+        yaw -= (event->x() - mouse_last_x) * scale_factor;
         pitch += (event->y() - mouse_last_y) * scale_factor;
 
         yaw -= 360 * floor(yaw / 360);
@@ -180,11 +186,46 @@ void GuiOpenglWidget::mouseMoveEvent(QMouseEvent *event) {
         if (pitch < -90) pitch = -90;
 
         update();
+    }
 
+    if (event->buttons() & Qt::RightButton) {
+        compute_fov();
+
+        Length move_h = static_cast<double>(event->x() - mouse_last_x)
+            / width() * 2 * camera_dist * fov_slope_x;
+        Vector dir_h(cos(yaw / 180 * M_PI), sin(yaw / 180 * M_PI), 0);
+        look_at += move_h * dir_h;
+
+        Length move_v = -static_cast<double>(event->y() - mouse_last_y)
+            / height() * 2 * camera_dist * fov_slope_y;
+        Vector dir_v(
+            -sin(yaw / 180 * M_PI) * sin(pitch / 180 * M_PI),
+            cos(yaw / 180 * M_PI) * sin(pitch / 180 * M_PI),
+            cos(pitch / 180 * M_PI));
+        look_at += move_v * dir_v;
+
+        /* Don't let the camera go too far from the model */
+        Vector vector_from_origin = look_at - Point::origin();
+        Length distance_from_origin = vector_from_origin.magnitude();
+        if (distance_from_origin > approx_scale) {
+            vector_from_origin *= (approx_scale / distance_from_origin);
+            look_at = Point::origin() + vector_from_origin;
+        }
+
+        update();
+    }
+
+    if (event->buttons() != 0) {
         mouse_last_x = event->x();
         mouse_last_y = event->y();
     }
 }
 
+void GuiOpenglWidget::wheelEvent(QWheelEvent *event) {
+    zoom *= pow(2, -event->delta() / (360.0 * 8.0));
+    if (zoom < 1) zoom = 1;
+    if (zoom > 100) zoom = 100;
+    update();
+}
 
 } /* namespace os2cx */
