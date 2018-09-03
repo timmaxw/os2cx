@@ -21,6 +21,15 @@ public:
     typedef Vector ShapeVector;
     typedef Point ShapePoint;
 
+    class IntegrationPoint {
+    public:
+        IntegrationPoint() { }
+        IntegrationPoint(double u, double v, double w, double we) :
+            uvw(u, v, w), weight(we) { }
+        ShapePoint uvw;
+        double weight;
+    };
+
     class Vertex {
     public:
         enum class Type { Corner, Edge };
@@ -39,24 +48,24 @@ public:
     public:
         /* vertex indices in counterclockwise order looking from outside */
         std::vector<int> vertices;
+
+        /* normalized vector pointing outwards */
+        ShapeVector normal;
+
+        /* integration points for surface integrals */
+        std::vector<IntegrationPoint> integration_points;
     };
     std::vector<Face> faces;
 
-    class IntegrationPoint {
-    public:
-        IntegrationPoint() { }
-        IntegrationPoint(double u, double v, double w, double we) :
-            uvw(u, v, w), weight(we) { }
-        ShapePoint uvw;
-        double weight;
-    };
-    std::vector<IntegrationPoint> integration_points;
+    /* integration points for volume integrals */
+    std::vector<IntegrationPoint> volume_integration_points;
 
     virtual void shape_functions(
         ShapePoint uvw,
         /* sf_out[i] will be the shape function for vertex 'i' */
         double *sf_out
     ) const = 0;
+
     virtual void shape_function_derivatives(
         ShapePoint uvw,
         /* sf_d_uvw_out[i].x will be the derivative of the shape function for
@@ -64,6 +73,11 @@ public:
         respect to 'v', and '.z' is the derivative with respect to 'w'. */
         ShapeVector *sf_d_uvw_out
     ) const = 0;
+
+protected:
+    /* Computes faces[*].normal and faces[*].integration_points from
+    faces[*].vertices and vertices[*].uvw */
+    void precalculate_face_info();
 };
 
 const ElementShapeInfo &element_shape_tetrahedron4();

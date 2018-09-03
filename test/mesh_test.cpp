@@ -4,7 +4,6 @@
 
 namespace os2cx {
 
-
 void check_element_shape_info_shape_functions(
     const ElementShapeInfo &shape,
     ElementShapeInfo::ShapePoint uvw
@@ -47,7 +46,8 @@ void check_element_shape_info_shape_functions(
 }
 
 void check_element_shape_info(const ElementShapeInfo &shape) {
-    ElementShapeInfo::ShapePoint uvw(0.11, 0.22, 0.33); /* arbitrary test point */
+    /* arbitrary test point */
+    ElementShapeInfo::ShapePoint uvw(0.11, 0.22, 0.33);
     check_element_shape_info_shape_functions(shape, uvw);
 }
 
@@ -57,6 +57,77 @@ TEST(MeshTest, CheckTetrahedron4) {
 
 TEST(MeshTest, CheckTetrahedron10) {
     check_element_shape_info(element_shape_tetrahedron10());
+}
+
+Mesh3 make_example_mesh(ElementType type, AffineTransform transform) {
+    Mesh3 mesh;
+    const ElementShapeInfo &shape = *ElementTypeInfo::get(type).shape;
+    Element3 element;
+    element.type = type;
+    for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
+        Node3 node;
+        node.point = transform.apply(shape.vertices[i].uvw);
+        element.nodes[i] = mesh.nodes.key_end();
+        mesh.nodes.push_back(node);
+    }
+    mesh.elements.push_back(element);
+    return mesh;
+}
+
+TEST(MeshTest, Volume) {
+    Mesh3 mesh1 = make_example_mesh(
+        ElementType::C3D4,
+        AffineTransform(Matrix::identity()));
+    EXPECT_FLOAT_EQ(1/6.0, mesh1.volume(*mesh1.elements.begin()));
+
+    Mesh3 mesh2 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::identity()));
+    EXPECT_FLOAT_EQ(1/6.0, mesh2.volume(*mesh2.elements.begin()));
+
+    Mesh3 mesh3 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::scale(3, 4, 5)));
+    EXPECT_FLOAT_EQ(1/6.0*60, mesh3.volume(*mesh3.elements.begin()));
+
+    Mesh3 mesh4 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::rotation(0, 1.23)));
+    EXPECT_FLOAT_EQ(1/6.0, mesh4.volume(*mesh4.elements.begin()));
+}
+
+TEST(MeshTest, Area) {
+    Mesh3 mesh1 = make_example_mesh(
+        ElementType::C3D4,
+        AffineTransform(Matrix::identity()));
+    Vector area1 = mesh1.oriented_area(*mesh1.elements.begin(), 0);
+    EXPECT_FLOAT_EQ(0, area1.x);
+    EXPECT_FLOAT_EQ(0, area1.y);
+    EXPECT_FLOAT_EQ(-1/2.0, area1.z);
+
+    Mesh3 mesh2 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::identity()));
+    Vector area2 = mesh2.oriented_area(*mesh2.elements.begin(), 0);
+    EXPECT_FLOAT_EQ(0, area2.x);
+    EXPECT_FLOAT_EQ(0, area2.y);
+    EXPECT_FLOAT_EQ(-1/2.0, area2.z);
+
+    Mesh3 mesh3 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::scale(3, 4, 5)));
+    Vector area3 = mesh3.oriented_area(*mesh3.elements.begin(), 0);
+    EXPECT_FLOAT_EQ(0, area3.x);
+    EXPECT_FLOAT_EQ(0, area3.y);
+    EXPECT_FLOAT_EQ(-1/2.0*12, area3.z);
+
+    Mesh3 mesh4 = make_example_mesh(
+        ElementType::C3D10,
+        AffineTransform(Matrix::rotation(0, 1.23)));
+    Vector area4 = mesh4.oriented_area(*mesh4.elements.begin(), 0);
+    EXPECT_FLOAT_EQ(0, area4.x);
+    EXPECT_FLOAT_EQ(-1/2.0*-sin(1.23), area4.y);
+    EXPECT_FLOAT_EQ(-1/2.0*cos(1.23), area4.z);
 }
 
 } /* namespace os2cx */

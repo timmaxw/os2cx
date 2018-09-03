@@ -144,12 +144,19 @@ public:
     }
 
     double determinant() const;
+    Matrix cofactor_matrix() const;
 
     Vector cols[3];
 };
 
 class AffineTransform {
 public:
+    AffineTransform() { }
+    explicit AffineTransform(const Matrix &m) :
+        matrix(m), vector(LengthVector::zero()) { }
+    AffineTransform(const Matrix &m, const LengthVector &v) :
+        matrix(m), vector(v) { }
+
     Point apply(Point v) const {
         return Point::origin() + matrix.apply(v - Point::origin()) + vector;
     }

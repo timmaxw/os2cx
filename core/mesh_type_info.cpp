@@ -6,6 +6,50 @@
 
 namespace os2cx {
 
+void ElementShapeInfo::precalculate_face_info() {
+    for (Face &face : faces) {
+        if (face.vertices.size() == 3) {
+            /* first-order triangular face */
+            ShapePoint a = vertices[face.vertices[0]].uvw;
+            ShapePoint b = vertices[face.vertices[1]].uvw;
+            ShapePoint c = vertices[face.vertices[2]].uvw;
+
+            ShapeVector vector = (b - a).cross(c - a);
+            double magnitude = vector.magnitude();
+            face.normal = vector / magnitude;
+
+            double total_area = magnitude / 2;
+
+            face.integration_points.resize(1);
+            face.integration_points[0].uvw =  a + (b - a) / 3 + (c - a) / 3;
+            face.integration_points[0].weight = total_area;
+
+        } else if (face.vertices.size() == 6) {
+            /* second-order triangular face */
+            ShapePoint a = vertices[face.vertices[0]].uvw;
+            ShapePoint b = vertices[face.vertices[2]].uvw;
+            ShapePoint c = vertices[face.vertices[4]].uvw;
+
+            ShapeVector vector = (b - a).cross(c - a);
+            double magnitude = vector.magnitude();
+            face.normal = vector / magnitude;
+
+            double total_area = magnitude / 2;
+
+            face.integration_points.resize(3);
+            face.integration_points[0].uvw =  a + (b - a) / 6 + (c - a) / 6;
+            face.integration_points[0].weight = total_area / 3;
+            face.integration_points[1].uvw =  a + (b - a) * 2 / 3 + (c - a) / 6;
+            face.integration_points[1].weight = total_area / 3;
+            face.integration_points[2].uvw =  a + (b - a) / 6 + (c - a) * 2 / 3;
+            face.integration_points[2].weight = total_area / 3;
+
+        } else {
+            assert(false);
+        }
+    }
+}
+
 class ElementShapeInfoTetrahedron4 : public ElementShapeInfo {
 public:
     ElementShapeInfoTetrahedron4() {
@@ -21,9 +65,10 @@ public:
         faces[1].vertices = { 0, 1, 3 };
         faces[2].vertices = { 1, 2, 3 };
         faces[3].vertices = { 0, 3, 2 };
+        precalculate_face_info();
 
-        integration_points.resize(1);
-        integration_points[0] = IntegrationPoint(0.25, 0.25, 0.25, 1/6.0);
+        volume_integration_points.resize(1);
+        volume_integration_points[0] = IntegrationPoint(0.25, 0.25, 0.25, 1/6.0);
     }
 
     void shape_functions(ShapePoint uvw, double *sf_out) const {
@@ -72,13 +117,14 @@ public:
         faces[1].vertices = { 0, 4, 1, 8, 3, 7 };
         faces[2].vertices = { 1, 5, 2, 9, 3, 8 };
         faces[3].vertices = { 0, 7, 3, 9, 2, 6 };
+        precalculate_face_info();
 
-        integration_points.resize(4);
+        volume_integration_points.resize(4);
         double a = (5 - sqrt(5)) / 20, b = (5 + 3 * sqrt(5)) / 20;
-        integration_points[0] = IntegrationPoint(a, a, a, 1/24.0);
-        integration_points[1] = IntegrationPoint(b, a, a, 1/24.0);
-        integration_points[2] = IntegrationPoint(a, b, a, 1/24.0);
-        integration_points[3] = IntegrationPoint(a, a, b, 1/24.0);
+        volume_integration_points[0] = IntegrationPoint(a, a, a, 1/24.0);
+        volume_integration_points[1] = IntegrationPoint(b, a, a, 1/24.0);
+        volume_integration_points[2] = IntegrationPoint(a, b, a, 1/24.0);
+        volume_integration_points[3] = IntegrationPoint(a, a, b, 1/24.0);
     }
 
     void shape_functions(ShapePoint uvw, double *sf_out) const {

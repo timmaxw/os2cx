@@ -73,4 +73,13 @@ double Matrix::determinant() const {
     return cols[0].cross(cols[1]).dot(cols[2]);
 }
 
+Matrix Matrix::cofactor_matrix() const
+{
+    Matrix m;
+    m.cols[0] = cols[1].cross(cols[2]);
+    m.cols[1] = cols[2].cross(cols[0]);
+    m.cols[2] = cols[0].cross(cols[1]);
+    return m;
+}
+
 } /* namespace os2cx */

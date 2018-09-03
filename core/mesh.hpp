@@ -111,15 +111,52 @@ public:
         ElementId *new_element_begin_out,
         ElementId *new_element_end_out);
 
+    /* Computes the volume of the given element. */
+    Volume volume(const Element3 &element) const;
+
+    /* Computes the weighted "volume" influenced by each node of the given
+    element. This is useful for e.g. converting a force distributed uniformly
+    over the volume of the element into an equivalent set of forces on the nodes
+    of the element. */
+    void volumes_for_nodes(const Element3 &element, Volume *volumes_out) const;
+
+    /* Computes the oriented area of the given face of the given element. (For
+    linear elements, this can be thought of as a vector pointing perpendicularly
+    out from the face with magnitude equal to the face's area; although this
+    description isn't quite right for a quadratic element with a curved face.)
+    */
+    Vector oriented_area(const Element3 &element, int face_index) const;
+
+    /* Computes the weighted "oriented areas" influenced by each node of the
+    given element. This is useful for e.g. converting a force distributed
+    uniformly over the area of the face into an equivalent set of forces on the
+    nodes. Nodes that aren't part of the face will have values set to zero. */
+    void oriented_areas_for_nodes(
+        const Element3 &element,
+        int face_index,
+        Vector *areas_out
+    ) const;
+
+    ContiguousMap<NodeId, Node3> nodes;
+    ContiguousMap<ElementId, Element3> elements;
+
+private:
     Matrix jacobian(
         const Element3 &element,
         ElementShapeInfo::ShapePoint uvw
     ) const;
-    Volume volume(const Element3 &element) const;
-    void volumes_for_nodes(const Element3 &element, Volume *volumes_out) const;
 
-    ContiguousMap<NodeId, Node3> nodes;
-    ContiguousMap<ElementId, Element3> elements;
+    double integrate_volume(
+        const Element3 &element,
+        const ElementShapeInfo::IntegrationPoint &ip
+    ) const;
+
+    Vector integrate_area(
+        const Element3 &element,
+        int face_index,
+        const ElementShapeInfo::IntegrationPoint &ip
+    ) const;
+
 };
 
 } /* namespace os2cx */
