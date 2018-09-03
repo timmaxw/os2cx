@@ -19,7 +19,14 @@ public slots:
     void project_updated();
 
 protected:
-    enum class Focus { None, Mesh, SelectVolume, SelectSurface, Load };
+    enum class Focus {
+        None,
+        Mesh,
+        SelectVolume,
+        SelectSurface,
+        LoadVolume,
+        LoadSurface
+    };
     Focus focus_type;
     std::string focus_name;
     QColor focus_color;

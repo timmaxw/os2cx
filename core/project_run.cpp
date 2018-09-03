@@ -161,7 +161,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_checkpoint();
     }
 
-    for (auto &pair : p->load_objects) {
+    for (auto &pair : p->load_volume_objects) {
         callbacks->project_run_log("Computing load '" + pair.first + "'...");
         const ElementSet &element_set =
             *p->find_volume_object(pair.second.volume)->element_set;
@@ -169,7 +169,20 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_load_from_element_set(
                 *p->mesh,
                 element_set,
-                p->unit_system.unit_to_system(pair.second.force_density))
+                p->unit_system.unit_to_system(pair.second.force_per_volume))
+        ));
+        callbacks->project_run_checkpoint();
+    }
+
+    for (auto &pair : p->load_surface_objects) {
+        callbacks->project_run_log("Computing load '" + pair.first + "'...");
+        const FaceSet &face_set =
+            *p->find_surface_object(pair.second.surface)->face_set;
+        pair.second.load.reset(new ConcentratedLoad(
+            compute_load_from_face_set(
+                *p->mesh,
+                face_set,
+                p->unit_system.unit_to_system(pair.second.force_per_area))
         ));
         callbacks->project_run_checkpoint();
     }

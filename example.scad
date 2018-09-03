@@ -5,17 +5,17 @@ module cantilever() {
 }
 
 os2cx_mesh("cantilever") cantilever();
-os2cx_select_surface("boundary", [-1, 0, 0], 45) {
+os2cx_select_surface("fixed_end", [-1, 0, 0], 45) {
     translate([-5, 0, 0]) cube([4, 3, 3], center=true);
 }
-os2cx_select_volume("load_volume") {
+os2cx_select_surface("free_end", [1, 0, 0], 45) {
     translate([5, 0, 0]) cube([4, 3, 3], center=true);
 }
-os2cx_load_volume("load", "load_volume", [[0, 0, -1000], "N/m^3"]);
+os2cx_load_surface("load", "free_end", [[0, 0, -1000], "N/m^2"]);
 
 os2cx_analysis_custom([
     "*INCLUDE, INPUT=cantilever.msh",
-    "*INCLUDE, INPUT=boundary.nam",
+    "*INCLUDE, INPUT=fixed_end.nam",
     "*MATERIAL, Name=steel",
     "*ELASTIC",
     "209000000000, 0.3",
@@ -23,7 +23,7 @@ os2cx_analysis_custom([
     "*STEP",
     "*STATIC",
     "*BOUNDARY",
-    "Nboundary,1,3",
+    "Nfixed_end,1,3",
     "*CLOAD",
     "*INCLUDE, INPUT=load.clo",
     "*NODE FILE, Nset=Ncantilever",

@@ -190,12 +190,12 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
         throw UnitParseError("'" + name + "' is not a valid force unit. " \
             "Valid force units are 'N' (with optional prefix) or 'lbf'.");
 
-    case UnitType::ForceDensity:
+    case UnitType::ForcePerVolume:
         if (parse_unit_ratio(
                 name,
                 UnitType::Force,
                 UnitType::Volume,
-                UnitType::ForceDensity,
+                UnitType::ForcePerVolume,
                 &output)) return output;
         throw UnitParseError("'" + name + "' is not a valid force density " \
             "unit. Valid force density units are of the form " \
@@ -266,7 +266,7 @@ UnitSystem::UnitSystem(
     units_in_si[UnitType::Volume] = pow(length_unit.unit_in_si, 3);
     units_in_si[UnitType::Pressure] =
         units_in_si[UnitType::Force] / units_in_si[UnitType::Area];
-    units_in_si[UnitType::ForceDensity] =
+    units_in_si[UnitType::ForcePerVolume] =
         units_in_si[UnitType::Force] / units_in_si[UnitType::Volume];
 }
 
@@ -361,14 +361,14 @@ Unit UnitSystem::suggest_unit(
         } else {
             return unit_lbf();
         }
-    case UnitType::ForceDensity: {
+    case UnitType::ForcePerVolume: {
         Unit volume_unit = unit_power(length_unit, 3, UnitType::Volume);
         return unit_ratio(
             suggest_unit(
                 UnitType::Force,
                 si_value_for_scale * volume_unit.unit_in_si),
             volume_unit,
-            UnitType::ForceDensity);
+            UnitType::ForcePerVolume);
     }
     case UnitType::Pressure:
         if (style == Unit::Metric) {

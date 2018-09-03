@@ -42,9 +42,13 @@ GuiModeInspect::GuiModeInspect(
         add_focus(tr("Surface '%1'").arg(pair.first.c_str()),
             Focus::SelectSurface, pair.first);
     }
-    for (const auto &pair : project->load_objects) {
+    for (const auto &pair : project->load_volume_objects) {
         add_focus(tr("Load '%1'").arg(pair.first.c_str()),
-            Focus::Load, pair.first);
+            Focus::LoadVolume, pair.first);
+    }
+    for (const auto &pair : project->load_surface_objects) {
+        add_focus(tr("Load '%1'").arg(pair.first.c_str()),
+            Focus::LoadSurface, pair.first);
     }
 
     connect(
@@ -114,7 +118,8 @@ void GuiModeInspect::current_item_changed(
     case Focus::SelectSurface:
         focus_color = QColor(0x00, 0xFF, 0x00);
         break;
-    case Focus::Load:
+    case Focus::LoadVolume:
+    case Focus::LoadSurface:
         focus_color = QColor(0xFF, 0x00, 0x00);
         break;
     default: assert(false);
@@ -178,15 +183,22 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
         callback.focus_bitset[
             project->select_surface_objects.at(focus_name).bit_index] = true;
         break;
-    case Focus::Load: {
+    case Focus::LoadVolume: {
         Project::VolumeObjectName volume =
-            project->load_objects.at(focus_name).volume;
+            project->load_volume_objects.at(focus_name).volume;
         if (project->mesh_objects.count(volume)) {
             callback.focus_mesh = volume;
         } else {
             callback.focus_bitset[
                 project->select_volume_objects.at(volume).bit_index] = true;
         }
+        break;
+    }
+    case Focus::LoadSurface: {
+        Project::SurfaceObjectName surface =
+            project->load_surface_objects.at(focus_name).surface;
+        callback.focus_bitset[
+            project->select_surface_objects.at(surface).bit_index] = true;
         break;
     }
     default: assert(false);
@@ -261,11 +273,17 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_mesh() {
         callback.focus_face_set =
             project->find_surface_object(focus_name)->face_set;
         break;
-    case Focus::Load:
+    case Focus::LoadVolume:
         callback.focus_element_set =
             project->find_volume_object(
-                project->load_objects.at(focus_name).volume
+                project->load_volume_objects.at(focus_name).volume
             )->element_set;
+        break;
+    case Focus::LoadSurface:
+        callback.focus_face_set =
+            project->find_surface_object(
+                project->load_surface_objects.at(focus_name).surface
+            )->face_set;
         break;
     default: assert(false);
     }

@@ -217,7 +217,7 @@ NodeSet compute_node_set_from_face_set(
 
 ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,
     const ElementSet &element_set,
-    Vector force_density
+    Vector force_per_volume
 ) {
     ConcentratedLoad load;
     for (ElementId element_id : element_set.elements) {
@@ -227,7 +227,26 @@ ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,
         mesh.volumes_for_nodes(element, volumes_for_nodes);
         for (int i = 0; i < num_nodes; ++i) {
             load.loads[element.nodes[i]].force +=
-                volumes_for_nodes[i] * force_density;
+                volumes_for_nodes[i] * force_per_volume;
+        }
+    }
+    return load;
+}
+
+ConcentratedLoad compute_load_from_face_set(
+    const Mesh3 &mesh,
+    const FaceSet &face_set,
+    Vector force_per_area
+) {
+    ConcentratedLoad load;
+    for (FaceId face_id : face_set.faces) {
+        const Element3 &element = mesh.elements[face_id.element_id];
+        int num_nodes = element.num_nodes();
+        Vector areas_for_nodes[ElementShapeInfo::max_vertices_per_element];
+        mesh.oriented_areas_for_nodes(element, face_id.face, areas_for_nodes);
+        for (int i = 0; i < num_nodes; ++i) {
+            load.loads[element.nodes[i]].force +=
+                areas_for_nodes[i].magnitude() * force_per_area;
         }
     }
     return load;

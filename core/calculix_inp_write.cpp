@@ -115,7 +115,13 @@ void write_calculix_job(
         /* TODO: write the face set too */
     }
 
-    for (const auto &pair : project.load_objects) {
+    for (const auto &pair : project.load_volume_objects) {
+        FilePath load_file_path = dir_path + "/" + pair.first + ".clo";
+        std::ofstream load_stream(load_file_path);
+        write_calculix_cload(load_stream, *pair.second.load);
+    }
+
+    for (const auto &pair : project.load_surface_objects) {
         FilePath load_file_path = dir_path + "/" + pair.first + ".clo";
         std::ofstream load_stream(load_file_path);
         write_calculix_cload(load_stream, *pair.second.load);

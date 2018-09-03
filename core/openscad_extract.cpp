@@ -85,7 +85,9 @@ std::string check_name_new(
         existing_object_type = "volume";
     } else if (project->select_surface_objects.count(new_name)) {
         existing_object_type = "surface";
-    } else if (project->load_objects.count(new_name)) {
+    } else if (project->load_volume_objects.count(new_name)) {
+        existing_object_type = "load";
+    } else if (project->load_surface_objects.count(new_name)) {
         existing_object_type = "load";
     }
     if (!existing_object_type.empty()) {
@@ -234,12 +236,31 @@ void do_load_volume_directive(
     Project::VolumeObjectName volume = check_string(args[1]);
     if (project->find_volume_object(volume) == nullptr) {
         throw UsageError("Load '" + name + "' refers to volume '" + volume +
-            "', which does not exist (yet).");
+            "', which does not exist (yet?).");
     }
-    project->load_objects[name].volume = volume;
+    project->load_volume_objects[name].volume = volume;
 
-    project->load_objects[name].force_density =
-        check_vector_3_with_unit(args[2], UnitType::ForceDensity);
+    project->load_volume_objects[name].force_per_volume =
+        check_vector_3_with_unit(args[2], UnitType::ForcePerVolume);
+}
+
+void do_load_surface_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 3, "load_surface");
+
+    Project::LoadObjectName name = check_name_new(args[0], "load", project);
+
+    Project::SurfaceObjectName surface = check_string(args[1]);
+    if (project->find_surface_object(surface) == nullptr) {
+        throw UsageError("Load '" + name + "' refers to surface '" + surface +
+            "', which does not exist (yet?).");
+    }
+    project->load_surface_objects[name].surface = surface;
+
+    project->load_surface_objects[name].force_per_area =
+        check_vector_3_with_unit(args[2], UnitType::Pressure);
 }
 
 void openscad_extract_inventory(Project *project) {
@@ -280,6 +301,8 @@ void openscad_extract_inventory(Project *project) {
                 do_select_surface_directive(project, args);
             } else if (echo[1].string_value == "load_volume_directive") {
                 do_load_volume_directive(project, args);
+            } else if (echo[1].string_value == "load_surface_directive") {
+                do_load_surface_directive(project, args);
             } else {
                 throw BadEchoError(
                     "unknown directive: " + echo[1].string_value);

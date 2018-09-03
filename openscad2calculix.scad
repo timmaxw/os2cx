@@ -113,7 +113,7 @@ module os2cx_select_surface(name, direction_vector, direction_angle_tolerance) {
     }
 }
 
-module os2cx_load_volume(name, volume, force_density) {
+module os2cx_load_volume(name, volume, force_per_volume) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_load_volume() first parameter must be a string");
@@ -121,7 +121,7 @@ module os2cx_load_volume(name, volume, force_density) {
         if (!__os2cx_is_string(volume)) {
             echo("ERROR: os2cx_load_volume() second parameter must be a string");
         }
-        if (!__os2cx_is_vector_3_with_unit(force_density)) {
+        if (!__os2cx_is_vector_3_with_unit(force_per_volume)) {
             echo("ERROR: os2cx_load_volume() third parameter must be a " +
                 "[vector, unit] pair.");
         }
@@ -130,6 +130,29 @@ module os2cx_load_volume(name, volume, force_density) {
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "load_volume_directive",
-            name, volume, force_density);
+            name, volume, force_per_volume);
+    }
+}
+
+module os2cx_load_surface(name, surface, force_per_area) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: os2cx_load_surface() first parameter must be a " +
+                "string");
+        }
+        if (!__os2cx_is_string(surface)) {
+            echo("ERROR: os2cx_load_surface() second parameter must be a " +
+                "string");
+        }
+        if (!__os2cx_is_vector_3_with_unit(force_per_area)) {
+            echo("ERROR: os2cx_load_surface() third parameter must be a " +
+                "[vector, unit] pair.");
+        }
+        if ($children != 0) {
+            echo("ERROR: os2cx_load_surface() shouldn't have any children");
+        }
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "load_surface_directive",
+            name, surface, force_per_area);
     }
 }

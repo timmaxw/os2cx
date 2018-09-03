@@ -51,10 +51,12 @@ public:
 
     typedef std::string VolumeObjectName;
     typedef std::string SurfaceObjectName;
+    typedef std::string LoadObjectName;
     typedef std::string MeshObjectName;
     typedef std::string SelectVolumeObjectName;
     typedef std::string SelectSurfaceObjectName;
-    typedef std::string LoadObjectName;
+    typedef std::string LoadVolumeObjectName;
+    typedef std::string LoadSurfaceObjectName;
 
     class VolumeObject {
     public:
@@ -66,6 +68,11 @@ public:
     public:
         std::shared_ptr<const FaceSet> face_set;
         std::shared_ptr<const NodeSet> node_set;
+    };
+
+    class LoadObject {
+    public:
+        std::shared_ptr<const ConcentratedLoad> load;
     };
 
     class MeshObject : public VolumeObject {
@@ -120,14 +127,21 @@ public:
     std::shared_ptr<const Mesh3> mesh;
     std::shared_ptr<const Mesh3Index> mesh_index;
 
-    class LoadObject {
+    class LoadVolumeObject : public LoadObject {
     public:
         VolumeObjectName volume;
-        WithUnit<Vector> force_density;
-        std::shared_ptr<const ConcentratedLoad> load;
+        WithUnit<Vector> force_per_volume;
     };
 
-    std::map<LoadObjectName, LoadObject> load_objects;
+    std::map<LoadVolumeObjectName, LoadVolumeObject> load_volume_objects;
+
+    class LoadSurfaceObject : public LoadObject {
+    public:
+        SurfaceObjectName surface;
+        WithUnit<Vector> force_per_area;
+    };
+
+    std::map<LoadSurfaceObjectName, LoadSurfaceObject> load_surface_objects;
 
     std::shared_ptr<const Results> results;
 

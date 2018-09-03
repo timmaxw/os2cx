@@ -18,7 +18,7 @@ enum class UnitType {
 
     Area,
     Force,
-    ForceDensity, /* force per unit volume */
+    ForcePerVolume,
     Pressure,
     Volume
 };
