@@ -7,6 +7,7 @@
 #include "calculix_run.hpp"
 #include "mesher_tetgen.hpp"
 #include "openscad_extract.hpp"
+#include "openscad_run.hpp"
 #include "plc_nef_to_plc.hpp"
 
 namespace os2cx {
@@ -15,7 +16,23 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     maybe_create_directory(p->temp_dir);
 
     callbacks->project_run_log("Scanning OpenSCAD file...");
-    openscad_extract_inventory(p);
+    try {
+        openscad_extract_inventory(p);
+    } catch (const OpenscadRunError &error) {
+        callbacks->project_run_log("Error running OpenSCAD");
+        p->errored = true;
+        return;
+    } catch (const UsageError &error) {
+        callbacks->project_run_log("Error in OpenSCAD file:");
+        callbacks->project_run_log(error.what());
+        p->errored = true;
+        return;
+    } catch (const BadEchoError &error) {
+        callbacks->project_run_log("Malformed echo from OpenSCAD:");
+        callbacks->project_run_log(error.what());
+        p->errored = true;
+        return;
+    }
     p->progress = Project::Progress::InventoryDone;
     callbacks->project_run_checkpoint();
 
@@ -194,23 +211,35 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     write_calculix_job(p->temp_dir, "main", *p);
     callbacks->project_run_checkpoint();
 
-    run_calculix(p->temp_dir, "main");
+    try {
+        run_calculix(p->temp_dir, "main");
+    } catch (const CalculixRunError &error) {
+        callbacks->project_run_log("CalculiX failed.");
+        p->errored = true;
+        return;
+    }
 
     callbacks->project_run_log("Reading CalculiX output files...");
     std::ifstream frd_stream(p->temp_dir + "/main.frd");
     std::vector<FrdAnalysis> frd_analyses;
-    read_calculix_frd(
-        frd_stream,
-        p->mesh->nodes.key_begin(),
-        p->mesh->nodes.key_end(),
-        &frd_analyses);
+    try {
+        read_calculix_frd(
+            frd_stream,
+            p->mesh->nodes.key_begin(),
+            p->mesh->nodes.key_end(),
+            &frd_analyses);
+    } catch (const CalculixFrdFileReadError &error) {
+        callbacks->project_run_log("Error reading CalculiX output file:");
+        callbacks->project_run_log(error.what());
+        p->errored = true;
+        return;
+    }
 
     Results results;
     results_from_frd_analyses(frd_analyses, &results);
     p->results.reset(new Results(std::move(results)));
     p->progress = Project::Progress::ResultsDone;
     callbacks->project_run_log("Done.");
-    callbacks->project_run_checkpoint();
 }
 
 } /* namespace os2cx */

@@ -29,17 +29,19 @@ public:
     };
 
     Project(const std::string &scad_path_, const std::string &temp_dir_) :
-        progress(Progress::NothingDone),
         scad_path(scad_path_),
         temp_dir(temp_dir_),
+        progress(Progress::NothingDone),
+        errored(false),
         next_bit_index(bit_index_solid() + 1),
         approx_scale(Length(0))
         { }
 
-    Progress progress;
-
     std::string scad_path;
     std::string temp_dir;
+
+    Progress progress;
+    bool errored;
 
     std::vector<std::string> inventory_errors;
 

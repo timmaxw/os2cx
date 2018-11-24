@@ -59,7 +59,7 @@ public:
 
     std::vector<QString> logs;
 
-    enum class Status {Running, Done, Interrupting, Interrupted};
+    enum class Status {Running, Done, Errored, Interrupting, Interrupted};
     Status status() const;
 
     /* Cancels running the project. Cancelling takes some time, so it happens

@@ -15,6 +15,7 @@ void GuiProjectRunnerWorkerThread::run() {
     mutex.lock();
     try {
         project_run(project_on_worker_thread.get(), this);
+        project_run_checkpoint();
     } catch (const ProjectInterruptedException &) {
         /* Do nothing. */
     }
@@ -82,7 +83,9 @@ GuiProjectRunner::Status GuiProjectRunner::status() const {
         was Status::Done while the project progress wasn't yet
         Progress::AllDone. To avoid confusion, check project progress directly.
         */
-        if (project_on_application_thread->progress ==
+        if (project_on_application_thread->errored) {
+            return Status::Errored;
+        } else if (project_on_application_thread->progress ==
                 Project::Progress::AllDone) {
             return Status::Done;
         } else {
