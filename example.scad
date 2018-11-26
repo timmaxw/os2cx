@@ -12,13 +12,11 @@ os2cx_select_surface("free_end", [1, 0, 0], 45) {
     translate([5, 0, 0]) cube([4, 3, 3], center=true);
 }
 os2cx_load_surface("load", "free_end", [[0, 0, -1000], "N/m^2"]);
+os2cx_material_elastic_simple(
+    "steel", youngs_modulus=[209, "GPa"], poissons_ratio=0.3);
 
 os2cx_analysis_custom([
-    "*INCLUDE, INPUT=cantilever.msh",
-    "*INCLUDE, INPUT=fixed_end.nam",
-    "*MATERIAL, Name=steel",
-    "*ELASTIC",
-    "209000000000, 0.3",
+    "*INCLUDE, INPUT=objects.inp",
     "*SOLID SECTION, Elset=Ecantilever, Material=steel",
     "*STEP",
     "*STATIC",

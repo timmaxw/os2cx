@@ -156,3 +156,29 @@ module os2cx_load_surface(name, surface, force_per_area) {
             name, surface, force_per_area);
     }
 }
+
+module os2cx_material_elastic_simple(
+    name, youngs_modulus=undef, poissons_ratio=undef
+) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: os2cx_material_elastic_simple() first parameter " +
+                "must be a string");
+        }
+        if (!__os2cx_is_number_with_unit(youngs_modulus)) {
+            echo("ERROR: os2cx_material_elastic_simple() 'youngs_modulus' " +
+                "parameter must be a [number, unit] pair.");
+        }
+        if (!__os2cx_is_number(poissons_ratio)) {
+            echo("ERROR: os2cx_material_elastic_simple() 'poissons_ratio' " +
+                "parameter must be a number.");
+        }
+        if ($children != 0) {
+            echo("ERROR: os2cx_material_elastic_simple() shouldn't have any " +
+                "children");
+        }
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "material_elastic_simple_directive",
+            name, youngs_modulus, poissons_ratio);
+    }
+}

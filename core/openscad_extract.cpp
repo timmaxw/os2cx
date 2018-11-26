@@ -99,6 +99,36 @@ std::string check_name_new(
     return new_name;
 }
 
+std::string check_name_existing(
+    const OpenscadValue &value,
+    const std::string &object_type,
+    Project *project,
+    const std::string &referrer
+) {
+    const std::string name = check_string(value);
+
+    bool exists;
+    if (object_type == "mesh") {
+        exists = (project->mesh_objects.count(name) != 0);
+    } else if (object_type == "volume") {
+        exists = (project->find_volume_object(name) != nullptr);
+    } else if (object_type == "surface") {
+        exists = (project->find_surface_object(name) != nullptr);
+    } else if (object_type == "material") {
+        exists = (project->material_objects.count(name) != 0);
+    } else {
+        throw BadEchoError("invalid object class: '" + object_type + "'");
+    }
+
+    if (!exists) {
+        throw UsageError(referrer + " refers to a " + object_type +
+            " called '" + name + "', but no " + object_type + " named '" +
+            name + "' has been declared.");
+    }
+
+    return name;
+}
+
 template<class Inner, class InnerConverter>
 std::vector<Inner> check_vector(
     const OpenscadValue &value,
@@ -233,12 +263,11 @@ void do_load_volume_directive(
 
     Project::LoadObjectName name = check_name_new(args[0], "load", project);
 
-    Project::VolumeObjectName volume = check_string(args[1]);
-    if (project->find_volume_object(volume) == nullptr) {
-        throw UsageError("Load '" + name + "' refers to volume '" + volume +
-            "', which does not exist (yet?).");
-    }
-    project->load_volume_objects[name].volume = volume;
+    project->load_volume_objects[name].volume = check_name_existing(
+        args[1],
+        "volume",
+        project,
+        "Load '" + name + "'");
 
     project->load_volume_objects[name].force_per_volume =
         check_vector_3_with_unit(args[2], UnitType::ForcePerVolume);
@@ -252,15 +281,39 @@ void do_load_surface_directive(
 
     Project::LoadObjectName name = check_name_new(args[0], "load", project);
 
-    Project::SurfaceObjectName surface = check_string(args[1]);
-    if (project->find_surface_object(surface) == nullptr) {
-        throw UsageError("Load '" + name + "' refers to surface '" + surface +
-            "', which does not exist (yet?).");
-    }
-    project->load_surface_objects[name].surface = surface;
+    project->load_surface_objects[name].surface = check_name_existing(
+        args[1],
+        "surface",
+        project,
+        "Load '" + name + "'");
 
     project->load_surface_objects[name].force_per_area =
         check_vector_3_with_unit(args[2], UnitType::Pressure);
+}
+
+void do_material_elastic_simple_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 3, "material_elastic_simple");
+
+    Project::MaterialObjectName name =
+        check_name_new(args[0], "material", project);
+    project->material_objects[name].youngs_modulus =
+        check_number_with_unit(args[1], UnitType::Pressure);
+    project->material_objects[name].poissons_ratio =
+        check_number(args[2]);
+}
+
+void do_check_existing_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 3, "check_existing");
+
+    std::string object_type = check_string(args[0]);
+    std::string referrer = check_string(args[1]);
+    check_name_existing(args[1], object_type, project, referrer);
 }
 
 void openscad_extract_inventory(Project *project) {
@@ -303,6 +356,11 @@ void openscad_extract_inventory(Project *project) {
                 do_load_volume_directive(project, args);
             } else if (echo[1].string_value == "load_surface_directive") {
                 do_load_surface_directive(project, args);
+            } else if (echo[1].string_value ==
+                    "material_elastic_simple_directive") {
+                do_material_elastic_simple_directive(project, args);
+            } else if (echo[1].string_value == "check_existing") {
+                do_check_existing_directive(project, args);
             } else {
                 throw BadEchoError(
                     "unknown directive: " + echo[1].string_value);

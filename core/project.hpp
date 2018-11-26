@@ -59,6 +59,7 @@ public:
     typedef std::string SelectSurfaceObjectName;
     typedef std::string LoadVolumeObjectName;
     typedef std::string LoadSurfaceObjectName;
+    typedef std::string MaterialObjectName;
 
     class VolumeObject {
     public:
@@ -144,6 +145,14 @@ public:
     };
 
     std::map<LoadSurfaceObjectName, LoadSurfaceObject> load_surface_objects;
+
+    class MaterialObject {
+    public:
+        WithUnit<double> youngs_modulus;
+        double poissons_ratio;
+    };
+
+    std::map<MaterialObjectName, MaterialObject> material_objects;
 
     std::shared_ptr<const Results> results;
 

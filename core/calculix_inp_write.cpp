@@ -84,35 +84,47 @@ void write_calculix_cload(
     }
 }
 
+void write_calculix_material(
+    std::ostream &stream,
+    const std::string &name,
+    const Project::MaterialObject &material,
+    const Project &project
+) {
+    stream << "*MATERIAL, Name=" << name << '\n'
+        << "*ELASTIC\n"
+        << project.unit_system.unit_to_system(material.youngs_modulus)
+        << ", " << material.poissons_ratio << '\n';
+}
+
 void write_calculix_job(
     const FilePath &dir_path,
     const std::string &main_file_name,
     const Project &project
 ) {
-    for (const auto &pair : project.mesh_objects) {
-        FilePath mesh_file_path = dir_path + "/" + pair.first + ".msh";
-        std::ofstream mesh_stream(mesh_file_path);
-        write_calculix_nodes_and_elements(
-            mesh_stream, pair.first, *project.mesh,
-            pair.second.node_begin, pair.second.node_end,
-            pair.second.element_begin, pair.second.element_end);
-    }
-
-    for (const auto &pair : project.select_volume_objects) {
-        FilePath select_file_path = dir_path + "/" + pair.first + ".nam";
-        std::ofstream select_stream(select_file_path);
-        write_calculix_nset(
-            select_stream, pair.first, *pair.second.node_set);
-        write_calculix_elset(
-            select_stream, pair.first, *pair.second.element_set);
-    }
-
-    for (const auto &pair : project.select_surface_objects) {
-        FilePath select_file_path = dir_path + "/" + pair.first + ".nam";
-        std::ofstream select_stream(select_file_path);
-        write_calculix_nset(
-            select_stream, pair.first, *pair.second.node_set);
-        /* TODO: write the face set too */
+    {
+        FilePath geometry_file_path = dir_path + "/objects.inp";
+        std::ofstream geometry_stream(geometry_file_path);
+        for (const auto &pair : project.mesh_objects) {
+            write_calculix_nodes_and_elements(
+                geometry_stream, pair.first, *project.mesh,
+                pair.second.node_begin, pair.second.node_end,
+                pair.second.element_begin, pair.second.element_end);
+        }
+        for (const auto &pair : project.select_volume_objects) {
+            write_calculix_nset(
+                geometry_stream, pair.first, *pair.second.node_set);
+            write_calculix_elset(
+                geometry_stream, pair.first, *pair.second.element_set);
+        }
+        for (const auto &pair : project.select_surface_objects) {
+            write_calculix_nset(
+                geometry_stream, pair.first, *pair.second.node_set);
+            /* TODO: write the face set too */
+        }
+        for (const auto &pair : project.material_objects) {
+            write_calculix_material(
+                geometry_stream, pair.first, pair.second, project);
+        }
     }
 
     for (const auto &pair : project.load_volume_objects) {

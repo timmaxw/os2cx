@@ -31,6 +31,12 @@ void write_calculix_cload(
     std::ostream &stream,
     const ConcentratedLoad &cload);
 
+void write_calculix_material(
+    std::ostream &stream,
+    const std::string &name,
+    const Project::MaterialObject &material,
+    const Project &project);
+
 void write_calculix_job(
     const FilePath &dir_path,
     const std::string &main_file_name,
