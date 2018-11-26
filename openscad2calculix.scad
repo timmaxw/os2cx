@@ -21,7 +21,6 @@ function __os2cx_is_vector_3_with_unit(arg) =
     && __os2cx_is_vector_3(arg[0])
     && __os2cx_is_string(arg[1]);
 
-
 module __os2cx_beacon() {
     origin_coords   = [0,   0,   0  ];
     concave_coords  = [0.1, 0.2, 0.3];
@@ -53,19 +52,71 @@ module __os2cx_beacon() {
     );
 }
 
+module __os2cx_check_existing(object_type, referrer, name) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: ", referrer, "refers to a", object_type, "called",
+                name, "but that's not a valid name.",
+                "(It needs to be a string.)");
+        }
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "check_existing_directive",
+            object_type, referrer, name);
+    }
+}
+
 module os2cx_analysis_custom(lines, unit_system=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_array_strings(lines)) {
-            echo("ERROR: os2cx_analysis_custom() parameter must be an " +
+            echo("ERROR: os2cx_analysis_custom() parameter must be an ",
                 "array of strings");
         }
         if (!__os2cx_is_array_strings(unit_system) || len(unit_system) != 3) {
-            echo("ERROR: os2cx_analysis_custom() 'unit_system' parameter " +
+            echo("ERROR: os2cx_analysis_custom() 'unit_system' parameter ",
                 "must be an array of three strings.");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "analysis_directive", lines, unit_system);
     }
+}
+
+module os2cx_analysis_static_simple(
+    mesh=undef,
+    material=undef,
+    fixed=undef,
+    load=undef
+) {
+    __os2cx_check_existing(
+        "mesh",
+        "os2cx_analysis_static_simple() 'mesh' parameter",
+        mesh);
+    __os2cx_check_existing(
+        "material",
+        "os2cx_analysis_static_simple() 'material' parameter",
+        material);
+    __os2cx_check_existing(
+        "surface",
+        "os2cx_analysis_static_simple() 'fixed' parameter",
+        fixed);
+    __os2cx_check_existing(
+        "load",
+        "os2cx_analysis_static_simple() 'load' parameter",
+        load);
+    os2cx_analysis_custom([
+        "*INCLUDE, INPUT=objects.inp",
+        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        "*STEP",
+        "*STATIC",
+        "*BOUNDARY",
+        str("N", fixed, ",1,3"),
+        "*CLOAD",
+        str("*INCLUDE, INPUT=", load, ".clo"),
+        str("*NODE FILE, Nset=N", mesh),
+        "U",
+        "*EL FILE",
+        "S",
+        "*END STEP"
+    ], unit_system=["m", "kg", "s"]);
 }
 
 module os2cx_mesh(name, max_tet_volume=undef) {
@@ -122,7 +173,7 @@ module os2cx_load_volume(name, volume, force_per_volume) {
             echo("ERROR: os2cx_load_volume() second parameter must be a string");
         }
         if (!__os2cx_is_vector_3_with_unit(force_per_volume)) {
-            echo("ERROR: os2cx_load_volume() third parameter must be a " +
+            echo("ERROR: os2cx_load_volume() third parameter must be a ",
                 "[vector, unit] pair.");
         }
         if ($children != 0) {
@@ -137,15 +188,15 @@ module os2cx_load_volume(name, volume, force_per_volume) {
 module os2cx_load_surface(name, surface, force_per_area) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_load_surface() first parameter must be a " +
+            echo("ERROR: os2cx_load_surface() first parameter must be a ",
                 "string");
         }
         if (!__os2cx_is_string(surface)) {
-            echo("ERROR: os2cx_load_surface() second parameter must be a " +
+            echo("ERROR: os2cx_load_surface() second parameter must be a ",
                 "string");
         }
         if (!__os2cx_is_vector_3_with_unit(force_per_area)) {
-            echo("ERROR: os2cx_load_surface() third parameter must be a " +
+            echo("ERROR: os2cx_load_surface() third parameter must be a ",
                 "[vector, unit] pair.");
         }
         if ($children != 0) {
@@ -162,19 +213,19 @@ module os2cx_material_elastic_simple(
 ) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_material_elastic_simple() first parameter " +
+            echo("ERROR: os2cx_material_elastic_simple() first parameter ",
                 "must be a string");
         }
         if (!__os2cx_is_number_with_unit(youngs_modulus)) {
-            echo("ERROR: os2cx_material_elastic_simple() 'youngs_modulus' " +
+            echo("ERROR: os2cx_material_elastic_simple() 'youngs_modulus' ",
                 "parameter must be a [number, unit] pair.");
         }
         if (!__os2cx_is_number(poissons_ratio)) {
-            echo("ERROR: os2cx_material_elastic_simple() 'poissons_ratio' " +
+            echo("ERROR: os2cx_material_elastic_simple() 'poissons_ratio' ",
                 "parameter must be a number.");
         }
         if ($children != 0) {
-            echo("ERROR: os2cx_material_elastic_simple() shouldn't have any " +
+            echo("ERROR: os2cx_material_elastic_simple() shouldn't have any ",
                 "children");
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {

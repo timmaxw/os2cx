@@ -114,6 +114,9 @@ std::string check_name_existing(
         exists = (project->find_volume_object(name) != nullptr);
     } else if (object_type == "surface") {
         exists = (project->find_surface_object(name) != nullptr);
+    } else if (object_type == "load") {
+        exists = (project->load_volume_objects.count(name) != 0)
+            || (project->load_surface_objects.count(name) != 0);
     } else if (object_type == "material") {
         exists = (project->material_objects.count(name) != 0);
     } else {
@@ -313,7 +316,7 @@ void do_check_existing_directive(
 
     std::string object_type = check_string(args[0]);
     std::string referrer = check_string(args[1]);
-    check_name_existing(args[1], object_type, project, referrer);
+    check_name_existing(args[2], object_type, project, referrer);
 }
 
 void openscad_extract_inventory(Project *project) {
@@ -359,7 +362,7 @@ void openscad_extract_inventory(Project *project) {
             } else if (echo[1].string_value ==
                     "material_elastic_simple_directive") {
                 do_material_elastic_simple_directive(project, args);
-            } else if (echo[1].string_value == "check_existing") {
+            } else if (echo[1].string_value == "check_existing_directive") {
                 do_check_existing_directive(project, args);
             } else {
                 throw BadEchoError(

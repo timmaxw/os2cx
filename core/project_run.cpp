@@ -19,7 +19,10 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     try {
         openscad_extract_inventory(p);
     } catch (const OpenscadRunError &error) {
-        callbacks->project_run_log("Error running OpenSCAD");
+        callbacks->project_run_log("Error running OpenSCAD:");
+        for (const std::string &error_line : error.errors) {
+            callbacks->project_run_log(error_line);
+        }
         p->errored = true;
         return;
     } catch (const UsageError &error) {
