@@ -1,6 +1,6 @@
 [OpenSCAD](http://www.openscad.org/) is a CAD tool that generates 3D models from a text-based input language. [CalculiX](http://www.calculix.de/) simulates 3D models to predict the physical strength, stiffness, etc. using finite element analysis. OpenSCAD2CalculiX (or OS2CX for short) integrates OpenSCAD and CalculiX together, so that 3D models generated in OpenSCAD can be simulated in CalculiX.
 
-OS2CX is an experimental project, currently in the late alpha / early beta stage.
+OS2CX is an experimental, alpha-quality project. Results may contain errors. Don't use it for anything important!
 
 # Example
 
