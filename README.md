@@ -57,7 +57,7 @@ os2cx_select_surface("loaded_end", [1, 0, 0], 45) {
 }
 
 /* Declares a load object in OS2CX, called "car_weight". It's defined as a
-force of 98,000 newtons in the -Z direction, applied uniformly over the
+force of 9,800 newtons in the -Z direction, applied uniformly over the
 "loaded_end" surface we defined above. */
 weight = 1000;
 gravity = 9.8;
@@ -90,9 +90,9 @@ will show us the results:
 
 ![Screenshot of simulation results](docs/example_screenshot.png)
 
-Consulting the color scale on the left-hand side, we can see that the beam would
-bend approximately 10.2 micrometers. (The bending is exaggerated by a factor of
-20,000 in the visualization.)
+The bending is exaggerated by a factor of 50 in the visualization. Consulting
+the color scale on the left-hand side, we can see that the beam would bend
+approximately 3.65 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 

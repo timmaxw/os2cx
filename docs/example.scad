@@ -32,7 +32,7 @@ os2cx_select_surface("loaded_end", [1, 0, 0], 45) {
 }
 
 /* Declares a load object in OS2CX, called "car_weight". It's defined as a
-force of 98,000 newtons in the -Z direction, applied uniformly over the
+force of 9,800 newtons in the -Z direction, applied uniformly over the
 "loaded_end" surface we defined above. */
 weight = 1000;
 gravity = 9.8;
