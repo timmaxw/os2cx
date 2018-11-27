@@ -94,11 +94,11 @@ Consulting the color scale on the left-hand side, we can see that the beam would
 bend approximately 10.2 micrometers. (The bending is exaggerated by a factor of
 20,000 in the visualization.)
 
+# Installing and running
+
 OS2CX has only been tested on Linux (Ubuntu 18.04). The dependencies are all
 cross-platform, so in principle it should be easy to get it working on other
 operating systems, but no guarantees.
-
-# Installing and running
 
 Dependencies:
 * OpenSCAD 2015.03-2 (`sudo apt install openscad`)
