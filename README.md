@@ -1,10 +1,18 @@
-[OpenSCAD](http://www.openscad.org/) is a CAD tool that generates 3D models from a text-based input language. [CalculiX](http://www.calculix.de/) simulates 3D models to predict the physical strength, stiffness, etc. using finite element analysis. OpenSCAD2CalculiX (or OS2CX for short) integrates OpenSCAD and CalculiX together, so that 3D models generated in OpenSCAD can be simulated in CalculiX.
+[OpenSCAD](http://www.openscad.org/) is a CAD tool that generates 3D models from
+a text-based input language. [CalculiX](http://www.calculix.de/) simulates 3D
+models to predict the physical strength, stiffness, etc. using finite element
+analysis. OpenSCAD2CalculiX (or OS2CX for short) integrates OpenSCAD and
+CalculiX together, so that 3D models generated in OpenSCAD can be simulated in
+CalculiX.
 
-OS2CX is an experimental, alpha-quality project. Results may contain errors. Don't use it for anything important!
+OS2CX is an experimental, alpha-quality project. Results may contain errors.
+Don't use it for anything important!
 
 # Example
 
-Suppose we want to calculate how much a 1-meter steel I-beam would flex if we anchored one end firmly in concrete and hung a 1-metric-ton car from the other end. We can model this I-beam in OpenSCAD like so:
+Suppose we want to calculate how much a 1-meter steel I-beam would flex if we
+anchored one end firmly in concrete and hung a 1-metric-ton car from the other
+end. We can model this I-beam in OpenSCAD like so:
 
 ```
 length = 1;
@@ -21,7 +29,9 @@ module i_beam() {
 }
 ```
 
-Next, we need to tell OS2CX the parameters of the simulation. We do this using modules that OS2CX adds to OpenSCAD via a `openscad2calculix.scad` helper library:
+Next, we need to tell OS2CX the parameters of the simulation. We do this using
+modules that OS2CX adds to OpenSCAD via a `openscad2calculix.scad` helper
+library:
 
 ```
 include <../openscad2calculix.scad>
@@ -72,13 +82,19 @@ os2cx_analysis_static_simple(
 );
 ```
 
-Let's this file as [example.scad](docs/example.scad) and open it using the OpenSCAD2CalculiX GUI application. After a few seconds of calculation, OS2CX will show us the results:
+Let's save this file as [example.scad](docs/example.scad) and open it using the
+OpenSCAD2CalculiX GUI application. After a few seconds of calculation, OS2CX
+will show us the results:
 
 ![Screenshot of simulation results](docs/example_screenshot.png)
 
-Consulting the color scale on the left-hand side, we can see that the beam would bend approximately 10.2 micrometers. (The bending is exaggerated by a factor of 20,000 in the visualization.)
+Consulting the color scale on the left-hand side, we can see that the beam would
+bend approximately 10.2 micrometers. (The bending is exaggerated by a factor of
+20,000 in the visualization.)
 
-OS2CX has only been tested on Linux (Ubuntu 18.04). The dependencies are all cross-platform, so in principle it should be easy to get it working on other operating systems, but no guarantees.
+OS2CX has only been tested on Linux (Ubuntu 18.04). The dependencies are all
+cross-platform, so in principle it should be easy to get it working on other
+operating systems, but no guarantees.
 
 # Installing and running
 
@@ -87,11 +103,19 @@ Dependencies:
 * CalculiX 2.11 (`sudo apt install calculix-ccx`)
 * Qt 5.11
 * CGAL 4.11 (`sudo apt install libcgal-dev`)
-* tiny-process-library (install from source at https://gitlab.com/eidheim/tiny-process-library)
-* tetgen 1.5.0 (as a library, not an executable) (`sudo apt install libtet1.5-dev`)
+* tiny-process-library (install from source at
+  https://gitlab.com/eidheim/tiny-process-library)
+* tetgen 1.5.0 (as a library, not an executable)
+  (`sudo apt install libtet1.5-dev`)
 * GLU (`sudo apt install libglu-dev`)
-* Google Test (as a library, not source) (install from source at https://github.com/google/googletest)
+* Google Test (as a library, not source) (install from source at
+  https://github.com/google/googletest)
 
 Development notes:
 * I develop OS2CX using Qt Creator.
+* It's structured as a top-level QMake project with three sub-projects: a `core`
+  project that contains the main logic, a `gui` project that defines the GUI
+  application, and a `test` project that defines tests for `core`.
+* Only `gui` actually depends on Qt; `core` and `test` are pure C++, even though
+  they are built with QMake.
 * The test executable must be executed in the toplevel `os2cx/` directory.
