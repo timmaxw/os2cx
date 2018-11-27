@@ -82,12 +82,14 @@ public:
 ConcentratedLoad compute_load_from_element_set(
     const Mesh3 &mesh,
     const ElementSet &element_set,
-    Vector force_per_volume);
+    Vector force_total_or_per_volume,
+    bool force_is_per_volume);
 
 ConcentratedLoad compute_load_from_face_set(
     const Mesh3 &mesh,
     const FaceSet &face_set,
-    Vector force_per_area);
+    Vector force_total_or_per_area,
+    bool force_is_per_area);
 
 } /* namespace os2cx */
 

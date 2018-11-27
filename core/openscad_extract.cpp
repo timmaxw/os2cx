@@ -262,7 +262,7 @@ void do_load_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 3, "load_volume");
+    check_arg_count(args, 4, "load_volume");
 
     Project::LoadObjectName name = check_name_new(args[0], "load", project);
 
@@ -272,15 +272,28 @@ void do_load_volume_directive(
         project,
         "Load '" + name + "'");
 
-    project->load_volume_objects[name].force_per_volume =
-        check_vector_3_with_unit(args[2], UnitType::ForcePerVolume);
+    bool force_total = args[2].type != OpenscadValue::Type::Undefined;
+    bool force_per_volume = args[3].type != OpenscadValue::Type::Undefined;
+
+    if (force_total && !force_per_volume) {
+        project->load_volume_objects[name].force_total_or_per_volume =
+            check_vector_3_with_unit(args[2], UnitType::Force);
+        project->load_volume_objects[name].force_is_per_volume = false;
+    } else if (force_per_volume && !force_total) {
+        project->load_volume_objects[name].force_total_or_per_volume =
+            check_vector_3_with_unit(args[3], UnitType::ForcePerVolume);
+        project->load_volume_objects[name].force_is_per_volume = true;
+    } else {
+        throw BadEchoError("specify exactly one of force_total and "
+            "force_per_volume");
+    }
 }
 
 void do_load_surface_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 3, "load_surface");
+    check_arg_count(args, 4, "load_surface");
 
     Project::LoadObjectName name = check_name_new(args[0], "load", project);
 
@@ -290,8 +303,21 @@ void do_load_surface_directive(
         project,
         "Load '" + name + "'");
 
-    project->load_surface_objects[name].force_per_area =
-        check_vector_3_with_unit(args[2], UnitType::Pressure);
+    bool force_total = args[2].type != OpenscadValue::Type::Undefined;
+    bool force_per_area = args[3].type != OpenscadValue::Type::Undefined;
+
+    if (force_total && !force_per_area) {
+        project->load_surface_objects[name].force_total_or_per_area =
+            check_vector_3_with_unit(args[2], UnitType::Force);
+        project->load_surface_objects[name].force_is_per_area = false;
+    } else if (force_per_area && !force_total) {
+        project->load_surface_objects[name].force_total_or_per_area =
+            check_vector_3_with_unit(args[3], UnitType::Pressure);
+        project->load_surface_objects[name].force_is_per_area = true;
+    } else {
+        throw BadEchoError("specify exactly one of force_total and "
+            "force_per_area");
+    }
 }
 
 void do_material_elastic_simple_directive(

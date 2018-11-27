@@ -24,7 +24,7 @@ TEST(AttrsTest, LoadVolume) {
 
     Vector force_per_volume(1.234, 0, 0);
     ConcentratedLoad load = compute_load_from_element_set(
-        mesh, element_set, force_per_volume);
+        mesh, element_set, force_per_volume, true);
 
     Vector total_force(0, 0, 0);
     for (const auto &pair : load.loads) {
@@ -60,7 +60,7 @@ TEST(AttrsTest, LoadSurface) {
 
     Vector force_per_area(1.234, 0, 0);
     ConcentratedLoad load = compute_load_from_face_set(
-        mesh, face_set, force_per_area);
+        mesh, face_set, force_per_area, true);
 
     Vector total_force(0, 0, 0);
     for (const auto &pair : load.loads) {

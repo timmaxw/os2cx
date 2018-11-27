@@ -189,7 +189,9 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_load_from_element_set(
                 *p->mesh,
                 element_set,
-                p->unit_system.unit_to_system(pair.second.force_per_volume))
+                p->unit_system.unit_to_system(
+                    pair.second.force_total_or_per_volume),
+                pair.second.force_is_per_volume)
         ));
         callbacks->project_run_checkpoint();
     }
@@ -202,7 +204,9 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             compute_load_from_face_set(
                 *p->mesh,
                 face_set,
-                p->unit_system.unit_to_system(pair.second.force_per_area))
+                p->unit_system.unit_to_system(
+                    pair.second.force_total_or_per_area),
+                pair.second.force_is_per_area)
         ));
         callbacks->project_run_checkpoint();
     }

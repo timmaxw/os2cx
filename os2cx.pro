@@ -6,5 +6,7 @@ SUBDIRS += \
     test
 
 DISTFILES += \
-    example.scad \
+    README.md \
+    docs/example.scad \
+    docs/example_screenshot.png \
     openscad2calculix.scad

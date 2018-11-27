@@ -133,7 +133,8 @@ public:
     class LoadVolumeObject : public LoadObject {
     public:
         VolumeObjectName volume;
-        WithUnit<Vector> force_per_volume;
+        WithUnit<Vector> force_total_or_per_volume;
+        bool force_is_per_volume;
     };
 
     std::map<LoadVolumeObjectName, LoadVolumeObject> load_volume_objects;
@@ -141,7 +142,8 @@ public:
     class LoadSurfaceObject : public LoadObject {
     public:
         SurfaceObjectName surface;
-        WithUnit<Vector> force_per_area;
+        WithUnit<Vector> force_total_or_per_area;
+        bool force_is_per_area;
     };
 
     std::map<LoadSurfaceObjectName, LoadSurfaceObject> load_surface_objects;
