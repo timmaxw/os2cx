@@ -80,12 +80,15 @@ protected:
     void precalculate_face_info();
 };
 
+const ElementShapeInfo &element_shape_brick8();
 const ElementShapeInfo &element_shape_tetrahedron4();
 const ElementShapeInfo &element_shape_tetrahedron10();
 
 enum class ElementType {
+    /* Numeric values match those used by CalculiX GraphiX .FRD files */
+    C3D8 = 1,
     C3D4 = 3,
-    C3D10 = 6
+    C3D10 = 6,
 };
 
 bool valid_element_type(ElementType);
@@ -100,6 +103,7 @@ public:
     const ElementShapeInfo *shape;
 };
 
+const ElementTypeInfo &element_type_c3d8();
 const ElementTypeInfo &element_type_c3d4();
 const ElementTypeInfo &element_type_c3d10();
 

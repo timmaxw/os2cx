@@ -50,6 +50,57 @@ void ElementShapeInfo::precalculate_face_info() {
     }
 }
 
+class ElementShapeInfoBrick8 : public ElementShapeInfo {
+public:
+    ElementShapeInfoBrick8() {
+        vertices.resize(8);
+        Vertex::Type c = Vertex::Type::Corner;
+        vertices[0] = Vertex(c, 0, 0, 0);
+        vertices[1] = Vertex(c, 1, 0, 0);
+        vertices[2] = Vertex(c, 1, 1, 0);
+        vertices[3] = Vertex(c, 0, 1, 0);
+        vertices[4] = Vertex(c, 0, 0, 1);
+        vertices[5] = Vertex(c, 1, 0, 1);
+        vertices[6] = Vertex(c, 1, 1, 1);
+        vertices[7] = Vertex(c, 0, 1, 1);
+
+        faces.resize(6);
+        faces[0].vertices = { 0, 3, 2, 1 };
+        faces[1].vertices = { 4, 5, 6, 7 };
+        faces[2].vertices = { 0, 1, 5, 4 };
+        faces[3].vertices = { 1, 2, 6, 5 };
+        faces[4].vertices = { 2, 3, 7, 6 };
+        faces[5].vertices = { 0, 4, 7, 3 };
+        precalculate_face_info();
+
+        volume_integration_points.resize(1);
+        volume_integration_points[0] = IntegrationPoint(0.5, 0.5, 0.5, 1.0);
+    }
+
+    void shape_functions(ShapePoint uvw, double *sf_out) const {
+        sf_out[0] = 1.0 - uvw.x - uvw.y - uvw.z;
+        sf_out[1] = uvw.x;
+        sf_out[2] = uvw.y;
+        sf_out[3] = uvw.z;
+    }
+
+    void shape_function_derivatives(
+        ShapePoint uvw,
+        ShapeVector *sf_d_uvw_out
+    ) const {
+        (void)uvw;
+        sf_d_uvw_out[0] = ShapeVector(-1, -1, -1);
+        sf_d_uvw_out[1] = ShapeVector( 1,  0,  0);
+        sf_d_uvw_out[2] = ShapeVector( 0,  1,  0);
+        sf_d_uvw_out[3] = ShapeVector( 0,  0,  1);
+    }
+};
+
+const ElementShapeInfo &element_shape_brick8() {
+    static const ElementShapeInfoBrick8 info;
+    return info;
+}
+
 class ElementShapeInfoTetrahedron4 : public ElementShapeInfo {
 public:
     ElementShapeInfoTetrahedron4() {

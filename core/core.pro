@@ -48,7 +48,8 @@ SOURCES += \
     plc_index.cpp \
     result.cpp \
     units.cpp \
-    project_run.cpp
+    project_run.cpp \
+    mesher_naive_bricks.cpp
 
 HEADERS += \
     attrs.hpp \
@@ -76,7 +77,8 @@ HEADERS += \
     plc_nef_to_plc.hpp \
     plc_index.hpp \
     units.hpp \
-    project_run.hpp
+    project_run.hpp \
+    mesher_naive_bricks.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.
