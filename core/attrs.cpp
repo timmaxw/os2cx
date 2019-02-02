@@ -146,8 +146,7 @@ FaceSet compute_face_set_from_plc_bit(
     for (fid.element_id = element_begin; fid.element_id != element_end;
             ++fid.element_id) {
         const Element3 &element = mesh.elements[fid.element_id];
-        const ElementShapeInfo *shape =
-            ElementTypeInfo::get(element.type).shape;
+        const ElementTypeShape *shape = &element_type_shape(element.type);
         for (fid.face = 0; fid.face < static_cast<int>(shape->faces.size());
                 ++fid.face) {
             FaceId other_fid = mesh_index.matching_face(fid);
@@ -205,8 +204,7 @@ NodeSet compute_node_set_from_face_set(
     NodeSet set;
     for (FaceId face_id : face_set.faces) {
         const Element3 &element = mesh.elements[face_id.element_id];
-        const ElementShapeInfo *shape =
-            ElementTypeInfo::get(element.type).shape;
+        const ElementTypeShape *shape = &element_type_shape(element.type);
 
         for (int vertex_index : shape->faces[face_id.face].vertices) {
             set.nodes.insert(element.nodes[vertex_index]);
@@ -225,7 +223,7 @@ ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,
     for (ElementId element_id : element_set.elements) {
         const Element3 &element = mesh.elements[element_id];
         int num_nodes = element.num_nodes();
-        Volume volumes_for_nodes[ElementShapeInfo::max_vertices_per_element];
+        Volume volumes_for_nodes[ElementTypeShape::max_vertices_per_element];
         mesh.volumes_for_nodes(element, volumes_for_nodes);
         for (int i = 0; i < num_nodes; ++i) {
             total_volume += volumes_for_nodes[i];
@@ -252,7 +250,7 @@ ConcentratedLoad compute_load_from_face_set(
     for (FaceId face_id : face_set.faces) {
         const Element3 &element = mesh.elements[face_id.element_id];
         int num_nodes = element.num_nodes();
-        Vector areas_for_nodes[ElementShapeInfo::max_vertices_per_element];
+        Vector areas_for_nodes[ElementTypeShape::max_vertices_per_element];
         mesh.oriented_areas_for_nodes(element, face_id.face, areas_for_nodes);
         for (int i = 0; i < num_nodes; ++i) {
             total_area += areas_for_nodes[i].magnitude();

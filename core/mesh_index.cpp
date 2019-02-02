@@ -9,16 +9,15 @@ public:
     static FaceNodes make(const Element3 &element, int face) {
         FaceNodes out;
 
-        const ElementShapeInfo &esi =
-            *ElementTypeInfo::get(element.type).shape;
-        assert(face < static_cast<int>(esi.faces.size()));
-        out.num_nodes = esi.faces[face].vertices.size();
+        const ElementTypeShape &shape = element_type_shape(element.type);
+        assert(face < static_cast<int>(shape.faces.size()));
+        out.num_nodes = shape.faces[face].vertices.size();
 
         /* Find the index of the node on the face with the largest node ID */
         int largest_node_id = -1;
         int largest_index = -1;
         for (int i = 0; i < out.num_nodes; ++i) {
-            int node_id = element.nodes[esi.faces[face].vertices[i]].to_int();
+            int node_id = element.nodes[shape.faces[face].vertices[i]].to_int();
             if (node_id > largest_node_id) {
                 largest_node_id = node_id;
                 largest_index = i;
@@ -31,7 +30,7 @@ public:
         this one, it will start from the same point (except reversed). */
         for (int i = 0; i < out.num_nodes; ++i) {
             int j = (largest_index + i) % out.num_nodes;
-            out.nodes[i] = element.nodes[esi.faces[face].vertices[j]];
+            out.nodes[i] = element.nodes[shape.faces[face].vertices[j]];
         }
 
         return out;
@@ -58,7 +57,7 @@ public:
     }
 
     int num_nodes;
-    NodeId nodes[ElementShapeInfo::max_vertices_per_face];
+    NodeId nodes[ElementTypeShape::max_vertices_per_face];
 };
 
 Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
@@ -73,9 +72,9 @@ Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
             element_id != mesh->elements.key_end();
             ++element_id) {
         const Element3 &element = mesh->elements[element_id];
-        const ElementShapeInfo &esi =
-            *ElementTypeInfo::get(element.type).shape;
-        for (int face = 0; face < static_cast<int>(esi.faces.size()); ++face) {
+        const ElementTypeShape &shape = element_type_shape(element.type);
+        for (int face = 0;
+                face < static_cast<int>(shape.faces.size()); ++face) {
             sequence.push_back(std::make_pair(
                 FaceNodes::make(element, face),
                 FaceId { element_id, face }

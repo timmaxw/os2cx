@@ -8,11 +8,21 @@
 
 namespace os2cx {
 
-class ElementShapeInfo {
+enum class ElementType {
+    C3D4 = 3,
+    C3D10 = 6
+};
+
+bool valid_element_type(ElementType);
+ElementType element_type_from_string(const std::string &str);
+
+class ElementTypeShape {
 public:
     static const int max_faces_per_element = 6;
     static const int max_vertices_per_face = 8;
     static const int max_vertices_per_element = 20;
+
+    std::string name;
 
     /* ShapeVector and ShapePoint represent vectors and points in the shape's
     local (U, V, W) coordinate system, as opposed to the global (X, Y, Z)
@@ -80,28 +90,9 @@ protected:
     void precalculate_face_info();
 };
 
-const ElementShapeInfo &element_shape_tetrahedron4();
-const ElementShapeInfo &element_shape_tetrahedron10();
-
-enum class ElementType {
-    C3D4 = 3,
-    C3D10 = 6
-};
-
-bool valid_element_type(ElementType);
-ElementType element_type_from_string(const std::string &str);
-
-class ElementTypeInfo {
-public:
-    static const ElementTypeInfo &get(ElementType type);
-
-    ElementType type;
-    std::string name;
-    const ElementShapeInfo *shape;
-};
-
-const ElementTypeInfo &element_type_c3d4();
-const ElementTypeInfo &element_type_c3d10();
+const ElementTypeShape &element_type_shape_c3d4();
+const ElementTypeShape &element_type_shape_c3d10();
+const ElementTypeShape &element_type_shape(ElementType);
 
 } /* namespace os2cx */
 

@@ -33,7 +33,7 @@ void Mesh3::append_mesh(
 }
 
 Volume Mesh3::volume(const Element3 &element) const {
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
+    const ElementTypeShape &shape = element_type_shape(element.type);
     double total_volume = 0;
     for (const auto &ip : shape.volume_integration_points) {
         total_volume += integrate_volume(element, ip);
@@ -45,13 +45,13 @@ void Mesh3::volumes_for_nodes(
     const Element3 &element,
     Volume *volumes_out
 ) const {
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
+    const ElementTypeShape &shape = element_type_shape(element.type);
     for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
         volumes_out[i] = 0;
     }
     for (const auto &ip : shape.volume_integration_points) {
         double d_volume = integrate_volume(element, ip);
-        double sf[ElementShapeInfo::max_vertices_per_element];
+        double sf[ElementTypeShape::max_vertices_per_element];
         shape.shape_functions(ip.uvw, sf);
         for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
             volumes_out[i] += sf[i] * d_volume;
@@ -60,8 +60,8 @@ void Mesh3::volumes_for_nodes(
 }
 
 Vector Mesh3::oriented_area(const Element3 &element, int face_index) const {
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
-    const ElementShapeInfo::Face &face_shape = shape.faces[face_index];
+    const ElementTypeShape &shape = element_type_shape(element.type);
+    const ElementTypeShape::Face &face_shape = shape.faces[face_index];
     Vector total_oriented_area = Vector::zero();
     for (const auto &ip : face_shape.integration_points) {
         total_oriented_area += integrate_area(element, face_index, ip);
@@ -74,14 +74,14 @@ void Mesh3::oriented_areas_for_nodes(
     int face_index,
     Vector *areas_out
 ) const {
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
-    const ElementShapeInfo::Face &face_shape = shape.faces[face_index];
+    const ElementTypeShape &shape = element_type_shape(element.type);
+    const ElementTypeShape::Face &face_shape = shape.faces[face_index];
     for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
         areas_out[i] = Vector::zero();
     }
     for (const auto &ip : face_shape.integration_points) {
         Vector d_area = integrate_area(element, face_index, ip);
-        double sf[ElementShapeInfo::max_vertices_per_element];
+        double sf[ElementTypeShape::max_vertices_per_element];
         shape.shape_functions(ip.uvw, sf);
         for (int node_ix : face_shape.vertices) {
             areas_out[node_ix] += sf[node_ix] * d_area;
@@ -91,11 +91,11 @@ void Mesh3::oriented_areas_for_nodes(
 
 Matrix Mesh3::jacobian(
     const Element3 &element,
-    ElementShapeInfo::ShapePoint uvw
+    ElementTypeShape::ShapePoint uvw
 ) const {
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(element.type).shape;
-    ElementShapeInfo::ShapeVector sf_d_uvw[
-        ElementShapeInfo::max_vertices_per_element];
+    const ElementTypeShape &shape = element_type_shape(element.type);
+    ElementTypeShape::ShapeVector sf_d_uvw[
+        ElementTypeShape::max_vertices_per_element];
     shape.shape_function_derivatives(uvw, sf_d_uvw);
     Matrix jacobian = Matrix::zero();
     for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {
@@ -109,7 +109,7 @@ Matrix Mesh3::jacobian(
 
 double Mesh3::integrate_volume(
     const Element3 &element,
-    const ElementShapeInfo::IntegrationPoint &ip
+    const ElementTypeShape::IntegrationPoint &ip
 ) const {
     return ip.weight * jacobian(element, ip.uvw).determinant();
 }
@@ -117,11 +117,11 @@ double Mesh3::integrate_volume(
 Vector Mesh3::integrate_area(
     const Element3 &element,
     int face_index,
-    const ElementShapeInfo::IntegrationPoint &ip
+    const ElementTypeShape::IntegrationPoint &ip
 ) const {
     Matrix j = jacobian(element, ip.uvw);
-    ElementShapeInfo::ShapeVector shape_normal =
-        ElementTypeInfo::get(element.type).shape->faces[face_index].normal;
+    ElementTypeShape::ShapeVector shape_normal =
+        element_type_shape(element.type).faces[face_index].normal;
     return ip.weight * j.cofactor_matrix().apply(shape_normal);
 }
 

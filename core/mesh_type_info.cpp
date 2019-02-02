@@ -6,7 +6,24 @@
 
 namespace os2cx {
 
-void ElementShapeInfo::precalculate_face_info() {
+bool valid_element_type(ElementType type) {
+    switch (type) {
+    case ElementType::C3D4:
+        return true;
+    case ElementType::C3D10:
+        return true;
+    default:
+        return false;
+    }
+}
+
+ElementType element_type_from_string(const std::string &str) {
+    if (str == "C3D4") return ElementType::C3D4;
+    if (str == "C3D10") return ElementType::C3D10;
+    throw std::domain_error("no such element type: " + str);
+}
+
+void ElementTypeShape::precalculate_face_info() {
     for (Face &face : faces) {
         if (face.vertices.size() == 3) {
             /* first-order triangular face */
@@ -50,9 +67,11 @@ void ElementShapeInfo::precalculate_face_info() {
     }
 }
 
-class ElementShapeInfoTetrahedron4 : public ElementShapeInfo {
+class ElementTypeShapeC3D4 : public ElementTypeShape {
 public:
-    ElementShapeInfoTetrahedron4() {
+    ElementTypeShapeC3D4() {
+        name = "C3D4";
+
         vertices.resize(4);
         Vertex::Type c = Vertex::Type::Corner;
         vertices[0] = Vertex(c, 0, 0, 0);
@@ -90,14 +109,16 @@ public:
     }
 };
 
-const ElementShapeInfo &element_shape_tetrahedron4() {
-    static const ElementShapeInfoTetrahedron4 info;
-    return info;
+const ElementTypeShape &element_type_shape_c3d4() {
+    static const ElementTypeShapeC3D4 shape;
+    return shape;
 }
 
-class ElementShapeInfoTetrahedron10 : public ElementShapeInfo {
+class ElementTypeShapeC3D10 : public ElementTypeShape {
 public:
-    ElementShapeInfoTetrahedron10() {
+    ElementTypeShapeC3D10() {
+        name = "C3D10";
+
         vertices.resize(10);
         Vertex::Type c = Vertex::Type::Corner;
         Vertex::Type e = Vertex::Type::Edge;
@@ -162,52 +183,18 @@ public:
     }
 };
 
-const ElementShapeInfo &element_shape_tetrahedron10() {
-    static const ElementShapeInfoTetrahedron10 info;
-    return info;
+const ElementTypeShape &element_type_shape_c3d10() {
+    static const ElementTypeShapeC3D10 shape;
+    return shape;
 }
 
-bool valid_element_type(ElementType type) {
+
+const ElementTypeShape &element_type_shape(ElementType type) {
     switch (type) {
-    case ElementType::C3D4:
-        return true;
-    case ElementType::C3D10:
-        return true;
-    default:
-        return false;
-    }
-}
-
-ElementType element_type_from_string(const std::string &str) {
-    if (str == "C3D4") return ElementType::C3D4;
-    if (str == "C3D10") return ElementType::C3D10;
-    throw std::domain_error("no such element type: " + str);
-}
-
-const ElementTypeInfo &ElementTypeInfo::get(ElementType type) {
-    switch (type) {
-    case ElementType::C3D4: return element_type_c3d4();
-    case ElementType::C3D10: return element_type_c3d10();
+    case ElementType::C3D4: return element_type_shape_c3d4();
+    case ElementType::C3D10: return element_type_shape_c3d10();
     default: assert(false);
     }
-}
-
-const ElementTypeInfo &element_type_c3d4() {
-    static ElementTypeInfo info {
-        ElementType::C3D4,
-        "C3D4",
-        &element_shape_tetrahedron4()
-    };
-    return info;
-}
-
-const ElementTypeInfo &element_type_c3d10() {
-    static ElementTypeInfo info {
-        ElementType::C3D10,
-        "C3D10",
-        &element_shape_tetrahedron10()
-    };
-    return info;
 }
 
 } /* namespace os2cx */
