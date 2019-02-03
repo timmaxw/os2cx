@@ -100,10 +100,15 @@ Mesh3 convert_output(tetgenio *tetgen) {
 
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
-    double max_tet_volume
+    double max_element_size
 ) {
     tetgenio tetgen_input;
     convert_input(plc, &tetgen_input);
+
+    /* Tetgen doesn't let us limit tetrahedron length, but it does let us limit
+    tetrahedron volume. Convert max_element_size into a roughly equivalent
+    max_tet_volume. */
+    double max_tet_volume = pow(max_element_size, 3) / 6.0;
 
     std::string flags;
     flags += "p";
@@ -121,7 +126,7 @@ Mesh3 mesher_tetgen(
     return convert_output(&tetgen_output);
 }
 
-double suggest_max_tet_volume(const Plc3 &plc) {
+double suggest_max_element_size(const Plc3 &plc) {
     double xmin, xmax, ymin, ymax, zmin, zmax;
     xmin = ymin = zmin = std::numeric_limits<double>::max();
     xmax = ymax = zmax = std::numeric_limits<double>::min();
@@ -147,7 +152,12 @@ double suggest_max_tet_volume(const Plc3 &plc) {
     bounding box. In practice the shape won't completely fill the bounding box,
     so we'll end up with fewer than default_max_tets (often far fewer), but it's
     an OK approximation. */
-    return bbox_volume / default_max_tets / fudge_factor;
+    double max_tet_volume = bbox_volume / default_max_tets / fudge_factor;
+
+    /* Convert max_tet_volume into a roughly equivalent max_element_size */
+    double max_element_size = pow(max_tet_volume * 6.0, 1 / 3.0);
+
+    return max_element_size;
 }
 
 } /* namespace os2cx */
