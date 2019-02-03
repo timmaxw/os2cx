@@ -51,6 +51,10 @@ void check_element_type_shape(const ElementTypeShape &shape) {
     check_element_type_shape_functions(shape, uvw);
 }
 
+TEST(MeshTest, CheckElementTypeShapeC3D8) {
+    check_element_type_shape(element_type_shape_c3d8());
+}
+
 TEST(MeshTest, CheckElementTypeShapeC3D4) {
     check_element_type_shape(element_type_shape_c3d4());
 }

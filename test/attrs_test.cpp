@@ -42,8 +42,8 @@ TEST(AttrsTest, LoadSurface) {
     Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
     compute_plc_nef_select_surface(
         &solid_nef,
-        Poly3::box(-0.1, -0.1, 1.1, 1.1, 1, 3),
-        Vector(0, 0, -1),
+        Poly3::box(-0.1, -0.1, 1.1, 1.1, 1, 2.1),
+        Vector(0, 0, 1),
         180,
         bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
