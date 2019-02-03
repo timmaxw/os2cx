@@ -95,13 +95,13 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
 
     for (auto &pair : p->mesh_objects) {
         callbacks->project_run_log("Meshing '" + pair.first + "'...");
-        double max_tet_volume = pair.second.max_tet_volume;
-        if (max_tet_volume == Project::MeshObject::suggest_max_tet_volume) {
-            max_tet_volume = suggest_max_tet_volume(*pair.second.plc);
-            callbacks->project_run_log( "Automatically chose max_tet_volume=" +
-                std::to_string(max_tet_volume));
+        double max_element_size = pair.second.max_element_size;
+        if (max_element_size == Project::MeshObject::SUGGEST_MAX_ELEMENT_SIZE) {
+            max_element_size = suggest_max_element_size(*pair.second.plc);
+            callbacks->project_run_log("Automatically chose max_element_size=" +
+                std::to_string(max_element_size));
         }
-        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_tet_volume);
+        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_element_size);
         pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
         callbacks->project_run_checkpoint();
     }

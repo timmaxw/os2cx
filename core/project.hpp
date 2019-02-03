@@ -80,11 +80,11 @@ public:
 
     class MeshObject : public VolumeObject {
     public:
-        /* If max_tet_volume is set to the magic value suggest_max_tet_volume,
-        then we'll automatically choose a reasonable value for max_tet_volume by
-        examining the PLC. */
-        static constexpr double suggest_max_tet_volume = -1;
-        double max_tet_volume;
+        /* If max_element_size is set to the magic value
+        SUGGEST_MAX_ELEMENT_SIZE, then we'll automatically choose a reasonable
+        value for max_element_size by examining the PLC. */
+        static constexpr double SUGGEST_MAX_ELEMENT_SIZE = -1;
+        double max_element_size;
 
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Plc3> plc;

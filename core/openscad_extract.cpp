@@ -210,9 +210,12 @@ void do_mesh_directive(
     Project::MeshObject object;
 
     if (args[1].type == OpenscadValue::Type::Undefined) {
-        object.max_tet_volume = Project::MeshObject::suggest_max_tet_volume;
+        object.max_element_size = Project::MeshObject::SUGGEST_MAX_ELEMENT_SIZE;
     } else {
-        object.max_tet_volume = check_number(args[1]);
+        object.max_element_size = check_number(args[1]);
+        if (object.max_element_size <= 0) {
+            throw UsageError("max_element_size must be positive");
+        }
     }
 
     project->mesh_objects.insert(std::make_pair(name, object));
