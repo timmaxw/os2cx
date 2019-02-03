@@ -5,6 +5,7 @@
 #include "calculix_frd_read.hpp"
 #include "calculix_inp_write.hpp"
 #include "calculix_run.hpp"
+#include "mesher_naive_bricks.hpp"
 #include "mesher_tetgen.hpp"
 #include "openscad_extract.hpp"
 #include "openscad_run.hpp"
@@ -101,8 +102,25 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             callbacks->project_run_log( "Automatically chose max_tet_volume=" +
                 std::to_string(max_tet_volume));
         }
-        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_tet_volume);
-        pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
+        switch(pair.second.mesher) {
+        case Project::MeshObject::Mesher::Tetgen: {
+            Mesh3 partial_mesh = mesher_tetgen(
+                *pair.second.plc,
+                max_tet_volume
+            );
+            pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
+            break;
+        }
+        case Project::MeshObject::Mesher::NaiveBricks: {
+            Mesh3 partial_mesh = mesher_naive_bricks(
+                *pair.second.plc,
+                max_tet_volume
+            );
+            pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
+            break;
+        }
+        default: assert(false);
+        }
         callbacks->project_run_checkpoint();
     }
 

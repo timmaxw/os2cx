@@ -80,6 +80,9 @@ public:
 
     class MeshObject : public VolumeObject {
     public:
+        enum class Mesher { Tetgen, NaiveBricks };
+        Mesher mesher;
+
         /* If max_tet_volume is set to the magic value suggest_max_tet_volume,
         then we'll automatically choose a reasonable value for max_tet_volume by
         examining the PLC. */
