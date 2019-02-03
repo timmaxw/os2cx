@@ -34,11 +34,11 @@ private:
 class Element3 {
 public:
     int num_nodes() const {
-        return ElementTypeInfo::get(type).shape->vertices.size();
+        return element_type_shape(type).vertices.size();
     }
 
     ElementType type;
-    NodeId nodes[ElementShapeInfo::max_vertices_per_element];
+    NodeId nodes[ElementTypeShape::max_vertices_per_element];
 };
 
 class ElementId {
@@ -59,8 +59,8 @@ public:
     static FaceId from_int(int id) {
         FaceId fi;
         fi.element_id = ElementId::from_int(
-            id / ElementShapeInfo::max_faces_per_element);
-        fi.face = id % ElementShapeInfo::max_faces_per_element;
+            id / ElementTypeShape::max_faces_per_element);
+        fi.face = id % ElementTypeShape::max_faces_per_element;
         return fi;
     }
     static FaceId invalid() {
@@ -72,7 +72,7 @@ public:
     FaceId() { }
     FaceId(ElementId ei, int f) : element_id(ei), face(f) { }
     int to_int() {
-        return element_id.to_int() * ElementShapeInfo::max_faces_per_element
+        return element_id.to_int() * ElementTypeShape::max_faces_per_element
             + face;
     }
     bool operator==(FaceId other) const {
@@ -143,18 +143,18 @@ public:
 private:
     Matrix jacobian(
         const Element3 &element,
-        ElementShapeInfo::ShapePoint uvw
+        ElementTypeShape::ShapePoint uvw
     ) const;
 
     double integrate_volume(
         const Element3 &element,
-        const ElementShapeInfo::IntegrationPoint &ip
+        const ElementTypeShape::IntegrationPoint &ip
     ) const;
 
     Vector integrate_area(
         const Element3 &element,
         int face_index,
-        const ElementShapeInfo::IntegrationPoint &ip
+        const ElementTypeShape::IntegrationPoint &ip
     ) const;
 
 };

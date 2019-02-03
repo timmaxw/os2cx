@@ -6,7 +6,27 @@
 
 namespace os2cx {
 
-void ElementShapeInfo::precalculate_face_info() {
+bool valid_element_type(ElementType type) {
+    switch (type) {
+    case ElementType::C3D8:
+        return true;
+    case ElementType::C3D4:
+        return true;
+    case ElementType::C3D10:
+        return true;
+    default:
+        return false;
+    }
+}
+
+ElementType element_type_from_string(const std::string &str) {
+    if (str == "C3D8") return ElementType::C3D8;
+    if (str == "C3D4") return ElementType::C3D4;
+    if (str == "C3D10") return ElementType::C3D10;
+    throw std::domain_error("no such element type: " + str);
+}
+
+void ElementTypeShape::precalculate_face_info() {
     for (Face &face : faces) {
         if (face.vertices.size() == 3) {
             /* first-order triangular face */
@@ -22,6 +42,23 @@ void ElementShapeInfo::precalculate_face_info() {
 
             face.integration_points.resize(1);
             face.integration_points[0].uvw =  a + (b - a) / 3 + (c - a) / 3;
+            face.integration_points[0].weight = total_area;
+
+        } else if (face.vertices.size() == 4) {
+            /* first-order rectangular face */
+            ShapePoint a = vertices[face.vertices[0]].uvw;
+            ShapePoint b = vertices[face.vertices[1]].uvw;
+            ShapePoint c = vertices[face.vertices[2]].uvw;
+            ShapePoint d = vertices[face.vertices[3]].uvw;
+
+            ShapeVector vector = (b - a).cross(d - a);
+            double magnitude = vector.magnitude();
+            face.normal = vector / magnitude;
+
+            double total_area = magnitude;
+
+            face.integration_points.resize(1);
+            face.integration_points[0].uvw = a + (c - a) / 2;
             face.integration_points[0].weight = total_area;
 
         } else if (face.vertices.size() == 6) {
@@ -50,9 +87,11 @@ void ElementShapeInfo::precalculate_face_info() {
     }
 }
 
-class ElementShapeInfoBrick8 : public ElementShapeInfo {
+class ElementTypeShapeC3D8 : public ElementTypeShape {
 public:
-    ElementShapeInfoBrick8() {
+    ElementTypeShapeC3D8() {
+        name = "C3D8";
+
         vertices.resize(8);
         Vertex::Type c = Vertex::Type::Corner;
         vertices[0] = Vertex(c, 0, 0, 0);
@@ -73,37 +112,71 @@ public:
         faces[5].vertices = { 0, 4, 7, 3 };
         precalculate_face_info();
 
-        volume_integration_points.resize(1);
-        volume_integration_points[0] = IntegrationPoint(0.5, 0.5, 0.5, 1.0);
+        volume_integration_points.resize(8);
+        volume_integration_points[0] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[1] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[2] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[3] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[4] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[5] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[6] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[7] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
     }
 
     void shape_functions(ShapePoint uvw, double *sf_out) const {
-        sf_out[0] = 1.0 - uvw.x - uvw.y - uvw.z;
-        sf_out[1] = uvw.x;
-        sf_out[2] = uvw.y;
-        sf_out[3] = uvw.z;
+        double inv_x = 1.0 - uvw.x, inv_y = 1.0 - uvw.y, inv_z = 1.0 - uvw.z;
+        sf_out[0] = inv_x * inv_y * inv_z;
+        sf_out[1] = uvw.x * inv_y * inv_z;
+        sf_out[2] = uvw.x * uvw.y * inv_z;
+        sf_out[3] = inv_x * uvw.y * inv_z;
+        sf_out[4] = inv_x * inv_y * uvw.z;
+        sf_out[5] = uvw.x * inv_y * uvw.z;
+        sf_out[6] = uvw.x * uvw.y * uvw.z;
+        sf_out[7] = inv_x * uvw.y * uvw.z;
     }
 
     void shape_function_derivatives(
         ShapePoint uvw,
         ShapeVector *sf_d_uvw_out
     ) const {
-        (void)uvw;
-        sf_d_uvw_out[0] = ShapeVector(-1, -1, -1);
-        sf_d_uvw_out[1] = ShapeVector( 1,  0,  0);
-        sf_d_uvw_out[2] = ShapeVector( 0,  1,  0);
-        sf_d_uvw_out[3] = ShapeVector( 0,  0,  1);
+        double inv_x = 1.0 - uvw.x, inv_y = 1.0 - uvw.y, inv_z = 1.0 - uvw.z;
+        sf_d_uvw_out[0] = ShapeVector(
+            -inv_y * inv_z, -inv_x * inv_z, -inv_x * inv_y);
+        sf_d_uvw_out[1] = ShapeVector(
+            +inv_y * inv_z, -uvw.x * inv_z, -uvw.x * inv_y);
+        sf_d_uvw_out[2] = ShapeVector(
+            +uvw.y * inv_z, +uvw.x * inv_z, -uvw.x * uvw.y);
+        sf_d_uvw_out[3] = ShapeVector(
+            -uvw.y * inv_z, +inv_x * inv_z, -inv_x * uvw.y);
+        sf_d_uvw_out[4] = ShapeVector(
+            -inv_y * uvw.z, -inv_x * uvw.z, +inv_x * inv_y);
+        sf_d_uvw_out[5] = ShapeVector(
+            +inv_y * uvw.z, -uvw.x * uvw.z, +uvw.x * inv_y);
+        sf_d_uvw_out[6] = ShapeVector(
+            +uvw.y * uvw.z, +uvw.x * uvw.z, +uvw.x * uvw.y);
+        sf_d_uvw_out[7] = ShapeVector(
+            -uvw.y * uvw.z, +inv_x * uvw.z, +inv_x * uvw.y);
     }
 };
 
-const ElementShapeInfo &element_shape_brick8() {
-    static const ElementShapeInfoBrick8 info;
-    return info;
+const ElementTypeShape &element_type_shape_c3d8() {
+    static const ElementTypeShapeC3D8 shape;
+    return shape;
 }
 
-class ElementShapeInfoTetrahedron4 : public ElementShapeInfo {
+class ElementTypeShapeC3D4 : public ElementTypeShape {
 public:
-    ElementShapeInfoTetrahedron4() {
+    ElementTypeShapeC3D4() {
+        name = "C3D4";
+
         vertices.resize(4);
         Vertex::Type c = Vertex::Type::Corner;
         vertices[0] = Vertex(c, 0, 0, 0);
@@ -141,14 +214,16 @@ public:
     }
 };
 
-const ElementShapeInfo &element_shape_tetrahedron4() {
-    static const ElementShapeInfoTetrahedron4 info;
-    return info;
+const ElementTypeShape &element_type_shape_c3d4() {
+    static const ElementTypeShapeC3D4 shape;
+    return shape;
 }
 
-class ElementShapeInfoTetrahedron10 : public ElementShapeInfo {
+class ElementTypeShapeC3D10 : public ElementTypeShape {
 public:
-    ElementShapeInfoTetrahedron10() {
+    ElementTypeShapeC3D10() {
+        name = "C3D10";
+
         vertices.resize(10);
         Vertex::Type c = Vertex::Type::Corner;
         Vertex::Type e = Vertex::Type::Edge;
@@ -213,52 +288,19 @@ public:
     }
 };
 
-const ElementShapeInfo &element_shape_tetrahedron10() {
-    static const ElementShapeInfoTetrahedron10 info;
-    return info;
+const ElementTypeShape &element_type_shape_c3d10() {
+    static const ElementTypeShapeC3D10 shape;
+    return shape;
 }
 
-bool valid_element_type(ElementType type) {
+
+const ElementTypeShape &element_type_shape(ElementType type) {
     switch (type) {
-    case ElementType::C3D4:
-        return true;
-    case ElementType::C3D10:
-        return true;
-    default:
-        return false;
-    }
-}
-
-ElementType element_type_from_string(const std::string &str) {
-    if (str == "C3D4") return ElementType::C3D4;
-    if (str == "C3D10") return ElementType::C3D10;
-    throw std::domain_error("no such element type: " + str);
-}
-
-const ElementTypeInfo &ElementTypeInfo::get(ElementType type) {
-    switch (type) {
-    case ElementType::C3D4: return element_type_c3d4();
-    case ElementType::C3D10: return element_type_c3d10();
+    case ElementType::C3D8: return element_type_shape_c3d8();
+    case ElementType::C3D4: return element_type_shape_c3d4();
+    case ElementType::C3D10: return element_type_shape_c3d10();
     default: assert(false);
     }
-}
-
-const ElementTypeInfo &element_type_c3d4() {
-    static ElementTypeInfo info {
-        ElementType::C3D4,
-        "C3D4",
-        &element_shape_tetrahedron4()
-    };
-    return info;
-}
-
-const ElementTypeInfo &element_type_c3d10() {
-    static ElementTypeInfo info {
-        ElementType::C3D10,
-        "C3D10",
-        &element_shape_tetrahedron10()
-    };
-    return info;
 }
 
 } /* namespace os2cx */

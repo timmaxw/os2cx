@@ -4,11 +4,11 @@
 
 namespace os2cx {
 
-void check_element_shape_info_shape_functions(
-    const ElementShapeInfo &shape,
-    ElementShapeInfo::ShapePoint uvw
+void check_element_type_shape_functions(
+    const ElementTypeShape &shape,
+    ElementTypeShape::ShapePoint uvw
 ) {
-    double sf[ElementShapeInfo::max_vertices_per_element];
+    double sf[ElementTypeShape::max_vertices_per_element];
     shape.shape_functions(uvw, sf);
 
     /* Sanity check that shape functions sum to 1 */
@@ -21,17 +21,17 @@ void check_element_shape_info_shape_functions(
     /* Sanity check that ElementShapeInfo.shape_function_derivatives is actually
     correctly computing the derivatives of ElementShapeInfo.shape_function,
     because it's easy to make mistakes when doing many derivatives by hand. */
-    ElementShapeInfo::ShapeVector sf_d_uvw[
-        ElementShapeInfo::max_vertices_per_element];
+    ElementTypeShape::ShapeVector sf_d_uvw[
+        ElementTypeShape::max_vertices_per_element];
     shape.shape_function_derivatives(uvw, sf_d_uvw);
     static const double epsilon = 1e-6;
     for (int i = 0; i < 3; ++i) {
-        ElementShapeInfo::ShapeVector delta_uvw(
+        ElementTypeShape::ShapeVector delta_uvw(
             i == 0 ? epsilon : 0,
             i == 1 ? epsilon : 0,
             i == 2 ? epsilon : 0);
-        ElementShapeInfo::ShapePoint uvw_prime = uvw + delta_uvw;
-        double sf_prime[ElementShapeInfo::max_vertices_per_element];
+        ElementTypeShape::ShapePoint uvw_prime = uvw + delta_uvw;
+        double sf_prime[ElementTypeShape::max_vertices_per_element];
         shape.shape_functions(uvw_prime, sf_prime);
         for (int j = 0; j < static_cast<int>(shape.vertices.size());
                 ++j) {
@@ -45,23 +45,23 @@ void check_element_shape_info_shape_functions(
     }
 }
 
-void check_element_shape_info(const ElementShapeInfo &shape) {
+void check_element_type_shape(const ElementTypeShape &shape) {
     /* arbitrary test point */
-    ElementShapeInfo::ShapePoint uvw(0.11, 0.22, 0.33);
-    check_element_shape_info_shape_functions(shape, uvw);
+    ElementTypeShape::ShapePoint uvw(0.11, 0.22, 0.33);
+    check_element_type_shape_functions(shape, uvw);
 }
 
-TEST(MeshTest, CheckTetrahedron4) {
-    check_element_shape_info(element_shape_tetrahedron4());
+TEST(MeshTest, CheckElementTypeShapeC3D4) {
+    check_element_type_shape(element_type_shape_c3d4());
 }
 
-TEST(MeshTest, CheckTetrahedron10) {
-    check_element_shape_info(element_shape_tetrahedron10());
+TEST(MeshTest, CheckElementTypeShapeC3D10) {
+    check_element_type_shape(element_type_shape_c3d10());
 }
 
 Mesh3 make_example_mesh(ElementType type, AffineTransform transform) {
     Mesh3 mesh;
-    const ElementShapeInfo &shape = *ElementTypeInfo::get(type).shape;
+    const ElementTypeShape &shape = element_type_shape(type);
     Element3 element;
     element.type = type;
     for (int i = 0; i < static_cast<int>(shape.vertices.size()); ++i) {

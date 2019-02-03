@@ -9,15 +9,15 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     GuiOpenglScene scene;
     for (const FaceId &fi : project.mesh_index->unmatched_faces) {
         const Element3 &element = project.mesh->elements[fi.element_id];
-        const ElementTypeInfo &type = ElementTypeInfo::get(element.type);
-        NodeId node_ids[ElementShapeInfo::max_vertices_per_face];
-        const ElementShapeInfo::Face &face = type.shape->faces[fi.face];
+        const ElementTypeShape &shape = element_type_shape(element.type);
+        NodeId node_ids[ElementTypeShape::max_vertices_per_face];
+        const ElementTypeShape::Face &face = shape.faces[fi.face];
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
             node_ids[i] = element.nodes[face.vertices[i]];
         }
 
-        Point ps[ElementShapeInfo::max_vertices_per_face];
-        QColor cs[ElementShapeInfo::max_vertices_per_face];
+        Point ps[ElementTypeShape::max_vertices_per_face];
+        QColor cs[ElementTypeShape::max_vertices_per_face];
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
             ps[i] = project.mesh->nodes[node_ids[i]].point;
             Vector disp;

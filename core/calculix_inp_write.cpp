@@ -29,14 +29,14 @@ void write_calculix_nodes_and_elements(
     }
 
     for (ElementType type : types_present) {
-        const ElementTypeInfo &type_info = ElementTypeInfo::get(type);
-        stream << "*ELEMENT, TYPE=" << type_info.name
+        const ElementTypeShape &shape = element_type_shape(type);
+        stream << "*ELEMENT, TYPE=" << shape.name
             << ", ELSET=E" << name << '\n';
         for (ElementId eid = element_begin; eid != element_end; ++eid) {
             const Element3 *element = &mesh.elements[eid];
             if (element->type != type) continue;
             stream << eid.to_int();
-            for (size_t i = 0; i < type_info.shape->vertices.size(); ++i) {
+            for (size_t i = 0; i < shape.vertices.size(); ++i) {
                 stream << ", " << element->nodes[i].to_int();
             }
             stream << '\n';
