@@ -99,7 +99,8 @@ Box element_c3d8_to_box(const Mesh3 &mesh, const Element3 &element) {
 void try_mnb(
     const std::vector<Box> &boxes_in,
     const std::vector<Box> &boxes_out,
-    int transform
+    int transform,
+    double max_element_size = 1e6
 ) {
     PlcNef3 example = PlcNef3::empty();
     for (const Box &box : boxes_in) {
@@ -108,7 +109,7 @@ void try_mnb(
     }
     Plc3 plc = plc_nef_to_plc(example);
 
-    Mesh3 mesh = mesher_naive_bricks(plc, 1e6);
+    Mesh3 mesh = mesher_naive_bricks(plc, max_element_size);
 
     std::set<Box, BoxLess> expected_boxes;
     for (const Box &box : boxes_out) {
@@ -137,9 +138,25 @@ void try_mnb(
 
 TEST(MesherNaiveBricksTest, SingleBrick) {
     try_mnb(
-        {Box(0, 0, 0, 1, 1, 1)},
-        {Box(0, 0, 0, 1, 1, 1)},
+        {Box(0, 0, 0, 1, 2, 3)},
+        {Box(0, 0, 0, 1, 2, 3)},
         IDENTITY
+    );
+}
+
+TEST(MesherNaiveBricksTest, SingleBrickSubdivided) {
+    try_mnb(
+        {Box(0, 0, 0, 1, 2, 3)},
+        {
+            Box(0, 0, 0, 1, 1, 1),
+            Box(0, 1, 0, 1, 2, 1),
+            Box(0, 0, 1, 1, 1, 2),
+            Box(0, 1, 1, 1, 2, 2),
+            Box(0, 0, 2, 1, 1, 3),
+            Box(0, 1, 2, 1, 2, 3)
+        },
+        IDENTITY,
+        1.0
     );
 }
 

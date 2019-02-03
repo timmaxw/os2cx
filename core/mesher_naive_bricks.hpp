@@ -18,7 +18,7 @@ public:
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_tet_volume);
+    double max_element_size);
 
 } /* namespace os2cx */
 

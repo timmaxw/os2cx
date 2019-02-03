@@ -58,8 +58,36 @@ public:
     std::map<double, int> points;
 };
 
+template<class Value>
+void apply_max_element_size(
+    double max_element_size,
+    std::map<double, Value> *grid
+) {
+    auto lower = grid->begin();
+    while (true) {
+        auto upper = lower;
+        ++upper;
+        if (upper == grid->end()) break;
+
+        int num_parts =
+            ceil((upper->first - lower->first) / max_element_size);
+        double part_size = (upper->first - lower->first) / num_parts;
+        for (int i = 1; i < num_parts; ++i) {
+            double split_point = lower->first + part_size * i;
+            /* This mutates 'grid', but our existing 'upper' and 'lower'
+            iterators remain valid. Because we've already calculated
+            'upper', iteration will continue after the newly added
+            points. */
+            (*grid)[split_point];
+        }
+
+        lower = upper;
+    }
+}
+
 void setup_grid(
     const Plc3 &plc,
+    double max_element_size,
     GridAxis *x_grid_out,
     GridAxis *y_grid_out,
     std::map<double, std::vector<TriangleRef> > *z_triangles_out
@@ -103,6 +131,10 @@ void setup_grid(
             }
         }
     }
+
+    apply_max_element_size(max_element_size, &x_grid_out->points);
+    apply_max_element_size(max_element_size, &y_grid_out->points);
+    apply_max_element_size(max_element_size, z_triangles_out);
 
     x_grid_out->precompute_indexes();
     y_grid_out->precompute_indexes();
@@ -329,13 +361,11 @@ void create_bricks(
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_tet_volume
+    double max_element_size
 ) {
-    (void)max_tet_volume;
-
     GridAxis x_grid, y_grid;
     std::map<double, std::vector<TriangleRef> > z_triangles;
-    setup_grid(plc, &x_grid, &y_grid, &z_triangles);
+    setup_grid(plc, max_element_size, &x_grid, &y_grid, &z_triangles);
 
     Mesh3 mesh;
     if (z_triangles.empty()) {
