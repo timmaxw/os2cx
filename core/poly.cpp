@@ -2,24 +2,21 @@
 
 namespace os2cx {
 
-Poly3 Poly3::box(
-    double x1, double y1, double z1,
-    double x2, double y2, double z2
-) {
+Poly3 Poly3::from_box(const Box &box) {
     class BoxMaker : public CGAL::Modifier_base<CgalPolyhedron3::HalfedgeDS> {
     public:
         void operator()(CgalPolyhedron3::HalfedgeDS &hds) {
             CGAL::Polyhedron_incremental_builder_3<
                 CgalPolyhedron3::HalfedgeDS> b(hds, true);
             b.begin_surface(8, 6, 12);
-            b.add_vertex(CGAL::Point_3<K>(x1, y1, z2));
-            b.add_vertex(CGAL::Point_3<K>(x2, y1, z2));
-            b.add_vertex(CGAL::Point_3<K>(x2, y2, z2));
-            b.add_vertex(CGAL::Point_3<K>(x1, y2, z1));
-            b.add_vertex(CGAL::Point_3<K>(x1, y1, z1));
-            b.add_vertex(CGAL::Point_3<K>(x2, y1, z1));
-            b.add_vertex(CGAL::Point_3<K>(x2, y2, z1));
-            b.add_vertex(CGAL::Point_3<K>(x1, y2, z2));
+            b.add_vertex(CGAL::Point_3<K>(box.xl, box.yl, box.zh));
+            b.add_vertex(CGAL::Point_3<K>(box.xh, box.yl, box.zh));
+            b.add_vertex(CGAL::Point_3<K>(box.xh, box.yh, box.zh));
+            b.add_vertex(CGAL::Point_3<K>(box.xl, box.yh, box.zl));
+            b.add_vertex(CGAL::Point_3<K>(box.xl, box.yl, box.zl));
+            b.add_vertex(CGAL::Point_3<K>(box.xh, box.yl, box.zl));
+            b.add_vertex(CGAL::Point_3<K>(box.xh, box.yh, box.zl));
+            b.add_vertex(CGAL::Point_3<K>(box.xl, box.yh, box.zh));
             int facets[12][3] = {
                 {4, 5, 1}, {0, 4, 1}, {0, 7, 4}, {4, 7, 3},
                 {0, 1, 2}, {7, 0, 2}, {3, 6, 4}, {4, 6, 5},
@@ -34,10 +31,10 @@ Poly3 Poly3::box(
             }
             b.end_surface();
         }
-        double x1, y1, z1, x2, y2, z2;
+        Box box;
     };
     BoxMaker bm;
-    bm.x1 = x1; bm.y1 = y1; bm.z1 = z1; bm.x2 = x2; bm.y2 = y2; bm.z2 = z2;
+    bm.box = box;
 
     Poly3 r;
     r.i.reset(new Poly3Internal);

@@ -13,8 +13,8 @@ TEST(PlcTest, PlcNefToPlc) {
     Plc3::Bitset bitset_solid, bitset_mask;
     bitset_solid.set(0);
     bitset_mask.set(1);
-    PlcNef3 solid = PlcNef3::from_poly(Poly3::box(0, 0, 0, 1, 1, 3));
-    PlcNef3 mask = PlcNef3::from_poly(Poly3::box(-1, -1, 1, 2, 2, 2));
+    PlcNef3 solid = PlcNef3::from_poly(Poly3::from_box(Box(0, 0, 0, 1, 1, 3)));
+    PlcNef3 mask = PlcNef3::from_poly(Poly3::from_box(Box(-1, -1, 1, 2, 2, 2)));
     solid.binarize(bitset_solid, Plc3::Bitset());
     mask.binarize(bitset_mask, Plc3::Bitset());
     PlcNef3 plc_nef = solid.binary_or(mask);

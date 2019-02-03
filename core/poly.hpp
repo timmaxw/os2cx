@@ -4,6 +4,8 @@
 #include <iostream>
 #include <memory>
 
+#include "calc.hpp"
+
 namespace os2cx {
 
 /* Poly3 is a closed polyhedron with an inside and an outside. It may have
@@ -19,9 +21,7 @@ class Poly3Internal;
 
 class Poly3 {
 public:
-    static Poly3 box(
-        double x1, double y1, double z1,
-        double x2, double y2, double z2);
+    static Poly3 from_box(const Box &box);
 
     Poly3();
     Poly3(Poly3 &&other);

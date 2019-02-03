@@ -78,6 +78,32 @@ private:
     std::vector<Value> values;
 };
 
+template<class Value>
+class Array2D {
+public:
+    Array2D(int _xs, int _ys) :
+        xs(_xs), ys(_ys), vector(xs * ys) { }
+    Array2D(int _xs, int _ys, const Value &original) :
+        xs(_xs), ys(_ys), vector(xs * ys, original) { }
+    Value &operator()(int x, int y) {
+        assert(x >= 0);
+        assert(y >= 0);
+        assert(x < xs);
+        assert(y < ys);
+        return vector[x + y * xs];
+    }
+    const Value &operator()(int x, int y) const {
+        assert(x >= 0);
+        assert(y >= 0);
+        assert(x < xs);
+        assert(y < ys);
+        return vector[x + y * xs];
+    }
+private:
+    int xs, ys;
+    std::vector<Value> vector;
+};
+
 } /* namespace os2cx */
 
 #endif
