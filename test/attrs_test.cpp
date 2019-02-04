@@ -8,10 +8,10 @@ namespace os2cx {
 
 TEST(AttrsTest, LoadVolume) {
     PlcNef3 solid_nef =
-        compute_plc_nef_for_solid(Poly3::box(0, 0, 0, 1, 1, 2));
+        compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
     Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
     compute_plc_nef_select_volume(
-        &solid_nef, Poly3::box(0, 0, 1, 1, 1, 3), bit_index_mask);
+        &solid_nef, Poly3::from_box(Box(0, 0, 1, 1, 1, 3)), bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
@@ -38,12 +38,12 @@ TEST(AttrsTest, LoadVolume) {
 
 TEST(AttrsTest, LoadSurface) {
     PlcNef3 solid_nef =
-        compute_plc_nef_for_solid(Poly3::box(0, 0, 0, 1, 1, 2));
+        compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
     Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
     compute_plc_nef_select_surface(
         &solid_nef,
-        Poly3::box(-0.1, -0.1, 1.1, 1.1, 1, 3),
-        Vector(0, 0, -1),
+        Poly3::from_box(Box(-0.1, -0.1, 1.1, 1.1, 1, 2.1)),
+        Vector(0, 0, 1),
         180,
         bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);

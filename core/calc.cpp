@@ -82,4 +82,10 @@ Matrix Matrix::cofactor_matrix() const
     return m;
 }
 
+std::ostream &operator<<(std::ostream &stream, Box box) {
+    return stream << "Box("
+        << box.xl << ", " << box.yl << ", " << box.zl << ", "
+        << box.xh << ", " << box.yh << ", " << box.zh << ")";
+}
+
 } /* namespace os2cx */

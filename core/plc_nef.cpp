@@ -17,6 +17,12 @@ PlcNef3 PlcNef3::clone() const {
     return res;
 }
 
+PlcNef3 PlcNef3::empty() {
+    PlcNef3 res;
+    res.i.reset(new PlcNef3Internal(CgalNef3Plc::EMPTY));
+    return res;
+}
+
 PlcNef3 PlcNef3::from_poly(const Poly3 &poly) {
     /* TODO: this doesn't work for polyhedra with multiple parts or internal
     holes */

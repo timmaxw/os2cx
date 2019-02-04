@@ -28,6 +28,13 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
 
         if (face.vertices.size() == 3) {
             scene.add_triangle(ps, cs);
+        } else if (face.vertices.size() == 4) {
+            Point subps1[3] = {ps[0], ps[1], ps[2]};
+            QColor subcs1[3] = {cs[0], cs[1], cs[2]};
+            scene.add_triangle(subps1, subcs1);
+            Point subps2[3] = {ps[0], ps[2], ps[3]};
+            QColor subcs2[3] = {cs[0], cs[2], cs[3]};
+            scene.add_triangle(subps2, subcs2);
         } else if (face.vertices.size() == 6) {
             int ixs[4][3] = {{0, 1, 5}, {2, 3, 1}, {4, 5, 3}, {1, 3, 5}};
             for (int i = 0; i < 4; ++i) {

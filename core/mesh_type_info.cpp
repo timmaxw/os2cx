@@ -8,6 +8,8 @@ namespace os2cx {
 
 bool valid_element_type(ElementType type) {
     switch (type) {
+    case ElementType::C3D8:
+        return true;
     case ElementType::C3D4:
         return true;
     case ElementType::C3D10:
@@ -18,6 +20,7 @@ bool valid_element_type(ElementType type) {
 }
 
 ElementType element_type_from_string(const std::string &str) {
+    if (str == "C3D8") return ElementType::C3D8;
     if (str == "C3D4") return ElementType::C3D4;
     if (str == "C3D10") return ElementType::C3D10;
     throw std::domain_error("no such element type: " + str);
@@ -39,6 +42,23 @@ void ElementTypeShape::precalculate_face_info() {
 
             face.integration_points.resize(1);
             face.integration_points[0].uvw =  a + (b - a) / 3 + (c - a) / 3;
+            face.integration_points[0].weight = total_area;
+
+        } else if (face.vertices.size() == 4) {
+            /* first-order rectangular face */
+            ShapePoint a = vertices[face.vertices[0]].uvw;
+            ShapePoint b = vertices[face.vertices[1]].uvw;
+            ShapePoint c = vertices[face.vertices[2]].uvw;
+            ShapePoint d = vertices[face.vertices[3]].uvw;
+
+            ShapeVector vector = (b - a).cross(d - a);
+            double magnitude = vector.magnitude();
+            face.normal = vector / magnitude;
+
+            double total_area = magnitude;
+
+            face.integration_points.resize(1);
+            face.integration_points[0].uvw = a + (c - a) / 2;
             face.integration_points[0].weight = total_area;
 
         } else if (face.vertices.size() == 6) {
@@ -65,6 +85,91 @@ void ElementTypeShape::precalculate_face_info() {
             assert(false);
         }
     }
+}
+
+class ElementTypeShapeC3D8 : public ElementTypeShape {
+public:
+    ElementTypeShapeC3D8() {
+        name = "C3D8";
+
+        vertices.resize(8);
+        Vertex::Type c = Vertex::Type::Corner;
+        vertices[0] = Vertex(c, 0, 0, 0);
+        vertices[1] = Vertex(c, 1, 0, 0);
+        vertices[2] = Vertex(c, 1, 1, 0);
+        vertices[3] = Vertex(c, 0, 1, 0);
+        vertices[4] = Vertex(c, 0, 0, 1);
+        vertices[5] = Vertex(c, 1, 0, 1);
+        vertices[6] = Vertex(c, 1, 1, 1);
+        vertices[7] = Vertex(c, 0, 1, 1);
+
+        faces.resize(6);
+        faces[0].vertices = { 0, 3, 2, 1 };
+        faces[1].vertices = { 4, 5, 6, 7 };
+        faces[2].vertices = { 0, 1, 5, 4 };
+        faces[3].vertices = { 1, 2, 6, 5 };
+        faces[4].vertices = { 2, 3, 7, 6 };
+        faces[5].vertices = { 0, 4, 7, 3 };
+        precalculate_face_info();
+
+        volume_integration_points.resize(8);
+        volume_integration_points[0] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[1] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[2] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[3] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[4] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[5] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[6] = IntegrationPoint(
+            0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+        volume_integration_points[7] = IntegrationPoint(
+            0.5 - 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 0.5 + 0.5/sqrt(3), 1/8.0);
+    }
+
+    void shape_functions(ShapePoint uvw, double *sf_out) const {
+        double inv_x = 1.0 - uvw.x, inv_y = 1.0 - uvw.y, inv_z = 1.0 - uvw.z;
+        sf_out[0] = inv_x * inv_y * inv_z;
+        sf_out[1] = uvw.x * inv_y * inv_z;
+        sf_out[2] = uvw.x * uvw.y * inv_z;
+        sf_out[3] = inv_x * uvw.y * inv_z;
+        sf_out[4] = inv_x * inv_y * uvw.z;
+        sf_out[5] = uvw.x * inv_y * uvw.z;
+        sf_out[6] = uvw.x * uvw.y * uvw.z;
+        sf_out[7] = inv_x * uvw.y * uvw.z;
+    }
+
+    void shape_function_derivatives(
+        ShapePoint uvw,
+        ShapeVector *sf_d_uvw_out
+    ) const {
+        double inv_x = 1.0 - uvw.x, inv_y = 1.0 - uvw.y, inv_z = 1.0 - uvw.z;
+        sf_d_uvw_out[0] = ShapeVector(
+            -inv_y * inv_z, -inv_x * inv_z, -inv_x * inv_y);
+        sf_d_uvw_out[1] = ShapeVector(
+            +inv_y * inv_z, -uvw.x * inv_z, -uvw.x * inv_y);
+        sf_d_uvw_out[2] = ShapeVector(
+            +uvw.y * inv_z, +uvw.x * inv_z, -uvw.x * uvw.y);
+        sf_d_uvw_out[3] = ShapeVector(
+            -uvw.y * inv_z, +inv_x * inv_z, -inv_x * uvw.y);
+        sf_d_uvw_out[4] = ShapeVector(
+            -inv_y * uvw.z, -inv_x * uvw.z, +inv_x * inv_y);
+        sf_d_uvw_out[5] = ShapeVector(
+            +inv_y * uvw.z, -uvw.x * uvw.z, +uvw.x * inv_y);
+        sf_d_uvw_out[6] = ShapeVector(
+            +uvw.y * uvw.z, +uvw.x * uvw.z, +uvw.x * uvw.y);
+        sf_d_uvw_out[7] = ShapeVector(
+            -uvw.y * uvw.z, +inv_x * uvw.z, +inv_x * uvw.y);
+    }
+};
+
+const ElementTypeShape &element_type_shape_c3d8() {
+    static const ElementTypeShapeC3D8 shape;
+    return shape;
 }
 
 class ElementTypeShapeC3D4 : public ElementTypeShape {
@@ -191,6 +296,7 @@ const ElementTypeShape &element_type_shape_c3d10() {
 
 const ElementTypeShape &element_type_shape(ElementType type) {
     switch (type) {
+    case ElementType::C3D8: return element_type_shape_c3d8();
     case ElementType::C3D4: return element_type_shape_c3d4();
     case ElementType::C3D10: return element_type_shape_c3d10();
     default: assert(false);

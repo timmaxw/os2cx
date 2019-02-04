@@ -16,8 +16,10 @@ PlcNef3::Bitset bitset_one() {
     return bitset;
 }
 
-const PlcNef3 region_u = PlcNef3::from_poly(Poly3::box(0, 0, 0, 2, 2, 2));
-const PlcNef3 region_v = PlcNef3::from_poly(Poly3::box(0, 0, 1, 2, 2, 3));
+const PlcNef3 region_u =
+    PlcNef3::from_poly(Poly3::from_box(Box(0, 0, 0, 2, 2, 2)));
+const PlcNef3 region_v =
+    PlcNef3::from_poly(Poly3::from_box(Box(0, 0, 1, 2, 2, 3)));
 const Point point_in_u(1, 1, 0.5);
 const Point point_in_v(1, 1, 2.5);
 const Point point_in_uv(1, 1, 1.5);

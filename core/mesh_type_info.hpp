@@ -9,6 +9,7 @@
 namespace os2cx {
 
 enum class ElementType {
+    C3D8 = 1,
     C3D4 = 3,
     C3D10 = 6
 };
@@ -90,6 +91,7 @@ protected:
     void precalculate_face_info();
 };
 
+const ElementTypeShape &element_type_shape_c3d8();
 const ElementTypeShape &element_type_shape_c3d4();
 const ElementTypeShape &element_type_shape_c3d10();
 const ElementTypeShape &element_type_shape(ElementType);

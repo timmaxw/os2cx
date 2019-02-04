@@ -37,8 +37,7 @@ public:
     class Surface {
     public:
         /* By convention, all triangles' vertices are ordered counterclockwise
-        when looking from volumes[0] into volumes[1], and all normal vectors
-        point into volumes[0]. */
+        when looking from volumes[0] into volumes[1]. */
         class Triangle {
         public:
             VertexId vertices[3];

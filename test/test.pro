@@ -20,5 +20,6 @@ SOURCES = $$CORE_SOURCES \
     plc_nef_test.cpp \
     plc_test.cpp \
     units_test.cpp \
-    mesh_test.cpp
+    mesh_test.cpp \
+    mesher_naive_bricks_test.cpp
 

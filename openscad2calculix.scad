@@ -126,17 +126,21 @@ module os2cx_analysis_static_simple(
     ], unit_system=[length_unit, "kg", "s"]);
 }
 
-module os2cx_mesh(name, max_element_size=undef) {
+module os2cx_mesh(name, mesher="tetgen", max_element_size=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_mesh() name must be a string");
+        }
+        if (!__os2cx_is_string(mesher)) {
+            echo("ERROR: os2cx_mesh() mesher must be a string");
         }
         if (max_element_size != undef && !__os2cx_is_number(max_element_size)) {
             echo("ERROR: os2cx_mesh() max_element_size must be a number");
         }
         children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "mesh_directive", name, max_element_size);
+        echo("__openscad2calculix", "mesh_directive",
+            name, mesher, max_element_size);
     } else if (__openscad2calculix_mode == ["mesh", name]) {
         children();
     }

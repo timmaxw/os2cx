@@ -165,6 +165,25 @@ public:
     LengthVector vector;
 };
 
+class Box {
+public:
+    Box() { }
+    Box(double _xl, double _yl, double _zl,
+        double _xh, double _yh, double _zh) :
+        xl(_xl), yl(_yl), zl(_zl), xh(_xh), yh(_yh), zh(_zh) { }
+    bool operator==(const Box &o) const {
+        return xl == o.xl && yl == o.yl && zl == o.zl
+            && xh == o.xh && yh == o.yh && zh == o.zh;
+    }
+    bool operator!=(const Box &o) const {
+        return !(*this == o);
+    }
+
+    double xl, yl, zl, xh, yh, zh;
+};
+
+std::ostream &operator<<(std::ostream &stream, Box box);
+
 } /* namespace os2cx */
 
 #endif

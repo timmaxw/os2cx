@@ -203,16 +203,26 @@ void do_mesh_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 2, "mesh");
+    check_arg_count(args, 3, "mesh");
 
     Project::MeshObjectName name = check_name_new(args[0], "mesh", project);
 
     Project::MeshObject object;
 
-    if (args[1].type == OpenscadValue::Type::Undefined) {
+    std::string mesher_name = check_string(args[1]);
+    if (mesher_name == "tetgen") {
+        object.mesher = Project::MeshObject::Mesher::Tetgen;
+    } else if (mesher_name == "naive_bricks") {
+        object.mesher = Project::MeshObject::Mesher::NaiveBricks;
+    } else {
+        throw UsageError("Invalid mesher name: '" + mesher_name +
+            "'. Expected 'tetgen' or 'naive_bricks'.");
+    }
+
+    if (args[2].type == OpenscadValue::Type::Undefined) {
         object.max_element_size = Project::MeshObject::SUGGEST_MAX_ELEMENT_SIZE;
     } else {
-        object.max_element_size = check_number(args[1]);
+        object.max_element_size = check_number(args[2]);
         if (object.max_element_size <= 0) {
             throw UsageError("max_element_size must be positive");
         }

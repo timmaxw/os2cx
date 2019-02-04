@@ -26,11 +26,14 @@ public:
     typedef Plc3::Bitset Bitset;
     enum class FeatureType { Volume, Face, Edge, Vertex };
 
-    PlcNef3();
+    PlcNef3(); /* Returns an invalid PlcNef3 */
     PlcNef3(PlcNef3 &&other);
     ~PlcNef3();
     PlcNef3 &operator=(PlcNef3 &&other);
     PlcNef3 clone() const;
+
+    /* Returns a PlcNef3 set to all-zeros everywhere. */
+    static PlcNef3 empty();
 
     /* Returns a PlcNef3 for which the surface and interior of the given
     polyhedron are set to all-ones, and the exterior is set to all-zeroes. */

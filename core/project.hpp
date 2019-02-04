@@ -80,6 +80,9 @@ public:
 
     class MeshObject : public VolumeObject {
     public:
+        enum class Mesher { Tetgen, NaiveBricks };
+        Mesher mesher;
+
         /* If max_element_size is set to the magic value
         SUGGEST_MAX_ELEMENT_SIZE, then we'll automatically choose a reasonable
         value for max_element_size by examining the PLC. */

@@ -5,6 +5,7 @@
 #include "calculix_frd_read.hpp"
 #include "calculix_inp_write.hpp"
 #include "calculix_run.hpp"
+#include "mesher_naive_bricks.hpp"
 #include "mesher_tetgen.hpp"
 #include "openscad_extract.hpp"
 #include "openscad_run.hpp"
@@ -101,8 +102,25 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             callbacks->project_run_log("Automatically chose max_element_size=" +
                 std::to_string(max_element_size));
         }
-        Mesh3 partial_mesh = mesher_tetgen(*pair.second.plc, max_element_size);
-        pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
+
+        switch(pair.second.mesher) {
+        case Project::MeshObject::Mesher::Tetgen: {
+            pair.second.partial_mesh.reset(new Mesh3(mesher_tetgen(
+                *pair.second.plc,
+                max_element_size
+            )));
+            break;
+        }
+        case Project::MeshObject::Mesher::NaiveBricks: {
+            pair.second.partial_mesh.reset(new Mesh3(mesher_naive_bricks(
+                *pair.second.plc,
+                max_element_size
+            )));
+            break;
+        }
+        default: assert(false);
+        }
+
         callbacks->project_run_checkpoint();
     }
 
