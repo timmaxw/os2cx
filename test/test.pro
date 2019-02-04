@@ -21,5 +21,6 @@ SOURCES = $$CORE_SOURCES \
     plc_test.cpp \
     units_test.cpp \
     mesh_test.cpp \
-    mesher_naive_bricks_test.cpp
+    mesher_naive_bricks_test.cpp \
+    mesh_type_info_test.cpp
 
