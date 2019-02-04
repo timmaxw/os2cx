@@ -280,36 +280,108 @@ void apply_triangles(
 }
 
 NodeId create_node(
-    Mesh3 *mesh,
-    const GridAxis::const_iterator &x,
-    const GridAxis::const_iterator &y,
-    double z,
-    Array2D<NodeId> *z_node_ids
+    const std::pair<double, int> &xp,
+    const std::pair<double, int> &yp,
+    const std::pair<double, Array2D<NodeId> *> &zp,
+    Mesh3 *mesh
 ) {
-    NodeId node_id = (*z_node_ids)(x->second, y->second);
+    NodeId node_id = (*zp.second)(xp.second, yp.second);
     if (node_id != NodeId::invalid()) {
         return node_id;
     }
     node_id = mesh->nodes.key_end();
     Node3 node;
-    node.point = Point(x->first, y->first, z);
+    node.point = Point(xp.first, yp.first, zp.first);
     mesh->nodes.push_back(node);
-    (*z_node_ids)(x->second, y->second) = node_id;
+    (*zp.second)(xp.second, yp.second) = node_id;
     return node_id;
 }
 
+void create_brick(
+    ElementType element_type,
+    int order,
+    const GridAxis::const_iterator &x_lower,
+    const GridAxis::const_iterator &x_upper,
+    const GridAxis::const_iterator &y_lower,
+    const GridAxis::const_iterator &y_upper,
+    double z_lower,
+    double z_upper,
+    Array2D<NodeId> *z_lower_node_ids,
+    Array2D<NodeId> *z_middle_node_ids,
+    Array2D<NodeId> *z_upper_node_ids,
+    Mesh3 *mesh
+) {
+    Element3 element;
+    element.type = element_type;
+
+    std::pair<double, int> xp_lower(x_lower->first, x_lower->second * 2);
+    std::pair<double, int> xp_upper(x_upper->first, x_upper->second * 2);
+    std::pair<double, int> yp_lower(y_lower->first, y_lower->second * 2);
+    std::pair<double, int> yp_upper(y_upper->first, y_upper->second * 2);
+    std::pair<double, Array2D<NodeId> *> zp_lower(z_lower, z_lower_node_ids);
+    std::pair<double, Array2D<NodeId> *> zp_upper(z_upper, z_upper_node_ids);
+
+    element.nodes[0] = create_node(xp_lower, yp_lower, zp_lower, mesh);
+    element.nodes[1] = create_node(xp_upper, yp_lower, zp_lower, mesh);
+    element.nodes[2] = create_node(xp_upper, yp_upper, zp_lower, mesh);
+    element.nodes[3] = create_node(xp_lower, yp_upper, zp_lower, mesh);
+    element.nodes[4] = create_node(xp_lower, yp_lower, zp_upper, mesh);
+    element.nodes[5] = create_node(xp_upper, yp_lower, zp_upper, mesh);
+    element.nodes[6] = create_node(xp_upper, yp_upper, zp_upper, mesh);
+    element.nodes[7] = create_node(xp_lower, yp_upper, zp_upper, mesh);
+
+    if (order == 2) {
+        std::pair<double, int> xp_middle(
+            (x_lower->first + x_upper->first) / 2, x_lower->second * 2 + 1);
+        std::pair<double, int> yp_middle(
+            (y_lower->first + y_upper->first) / 2, y_lower->second * 2 + 1);
+        std::pair<double, Array2D<NodeId> *> zp_middle(
+            (z_lower + z_upper) / 2, z_middle_node_ids);
+
+        element.nodes[ 8] = create_node(xp_middle, yp_lower,  zp_lower,  mesh);
+        element.nodes[ 9] = create_node(xp_upper,  yp_middle, zp_lower,  mesh);
+        element.nodes[10] = create_node(xp_middle, yp_upper,  zp_lower,  mesh);
+        element.nodes[11] = create_node(xp_lower,  yp_middle, zp_lower,  mesh);
+        element.nodes[12] = create_node(xp_middle, yp_lower,  zp_upper,  mesh);
+        element.nodes[13] = create_node(xp_upper,  yp_middle, zp_upper,  mesh);
+        element.nodes[14] = create_node(xp_middle, yp_upper,  zp_upper,  mesh);
+        element.nodes[15] = create_node(xp_lower,  yp_middle, zp_upper,  mesh);
+        element.nodes[16] = create_node(xp_lower,  yp_lower,  zp_middle, mesh);
+        element.nodes[17] = create_node(xp_upper,  yp_lower,  zp_middle, mesh);
+        element.nodes[18] = create_node(xp_upper,  yp_upper,  zp_middle, mesh);
+        element.nodes[19] = create_node(xp_lower,  yp_upper,  zp_middle, mesh);
+    }
+
+    mesh->elements.push_back(element);
+
+    NAIVE_BRICKS_DEBUG(std::cerr << "created brick" << std::endl);
+}
+
 void create_bricks(
+    const Plc3 &plc,
+    ElementType element_type,
     const GridAxis &x_grid,
     const GridAxis &y_grid,
     double z_lower,
     double z_upper,
-    const Plc3 &plc,
     const Array2D<Plc3::VolumeId> &volume_ids,
-    Mesh3 *mesh,
     Array2D<NodeId> *z_lower_node_ids,
-    Array2D<NodeId> *z_upper_node_ids
+    Array2D<NodeId> *z_upper_node_ids,
+    Mesh3 *mesh
 ) {
-    auto x_lower =x_grid.begin_points();
+    assert(element_type_shape(element_type).category ==
+        ElementTypeShape::Category::Brick);
+    int order = element_type_shape(element_type).order;
+
+    Array2D<NodeId> z_middle_node_ids;
+    if (order == 2) {
+        z_middle_node_ids = Array2D<NodeId>(
+            x_grid.num_points() + x_grid.num_intervals(),
+            y_grid.num_points() + y_grid.num_intervals(),
+            NodeId::invalid());
+    }
+
+    auto x_lower = x_grid.begin_points();
     while (true) {
         auto x_upper = x_lower;
         ++x_upper;
@@ -330,26 +402,11 @@ void create_bricks(
 
             if (volume_ids(x_lower->second, y_lower->second) !=
                     plc.volume_outside) {
-                Element3 element;
-                element.type = ElementType::C3D8;
-                element.nodes[0] = create_node(
-                    mesh, x_lower, y_lower, z_lower, z_lower_node_ids);
-                element.nodes[1] = create_node(
-                    mesh, x_upper, y_lower, z_lower, z_lower_node_ids);
-                element.nodes[2] = create_node(
-                    mesh, x_upper, y_upper, z_lower, z_lower_node_ids);
-                element.nodes[3] = create_node(
-                    mesh, x_lower, y_upper, z_lower, z_lower_node_ids);
-                element.nodes[4] = create_node(
-                    mesh, x_lower, y_lower, z_upper, z_upper_node_ids);
-                element.nodes[5] = create_node(
-                    mesh, x_upper, y_lower, z_upper, z_upper_node_ids);
-                element.nodes[6] = create_node(
-                    mesh, x_upper, y_upper, z_upper, z_upper_node_ids);
-                element.nodes[7] = create_node(
-                    mesh, x_lower, y_upper, z_upper, z_upper_node_ids);
-                mesh->elements.push_back(element);
-                NAIVE_BRICKS_DEBUG(std::cerr << "created brick" << std::endl);
+                create_brick(
+                    element_type, order,
+                    x_lower, x_upper, y_lower, y_upper, z_lower, z_upper,
+                    z_lower_node_ids, &z_middle_node_ids, z_upper_node_ids,
+                    mesh);
             }
 
             y_lower = y_upper;
@@ -361,7 +418,8 @@ void create_bricks(
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_element_size
+    double max_element_size,
+    ElementType element_type
 ) {
     GridAxis x_grid, y_grid;
     std::map<double, std::vector<TriangleRef> > z_triangles;
@@ -378,7 +436,9 @@ Mesh3 mesher_naive_bricks(
     Array2D<Plc3::VolumeId> volume_ids(
         x_grid.num_intervals(), y_grid.num_intervals(), plc.volume_outside);
     Array2D<NodeId> node_ids(
-        x_grid.num_points(), y_grid.num_points(), NodeId::invalid());
+        x_grid.num_points() + x_grid.num_intervals(),
+        y_grid.num_points() + y_grid.num_intervals(),
+        NodeId::invalid());
 
     auto z_lower = z_triangles.begin();
     while (true) {
@@ -401,14 +461,17 @@ Mesh3 mesher_naive_bricks(
             << "create bricks at z = (" << z_lower->first
             << ", " << z_upper->first << ")" << std::endl);
         Array2D<NodeId> node_ids_2(
-            x_grid.num_points(), y_grid.num_points(), NodeId::invalid());
+            x_grid.num_points() + x_grid.num_intervals(),
+            y_grid.num_points() + y_grid.num_intervals(),
+            NodeId::invalid());
         create_bricks(
+            plc,
+            element_type,
             x_grid, y_grid,
             z_lower->first, z_upper->first,
-            plc,
             volume_ids,
-            &mesh,
-            &node_ids, &node_ids_2);
+            &node_ids, &node_ids_2,
+            &mesh);
         node_ids = std::move(node_ids_2);
 
         z_lower = z_upper;

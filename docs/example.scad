@@ -15,7 +15,7 @@ include <../openscad2calculix.scad>
 
 /* Declares a new mesh object in OS2CX. Its name will be "i_beam", and its shape
 comes from the the OpenSCAD i_beam() module we defined above. */
-os2cx_mesh("i_beam", mesher="naive_bricks") {
+os2cx_mesh("i_beam") {
   i_beam();
 }
 

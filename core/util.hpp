@@ -81,6 +81,7 @@ private:
 template<class Value>
 class Array2D {
 public:
+    Array2D() : xs(0), ys(0) { }
     Array2D(int _xs, int _ys) :
         xs(_xs), ys(_ys), vector(xs * ys) { }
     Array2D(int _xs, int _ys, const Value &original) :

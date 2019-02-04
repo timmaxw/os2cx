@@ -18,7 +18,8 @@ public:
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_element_size);
+    double max_element_size,
+    ElementType element_type);
 
 } /* namespace os2cx */
 

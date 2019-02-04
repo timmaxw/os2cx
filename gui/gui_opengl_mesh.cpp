@@ -26,24 +26,35 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
             ps[i] += disp;
         }
 
-        if (face.vertices.size() == 3) {
-            scene.add_triangle(ps, cs);
-        } else if (face.vertices.size() == 4) {
-            Point subps1[3] = {ps[0], ps[1], ps[2]};
-            QColor subcs1[3] = {cs[0], cs[1], cs[2]};
-            scene.add_triangle(subps1, subcs1);
-            Point subps2[3] = {ps[0], ps[2], ps[3]};
-            QColor subcs2[3] = {cs[0], cs[2], cs[3]};
-            scene.add_triangle(subps2, subcs2);
+        int n;
+        const int (*ixs)[3];
+        if (face.vertices.size() == 4) {
+            static const int rect_4_ixs[2][3] = {{0, 1, 2}, {0, 2, 3}};
+            n = 2;
+            ixs = rect_4_ixs;
+        } else if (face.vertices.size() == 8) {
+            static const int rect_8_ixs[6][3] = {
+                {0, 1, 7}, {1, 2, 3}, {3, 4, 5}, {5, 6, 7}, {1, 3, 5}, {1, 5, 7}
+            };
+            n = 6;
+            ixs = rect_8_ixs;
+        } else if (face.vertices.size() == 3) {
+            static const int tri_3_ixs[1][3] = {{0, 1, 2}};
+            n = 1;
+            ixs = tri_3_ixs;
         } else if (face.vertices.size() == 6) {
-            int ixs[4][3] = {{0, 1, 5}, {2, 3, 1}, {4, 5, 3}, {1, 3, 5}};
-            for (int i = 0; i < 4; ++i) {
-                Point subps[3] = {ps[ixs[i][0]], ps[ixs[i][1]], ps[ixs[i][2]]};
-                QColor subcs[3] = {cs[ixs[i][0]], cs[ixs[i][1]], cs[ixs[i][2]]};
-                scene.add_triangle(subps, subcs);
-            }
+            static const int tri_6_ixs[4][3] = {
+                {0, 1, 5}, {2, 3, 1}, {4, 5, 3}, {1, 3, 5}
+            };
+            n = 4;
+            ixs = tri_6_ixs;
         } else {
             assert(false);
+        }
+        for (int i = 0; i < n; ++i) {
+            Point subps[3] = {ps[ixs[i][0]], ps[ixs[i][1]], ps[ixs[i][2]]};
+            QColor subcs[3] = {cs[ixs[i][0]], cs[ixs[i][1]], cs[ixs[i][2]]};
+            scene.add_triangle(subps, subcs);
         }
 
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {

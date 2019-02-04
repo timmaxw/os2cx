@@ -37,7 +37,14 @@ void write_calculix_nodes_and_elements(
             if (element->type != type) continue;
             stream << eid.to_int();
             for (size_t i = 0; i < shape.vertices.size(); ++i) {
-                stream << ", " << element->nodes[i].to_int();
+                if (i == 15) {
+                    /* If there would be more than 16 entries on a single line,
+                    CalculiX expects it to be split into two lines */
+                    stream << "\n";
+                } else {
+                    stream << ", ";
+                }
+                stream << element->nodes[i].to_int();
             }
             stream << '\n';
         }

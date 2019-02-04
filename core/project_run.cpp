@@ -114,7 +114,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         case Project::MeshObject::Mesher::NaiveBricks: {
             pair.second.partial_mesh.reset(new Mesh3(mesher_naive_bricks(
                 *pair.second.plc,
-                max_element_size
+                max_element_size,
+                ElementType::C3D20R
             )));
             break;
         }

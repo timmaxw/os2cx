@@ -79,9 +79,11 @@ Box box_transform(const Box &b, int t) {
     return b3;
 }
 
-Box element_c3d8_to_box(const Mesh3 &mesh, const Element3 &element) {
-    Point p[8];
-    for (int i = 0; i < 8; ++i) p[i] = mesh.nodes[element.nodes[i]].point;
+Box element_to_box(const Mesh3 &mesh, const Element3 &element) {
+    Point p[20];
+    for (int i = 0; i < element.num_nodes(); ++i) {
+        p[i] = mesh.nodes[element.nodes[i]].point;
+    }
 
     Box box(p[0].x, p[0].y, p[0].z, p[6].x, p[6].y, p[6].z);
     EXPECT_EQ(Point(box.xl, box.yl, box.zl), p[0]);
@@ -93,6 +95,24 @@ Box element_c3d8_to_box(const Mesh3 &mesh, const Element3 &element) {
     EXPECT_EQ(Point(box.xh, box.yh, box.zh), p[6]);
     EXPECT_EQ(Point(box.xl, box.yh, box.zh), p[7]);
 
+    if (element.num_nodes() == 20) {
+        double box_xm = (box.xl + box.xh) / 2;
+        double box_ym = (box.yl + box.yh) / 2;
+        double box_zm = (box.zl + box.zh) / 2;
+        EXPECT_EQ(Point(box_xm, box.yl, box.zl), p[ 8]);
+        EXPECT_EQ(Point(box.xh, box_ym, box.zl), p[ 9]);
+        EXPECT_EQ(Point(box_xm, box.yh, box.zl), p[10]);
+        EXPECT_EQ(Point(box.xl, box_ym, box.zl), p[11]);
+        EXPECT_EQ(Point(box_xm, box.yl, box.zh), p[12]);
+        EXPECT_EQ(Point(box.xh, box_ym, box.zh), p[13]);
+        EXPECT_EQ(Point(box_xm, box.yh, box.zh), p[14]);
+        EXPECT_EQ(Point(box.xl, box_ym, box.zh), p[15]);
+        EXPECT_EQ(Point(box.xl, box.yl, box_zm), p[16]);
+        EXPECT_EQ(Point(box.xh, box.yl, box_zm), p[17]);
+        EXPECT_EQ(Point(box.xh, box.yh, box_zm), p[18]);
+        EXPECT_EQ(Point(box.xl, box.yh, box_zm), p[19]);
+    }
+
     return box;
 }
 
@@ -100,7 +120,8 @@ void try_mnb(
     const std::vector<Box> &boxes_in,
     const std::vector<Box> &boxes_out,
     int transform,
-    double max_element_size = 1e6
+    double max_element_size = 1e6,
+    ElementType element_type = ElementType::C3D8
 ) {
     PlcNef3 example = PlcNef3::empty();
     for (const Box &box : boxes_in) {
@@ -109,7 +130,7 @@ void try_mnb(
     }
     Plc3 plc = plc_nef_to_plc(example);
 
-    Mesh3 mesh = mesher_naive_bricks(plc, max_element_size);
+    Mesh3 mesh = mesher_naive_bricks(plc, max_element_size, element_type);
 
     std::set<Box, BoxLess> expected_boxes;
     for (const Box &box : boxes_out) {
@@ -119,8 +140,8 @@ void try_mnb(
     std::set<Box, BoxLess> unmatched_boxes = expected_boxes;
 
     for (const Element3 &element : mesh.elements) {
-        ASSERT_EQ(ElementType::C3D8, element.type);
-        Box box = element_c3d8_to_box(mesh, element);
+        ASSERT_EQ(element_type, element.type);
+        Box box = element_to_box(mesh, element);
         if (expected_boxes.count(box)) {
             if (unmatched_boxes.count(box)) {
                 unmatched_boxes.erase(box);
@@ -156,7 +177,17 @@ TEST(MesherNaiveBricksTest, SingleBrickSubdivided) {
             Box(0, 1, 2, 1, 2, 3)
         },
         IDENTITY,
-        1.0
+        1.0 /* override max_element_size to force subdivision */
+    );
+}
+
+TEST(MesherNaiveBricksTest, SingleBrickSecondOrder) {
+    try_mnb(
+        {Box(0, 0, 0, 1, 2, 3)},
+        {Box(0, 0, 0, 1, 2, 3)},
+        IDENTITY,
+        1e6,
+        ElementType::C3D20R
     );
 }
 
