@@ -204,6 +204,43 @@ void read_nodal_point_coordinate_block(CalculixFrdReader &r) {
     }
 }
 
+enum CalculixFrdElementType {
+    Beam2 = 11,
+    Beam3 = 12,
+    Shell3 = 7,
+    Shell6 = 8,
+    Shell4 = 9,
+    Shell8 = 10,
+    Tet4 = 3,
+    Tet10 = 6,
+    Brick8 = 1,
+    Brick20 = 4,
+    Penta6 = 2,
+    Penta15 = 5
+};
+
+bool valid_frd_element_type(int type) {
+    return (type >= 1 && type <= 12);
+}
+
+int nodes_for_frd_element_type(CalculixFrdElementType type) {
+    switch (type) {
+    case Beam2: return 2;
+    case Beam3: return 3;
+    case Shell3: return 3;
+    case Shell6: return 6;
+    case Shell4: return 4;
+    case Shell8: return 8;
+    case Tet4: return 4;
+    case Tet10: return 10;
+    case Brick8: return 8;
+    case Brick20: return 20;
+    case Penta6: return 6;
+    case Penta15: return 15;
+    default: assert(false);
+    }
+}
+
 void read_element_definition_block(CalculixFrdReader &r) {
     r.read_indent(18);
     int numelem = r.read_text_int<12>();
@@ -221,16 +258,16 @@ void read_element_definition_block(CalculixFrdReader &r) {
                 } else {
                     r.read_text_int<10>();
                 }
-                ElementType type =
-                    static_cast<ElementType>(r.read_text_int<5>());
-                if (!valid_element_type(type)) {
+                int frd_element_type = r.read_text_int<5>();
+                if (!valid_frd_element_type(frd_element_type)) {
                     r.fail("unrecognized element type");
                 }
                 r.read_text_int<5>();
                 r.read_text_int<5>();
                 r.read_eol();
 
-                int num_nodes = element_type_shape(type).vertices.size();
+                int num_nodes = nodes_for_frd_element_type(
+                    static_cast<CalculixFrdElementType>(frd_element_type));
                 while (num_nodes > 0) {
                     r.read_indent(1);
                     code = r.read_text_int<2>();
@@ -263,10 +300,11 @@ void read_element_definition_block(CalculixFrdReader &r) {
     } else if (format == FrdFormat::BinaryFloat) {
         for (int i = 0; i < numelem; ++i) {
             r.read_bin_int();
-            ElementType type = static_cast<ElementType>(r.read_bin_int());
+            int frd_element_type = r.read_bin_int();
             r.read_bin_int();
             r.read_bin_int();
-            int num_nodes = element_type_shape(type).vertices.size();
+            int num_nodes = nodes_for_frd_element_type(
+                static_cast<CalculixFrdElementType>(frd_element_type));
             for (int i = 0; i < num_nodes; ++i) {
                 r.read_bin_int();
             }

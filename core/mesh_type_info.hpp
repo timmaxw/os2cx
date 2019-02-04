@@ -9,21 +9,30 @@
 namespace os2cx {
 
 enum class ElementType {
-    C3D8 = 1,
-    C3D4 = 3,
-    C3D10 = 6
+    C3D8,    /* eight-node brick */
+    C3D20,   /* twenty-node brick */
+    C3D20R,  /* twenty-node brick (reduced integration) */
+    C3D20RI, /* twenty-node brick (reduced integration, incompressibility) */
+    C3D4,    /* four-node tetrahedron */
+    C3D10,   /* ten-node tetrahedron */
 };
 
-bool valid_element_type(ElementType);
 ElementType element_type_from_string(const std::string &str);
 
 class ElementTypeShape {
 public:
+    enum class Category {
+        Brick,
+        Tetrahedron
+    };
+
     static const int max_faces_per_element = 6;
     static const int max_vertices_per_face = 8;
     static const int max_vertices_per_element = 20;
 
     std::string name;
+    Category category;
+    int order; /* 1 or 2 */
 
     /* ShapeVector and ShapePoint represent vectors and points in the shape's
     local (U, V, W) coordinate system, as opposed to the global (X, Y, Z)
@@ -91,9 +100,6 @@ protected:
     void precalculate_face_info();
 };
 
-const ElementTypeShape &element_type_shape_c3d8();
-const ElementTypeShape &element_type_shape_c3d4();
-const ElementTypeShape &element_type_shape_c3d10();
 const ElementTypeShape &element_type_shape(ElementType);
 
 } /* namespace os2cx */
