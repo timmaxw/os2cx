@@ -147,7 +147,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             ));
         }
         p->mesh.reset(new Mesh3(std::move(combined_mesh)));
-        p->mesh_index.reset(new Mesh3Index(p->mesh.get()));
+        p->mesh_index.reset(new Mesh3MatchingFaceIndex(p->mesh.get()));
         p->progress = Project::Progress::MeshDone;
         callbacks->project_run_checkpoint();
     }

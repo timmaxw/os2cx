@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "mesh_index.hpp"
+#include "mesh_matching_face_index.hpp"
 
 namespace os2cx {
 
-TEST(MeshIndexTest, Mesh3Index) {
+TEST(MeshIndexTest, Mesh3MatchingFaceIndex) {
     Mesh3 mesh;
     NodeId n[5];
     for (int i = 0; i < 5; ++i) {
@@ -21,7 +21,7 @@ TEST(MeshIndexTest, Mesh3Index) {
         {n[0], n[2], n[1], n[4]}
     });
 
-    Mesh3Index index(&mesh);
+    Mesh3MatchingFaceIndex index(&mesh);
 
     for (int i = 0; i < 2; ++i) {
         ElementId eid = ElementId::from_int(1 + i);

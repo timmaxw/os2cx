@@ -49,7 +49,7 @@ TEST(AttrsTest, LoadSurface) {
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
-    Mesh3Index mesh_index(&mesh);
+    Mesh3MatchingFaceIndex mesh_index(&mesh);
     FaceSet face_set = compute_face_set_from_plc_bit(
         plc_index,
         mesh,

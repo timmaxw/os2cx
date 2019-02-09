@@ -6,7 +6,7 @@
 
 #include "attrs.hpp"
 #include "mesh.hpp"
-#include "mesh_index.hpp"
+#include "mesh_matching_face_index.hpp"
 #include "plc.hpp"
 #include "plc_nef.hpp"
 #include "plc_index.hpp"
@@ -131,7 +131,7 @@ public:
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
     std::shared_ptr<const Mesh3> mesh;
-    std::shared_ptr<const Mesh3Index> mesh_index;
+    std::shared_ptr<const Mesh3MatchingFaceIndex> mesh_index;
 
     class LoadVolumeObject : public LoadObject {
     public:

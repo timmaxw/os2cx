@@ -135,7 +135,7 @@ ElementSet compute_element_set_from_plc_bit(
 FaceSet compute_face_set_from_plc_bit(
     const Plc3Index &plc_index,
     const Mesh3 &mesh,
-    const Mesh3Index &mesh_index,
+    const Mesh3MatchingFaceIndex &mesh_index,
     ElementId element_begin,
     ElementId element_end,
     Plc3::BitIndex bit_index

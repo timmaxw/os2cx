@@ -1,4 +1,4 @@
-#include "mesh_index.hpp"
+#include "mesh_matching_face_index.hpp"
 
 #include <boost/container/flat_map.hpp>
 
@@ -60,7 +60,7 @@ public:
     NodeId nodes[ElementTypeShape::max_vertices_per_face];
 };
 
-Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
+Mesh3MatchingFaceIndex::Mesh3MatchingFaceIndex(const Mesh3 *mesh_) : mesh(mesh_) {
     /* We want to build a map from FaceNodes to FaceId so that we can match
     faces. We use 'boost::container::flat_map' instead of 'std::map' in order to
     reduce memory allocations and improve memory locality. The FaceNodes

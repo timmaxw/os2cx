@@ -1,0 +1,26 @@
+#ifndef OS2CX_MESH_SPATIAL_INDEX_HPP_
+#define OS2CX_MESH_SPATIAL_INDEX_HPP_
+
+#include "attrs.hpp"
+
+namespace os2cx {
+
+class Mesh3SpatialIndexInternal;
+
+class Mesh3SpatialIndex {
+public:
+    Mesh3SpatialIndex(const Mesh3 *mesh);
+    Mesh3SpatialIndex(const Mesh3 *mesh, const ElementSet &element_set);
+    Mesh3SpatialIndex(const Mesh3 *mesh, const FaceSet &face_set);
+    ~Mesh3SpatialIndex();
+
+    FaceId nearest_face(Point query, double max_dist);
+
+private:
+    const Mesh3 *mesh;
+    std::unique_ptr<Mesh3SpatialIndexInternal> i;
+}
+
+} /* namespace os2cx */
+
+#endif

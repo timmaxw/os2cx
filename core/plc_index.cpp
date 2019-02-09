@@ -56,9 +56,17 @@ private:
     Id i;
 };
 
+typedef CGAL::AABB_traits<KS, PlcAabbPrimitive> PlcAabbTraits;
+typedef CGAL::AABB_tree<PlcAabbTraits> PlcAabbTree;
+
+class Plc3IndexInternal {
+public:
+    PlcAabbTree tree;
+};
+
 class PlcAabbPrimitiveIterator {
 public:
-    bool operator!=(const PlcAabbPrimitiveIterator &other) {
+    bool operator!=(const PlcAabbPrimitiveIterator &other) const {
         return pm != other.pm || pair != other.pair;
     }
     PlcAabbPrimitiveIterator &operator++() {
@@ -87,19 +95,11 @@ public:
     std::pair<Plc3::SurfaceId, int> pair;
 };
 
-typedef CGAL::AABB_traits<KS, PlcAabbPrimitive> PlcAabbTraits;
-typedef CGAL::AABB_tree<PlcAabbTraits> PlcAabbTree;
-
-class Plc3IndexInternal {
-public:
-    PlcAabbTree tree;
-};
-
 Plc3Index::Plc3Index(const Plc3 *plc_) : plc(plc_)
 {
-    i.reset(new Plc3IndexInternal);
     PlcAabbPrimitiveIterator begin {plc, {0, 0}};
     PlcAabbPrimitiveIterator end {plc, {plc->surfaces.size(), 0}};
+    i.reset(new Plc3IndexInternal);
     i->tree.rebuild(begin, end, plc);
     i->tree.accelerate_distance_queries();
 }

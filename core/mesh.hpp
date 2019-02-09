@@ -36,6 +36,9 @@ public:
     int num_nodes() const {
         return element_type_shape(type).vertices.size();
     }
+    int num_faces() const {
+        return element_type_shape(type).faces.size();
+    }
 
     ElementType type;
     NodeId nodes[ElementTypeShape::max_vertices_per_element];

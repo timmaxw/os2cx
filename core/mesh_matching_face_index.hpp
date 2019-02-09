@@ -6,9 +6,9 @@
 
 namespace os2cx {
 
-class Mesh3Index {
+class Mesh3MatchingFaceIndex {
 public:
-    Mesh3Index(const Mesh3 *mesh);
+    Mesh3MatchingFaceIndex(const Mesh3 *mesh);
 
     /* If face 'face' of element 'el' is directly face-to-face with some face of
     another element, returns the other element and which face. Otherwise,

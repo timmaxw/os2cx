@@ -33,7 +33,6 @@ SOURCES += \
     calculix_run.cpp \
     mesh.cpp \
     mesher_tetgen.cpp \
-    mesh_index.cpp \
     mesh_type_info.cpp \
     openscad_extract.cpp \
     openscad_run.cpp \
@@ -49,7 +48,10 @@ SOURCES += \
     result.cpp \
     units.cpp \
     project_run.cpp \
-    mesher_naive_bricks.cpp
+    mesher_naive_bricks.cpp \
+    attr_gap.cpp \
+    mesh_matching_face_index.cpp \
+    mesh_spatial_index.cpp
 
 HEADERS += \
     attrs.hpp \
@@ -60,7 +62,6 @@ HEADERS += \
     calculix_run.hpp \
     mesh.hpp \
     mesher_tetgen.hpp \
-    mesh_index.hpp \
     mesh_type_info.hpp \
     openscad_extract.hpp \
     openscad_run.hpp \
@@ -78,7 +79,10 @@ HEADERS += \
     plc_index.hpp \
     units.hpp \
     project_run.hpp \
-    mesher_naive_bricks.hpp
+    mesher_naive_bricks.hpp \
+    attr_gap.hpp \
+    mesh_matching_face_index.hpp \
+    mesh_spatial_index.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.
