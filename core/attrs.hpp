@@ -4,7 +4,7 @@
 #include <map>
 
 #include "mesh.hpp"
-#include "mesh_index.hpp"
+#include "mesh_matching_face_index.hpp"
 #include "plc.hpp"
 #include "plc_nef.hpp"
 #include "plc_index.hpp"
@@ -49,7 +49,7 @@ public:
 FaceSet compute_face_set_from_plc_bit(
     const Plc3Index &plc_index,
     const Mesh3 &mesh,
-    const Mesh3Index &mesh_index,
+    const Mesh3MatchingFaceIndex &mesh_index,
     ElementId element_begin,
     ElementId element_end,
     Plc3::BitIndex bit_index);

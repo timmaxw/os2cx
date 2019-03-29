@@ -4,7 +4,7 @@
 
 namespace os2cx {
 
-TEST(MeshIndexTest, Mesh3MatchingFaceIndex) {
+TEST(MeshMatchingFaceIndexTest, BasicTest) {
     Mesh3 mesh;
     NodeId n[5];
     for (int i = 0; i < 5; ++i) {

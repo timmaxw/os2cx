@@ -1,6 +1,7 @@
 #ifndef OS2CX_ATTR_GAP_HPP_
 #define OS2CX_ATTR_GAP_HPP_
 
+#if 0
 namespace os2cx {
 
 class Gap {
@@ -21,5 +22,6 @@ Gap compute_gap_from_face_sets(
 );
 
 } /* namespace os2cx */
+#endif
 
 #endif

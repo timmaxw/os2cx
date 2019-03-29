@@ -1,5 +1,6 @@
 #include "attr_gap.hpp"
 
+#if 0
 namespace os2cx {
 
 Gap compute_gap_from_face_sets(
@@ -14,3 +15,5 @@ Gap compute_gap_from_face_sets(
 
 
 } /* namespace os2cx */
+
+#endif

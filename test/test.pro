@@ -11,7 +11,6 @@ HEADERS = $$CORE_HEADERS
 SOURCES = $$CORE_SOURCES \
     attrs_test.cpp \
     calculix_read_test.cpp \
-    mesh_index_test.cpp \
     openscad_extract_test.cpp \
     openscad_run_test.cpp \
     openscad_value_test.cpp \
@@ -22,5 +21,6 @@ SOURCES = $$CORE_SOURCES \
     units_test.cpp \
     mesh_test.cpp \
     mesher_naive_bricks_test.cpp \
-    mesh_type_info_test.cpp
+    mesh_type_info_test.cpp \
+    mesh_matching_face_index_test.cpp
 

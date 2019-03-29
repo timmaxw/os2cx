@@ -9,17 +9,20 @@ class Mesh3SpatialIndexInternal;
 
 class Mesh3SpatialIndex {
 public:
-    Mesh3SpatialIndex(const Mesh3 *mesh);
-    Mesh3SpatialIndex(const Mesh3 *mesh, const ElementSet &element_set);
     Mesh3SpatialIndex(const Mesh3 *mesh, const FaceSet &face_set);
     ~Mesh3SpatialIndex();
 
-    FaceId nearest_face(Point query, double max_dist);
+    bool nearest_face(
+        Point query,
+        double max_dist,
+        FaceId *face_out,
+        double *signed_dist_out,
+        ) const;
 
 private:
     const Mesh3 *mesh;
     std::unique_ptr<Mesh3SpatialIndexInternal> i;
-}
+};
 
 } /* namespace os2cx */
 

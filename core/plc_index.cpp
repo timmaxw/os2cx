@@ -23,8 +23,7 @@ public:
 
     PlcAabbPrimitive() { }
 
-    template<class Iterator>
-    PlcAabbPrimitive(Iterator it, const Plc3 *) : i(*it) { }
+    PlcAabbPrimitive(Plc3::SurfaceId sid, int ix) : i(sid, ix) { }
 
     Datum datum(const Plc3 *rm) const {
         const Plc3::Surface::Triangle &tri =
@@ -64,43 +63,18 @@ public:
     PlcAabbTree tree;
 };
 
-class PlcAabbPrimitiveIterator {
-public:
-    bool operator!=(const PlcAabbPrimitiveIterator &other) const {
-        return pm != other.pm || pair != other.pair;
-    }
-    PlcAabbPrimitiveIterator &operator++() {
-        pair.second += 1;
-        while (pair.first != static_cast<int>(pm->surfaces.size()) &&
-                pair.second == static_cast<int>(
-                    pm->surfaces[pair.first].triangles.size())) {
-            ++pair.first;
-            pair.second = 0;
-        }
-        return *this;
-    }
-    PlcAabbPrimitiveIterator operator++(int) {
-        PlcAabbPrimitiveIterator copy = *this;
-        ++*this;
-        return copy;
-    }
-    const std::pair<Plc3::SurfaceId, int> &operator*() const {
-        return pair;
-    }
-    const std::pair<Plc3::SurfaceId, int> *operator->() const {
-        return &pair;
-    }
-
-    const Plc3 *pm;
-    std::pair<Plc3::SurfaceId, int> pair;
-};
-
 Plc3Index::Plc3Index(const Plc3 *plc_) : plc(plc_)
 {
-    PlcAabbPrimitiveIterator begin {plc, {0, 0}};
-    PlcAabbPrimitiveIterator end {plc, {plc->surfaces.size(), 0}};
     i.reset(new Plc3IndexInternal);
-    i->tree.rebuild(begin, end, plc);
+    for (Plc3::SurfaceId sid = 0;
+            sid < static_cast<int>(plc->surfaces.size()); ++sid) {
+        const Plc3::Surface &surface = plc->surfaces[sid];
+        for (int ix = 0; ix < static_cast<int>(surface.triangles.size());
+                ++ix) {
+            i->tree.insert(PlcAabbPrimitive(sid, ix));
+        }
+    }
+    i->tree.build();
     i->tree.accelerate_distance_queries();
 }
 
