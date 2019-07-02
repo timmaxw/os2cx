@@ -143,10 +143,16 @@ Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
     return surface.volumes[(dot > 0) ? 1 : 0];
 }
 
-Plc3::SurfaceId Plc3Index::surface_closest_to_point(Point point) const {
+static const double epsilon = 1e-9;
+
+Plc3::SurfaceId Plc3Index::surface_containing_point(Point point) const {
     CGAL::Point_3<KS> point2(point.x, point.y, point.z);
     PlcAabbTree::Point_and_primitive_id hit =
         i->tree.closest_point_and_primitive(point2);
+    double sq_dist = CGAL::squared_distance(hit.first, point2);
+    if (sq_dist > epsilon * epsilon) {
+        return -1;
+    }
     return hit.second.first;
 }
 

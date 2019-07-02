@@ -26,10 +26,10 @@ void GuiColorScale::set_range(
     double scale = std::max(std::abs(val_min), std::abs(val_max));
     colors.clear();
     colors[-scale]     = QColor::fromHsl(240, 0xFF, 0x66);
+    colors[ scale]     = QColor::fromHsl(  0, 0xFF, 0x66);
     colors[-scale / 3] = QColor::fromHsl(180, 0xEE, 0x99);
+    colors[ scale / 3] = QColor::fromHsl( 60, 0xEE, 0x99);
     colors[0]          = QColor::fromHsl(120, 0x00, 0xEE);
-    colors[scale / 3]  = QColor::fromHsl( 60, 0xEE, 0x99);
-    colors[scale]      = QColor::fromHsl(  0, 0xFF, 0x66);
 
     unit_system = new_unit_system;
     unit_type = new_unit_type;
@@ -84,6 +84,7 @@ void GuiColorScale::paintEvent(QPaintEvent *) {
     QLinearGradient gradient(bar_rect.left(), 0, bar_rect.right(), 0);
     gradient.setColorAt(0.0, color(range_min));
     for (const auto &pair : colors) {
+        if (range_max == range_min) continue;
         double normalized = (pair.first - range_min) / (range_max - range_min);
         if (normalized <= 0.0 || normalized >= 1.0) continue;
         gradient.setColorAt(normalized, pair.second);

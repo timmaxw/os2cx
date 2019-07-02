@@ -72,12 +72,22 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 select_volume_pair.second.bit_index);
         }
         for (auto &select_surface_pair : p->select_surface_objects) {
-            compute_plc_nef_select_surface(
-                &solid_nef,
-                *select_surface_pair.second.mask,
-                select_surface_pair.second.direction_vector,
-                select_surface_pair.second.direction_angle_tolerance,
-                select_surface_pair.second.bit_index);
+            if (select_surface_pair.second.mode ==
+                    Project::SelectSurfaceObject::Mode::External) {
+                compute_plc_nef_select_surface_external(
+                    &solid_nef,
+                    *select_surface_pair.second.mask,
+                    select_surface_pair.second.direction_vector,
+                    select_surface_pair.second.direction_angle_tolerance,
+                    select_surface_pair.second.bit_index);
+            } else {
+                compute_plc_nef_select_surface_internal(
+                    &solid_nef,
+                    *select_surface_pair.second.mask,
+                    select_surface_pair.second.direction_vector,
+                    select_surface_pair.second.direction_angle_tolerance,
+                    select_surface_pair.second.bit_index);
+            }
         }
 
         pair.second.plc.reset(new Plc3(plc_nef_to_plc(solid_nef)));
@@ -183,7 +193,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             FaceSet partial_face_set = compute_face_set_from_plc_bit(
                 *mesh_pair.second.plc_index,
                 *p->mesh,
-                *p->mesh_index,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,
                 pair.second.bit_index);

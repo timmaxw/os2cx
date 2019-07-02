@@ -40,7 +40,7 @@ TEST(AttrsTest, LoadSurface) {
     PlcNef3 solid_nef =
         compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
     Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
-    compute_plc_nef_select_surface(
+    compute_plc_nef_select_surface_external(
         &solid_nef,
         Poly3::from_box(Box(-0.1, -0.1, 1.1, 1.1, 1, 2.1)),
         Vector(0, 0, 1),
@@ -49,11 +49,9 @@ TEST(AttrsTest, LoadSurface) {
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
-    Mesh3Index mesh_index(&mesh);
     FaceSet face_set = compute_face_set_from_plc_bit(
         plc_index,
         mesh,
-        mesh_index,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
         bit_index_mask);

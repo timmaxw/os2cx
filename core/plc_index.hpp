@@ -16,8 +16,12 @@ public:
     ~Plc3Index();
 
     Length approx_scale() const;
+
     Plc3::VolumeId volume_containing_point(Point p) const;
-    Plc3::SurfaceId surface_closest_to_point(Point p) const;
+
+    /* If the point is on a surface (to within some epsilon), returns that
+    surface; otherwise, returns -1. */
+    Plc3::SurfaceId surface_containing_point(Point p) const;
 
     const Plc3 *plc;
     std::unique_ptr<Plc3IndexInternal> i;

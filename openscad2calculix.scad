@@ -168,6 +168,26 @@ module os2cx_select_surface(name, direction_vector, direction_angle_tolerance) {
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "select_surface_directive",
             name,
+            "external",
+            direction_vector,
+            direction_angle_tolerance);
+    } else if (__openscad2calculix_mode == ["select_surface", name]) {
+        children();
+    }
+}
+
+module os2cx_select_surface_internal(
+    name, direction_vector, direction_angle_tolerance
+) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: os2cx_select_surface() parameter must be a string");
+        }
+        # children();
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "select_surface_directive",
+            name,
+            "internal",
             direction_vector,
             direction_angle_tolerance);
     } else if (__openscad2calculix_mode == ["select_surface", name]) {

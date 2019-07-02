@@ -20,7 +20,14 @@ void compute_plc_nef_select_volume(
     const Poly3 &mask,
     Plc3::BitIndex bit_index_mask);
 
-void compute_plc_nef_select_surface(
+void compute_plc_nef_select_surface_external(
+    PlcNef3 *solid_nef,
+    const Poly3 &mask,
+    Vector direction_vector,
+    double direction_angle_tolerance,
+    Plc3::BitIndex bit_index_mask);
+
+void compute_plc_nef_select_surface_internal(
     PlcNef3 *solid_nef,
     const Poly3 &mask,
     Vector direction_vector,
@@ -49,7 +56,6 @@ public:
 FaceSet compute_face_set_from_plc_bit(
     const Plc3Index &plc_index,
     const Mesh3 &mesh,
-    const Mesh3Index &mesh_index,
     ElementId element_begin,
     ElementId element_end,
     Plc3::BitIndex bit_index);

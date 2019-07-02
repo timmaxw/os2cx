@@ -121,6 +121,7 @@ public:
     public:
         Plc3::BitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
+        enum class Mode { External, Internal } mode;
         Vector direction_vector;
         double direction_angle_tolerance;
     };

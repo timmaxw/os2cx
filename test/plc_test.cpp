@@ -49,13 +49,16 @@ TEST(PlcTest, PlcNefToPlc) {
     EXPECT_EQ(bitset_solid | bitset_mask, plc.volumes[box2].bitset);
     EXPECT_EQ(bitset_solid, plc.volumes[box3].bitset);
 
-    Plc3::SurfaceId box1_out = ind.surface_closest_to_point(Point(0, 0, 0.5));
-    Plc3::SurfaceId box2_out = ind.surface_closest_to_point(Point(0, 0, 1.5));
-    Plc3::SurfaceId box3_out = ind.surface_closest_to_point(Point(0, 0, 2.5));
+    Plc3::SurfaceId box1_out =
+        ind.surface_containing_point(Point(0, 0, 0.5));
+    Plc3::SurfaceId box2_out =
+        ind.surface_containing_point(Point(0, 0, 1.5));
+    Plc3::SurfaceId box3_out =
+        ind.surface_containing_point(Point(0, 0, 2.5));
     Plc3::SurfaceId box1_box2 =
-        ind.surface_closest_to_point(Point(0.5, 0.5, 1));
+        ind.surface_containing_point(Point(0.5, 0.5, 1));
     Plc3::SurfaceId box2_box3 =
-        ind.surface_closest_to_point(Point(0.5, 0.5, 2));
+        ind.surface_containing_point(Point(0.5, 0.5, 2));
     EXPECT_EQ(std::min(box1, out), plc.surfaces[box1_out].volumes[0]);
     EXPECT_EQ(std::max(box1, out), plc.surfaces[box1_out].volumes[1]);
     EXPECT_EQ(std::min(box2, out), plc.surfaces[box2_out].volumes[0]);

@@ -46,39 +46,54 @@ void compute_plc_nef_select_volume(
     *solid_nef = solid_nef->binary_and(mask_nef);
 }
 
-void compute_plc_nef_select_surface(
-    PlcNef3 *solid_nef,
-    const Poly3 &mask,
+void select_external_faces_based_on_direction(
+    PlcNef3 *nef,
     Vector direction_vector,
     double direction_angle_tolerance,
-    Plc3::BitIndex bit_index_mask
+    Plc3::BitIndex bit_index,
+    bool bit_value
 ) {
     double cos_threshold = cos(direction_angle_tolerance / 180 * M_PI);
-
-    /* First, set the mask bit on every external face of solid_nef that
-    satisfies the direction criterion. We don't set it on volumes, edges, or
-    vertices, so it stays zero there. */
-    assert(bit_index_mask != bit_index_solid());
-    solid_nef->map_faces([&](
+    assert(bit_index != bit_index_solid());
+    nef->map_faces([&](
         Plc3::Bitset face_bitset,
         Plc3::Bitset vol1_bitset,
         Plc3::Bitset vol2_bitset,
         Vector normal_towards_vol1
     ) {
         if (direction_vector == Vector::zero()) {
-            face_bitset.set(bit_index_mask);
+            face_bitset.set(bit_index, bit_value);
         } else {
             bool vol1_solid = vol1_bitset[bit_index_solid()];
             bool vol2_solid = vol2_bitset[bit_index_solid()];
             double dot = direction_vector.dot(normal_towards_vol1);
             if (!vol1_solid && vol2_solid && dot > cos_threshold) {
-                face_bitset.set(bit_index_mask);
+                face_bitset.set(bit_index, bit_value);
             } else if (vol1_solid && !vol2_solid && -dot > cos_threshold) {
-                face_bitset.set(bit_index_mask);
+                face_bitset.set(bit_index, bit_value);
             }
         }
         return face_bitset;
     });
+}
+
+void compute_plc_nef_select_surface_external(
+    PlcNef3 *solid_nef,
+    const Poly3 &mask,
+    Vector direction_vector,
+    double direction_angle_tolerance,
+    Plc3::BitIndex bit_index_mask
+) {
+    /* First, set the mask bit on every external face of solid_nef that
+    satisfies the direction criterion. We don't set it on volumes, edges, or
+    vertices, so it stays zero there. */
+    select_external_faces_based_on_direction(
+        solid_nef,
+        direction_vector,
+        direction_angle_tolerance,
+        bit_index_mask,
+        true
+    );
 
     /* For the mask nef: In all solid parts of the mask, set all bits true.
     In the empty volumes, set all bits except 'bit_index_mask'. So AND-ing this
@@ -94,6 +109,46 @@ void compute_plc_nef_select_surface(
     });
 
     *solid_nef = solid_nef->binary_and(mask_nef);
+}
+
+void compute_plc_nef_select_surface_internal(
+    PlcNef3 *solid_nef,
+    const Poly3 &mask,
+    Vector direction_vector,
+    double direction_angle_tolerance,
+    Plc3::BitIndex bit_index_mask
+) {
+    PlcNef3 mask_nef = PlcNef3::from_poly(mask);
+
+    /* First, clear the mask bit on every selected face of the mask. */
+    select_external_faces_based_on_direction(
+        &mask_nef,
+        direction_vector,
+        direction_angle_tolerance,
+        bit_index_mask,
+        false
+    );
+
+    /* On selected faces of the mask, set only the mask bit true. Everywhere
+    else, set all bits false. */
+    mask_nef.map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
+        Plc3::Bitset result;
+        if (bs[bit_index_solid()] && !bs[bit_index_mask]) {
+            result.set(bit_index_mask);
+        }
+        return result;
+    });
+
+    /* Project mask_nef onto solid_nef */
+    *solid_nef = solid_nef->binary_or(mask_nef);
+
+    /* Now clear the mask bit in the non-solid parts of solid_nef */
+    solid_nef->map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
+        if (!bs[bit_index_solid()]) {
+            bs.reset(bit_index_mask);
+        }
+        return bs;
+    });
 }
 
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {
@@ -135,7 +190,6 @@ ElementSet compute_element_set_from_plc_bit(
 FaceSet compute_face_set_from_plc_bit(
     const Plc3Index &plc_index,
     const Mesh3 &mesh,
-    const Mesh3Index &mesh_index,
     ElementId element_begin,
     ElementId element_end,
     Plc3::BitIndex bit_index
@@ -149,12 +203,6 @@ FaceSet compute_face_set_from_plc_bit(
         const ElementTypeShape *shape = &element_type_shape(element.type);
         for (fid.face = 0; fid.face < static_cast<int>(shape->faces.size());
                 ++fid.face) {
-            FaceId other_fid = mesh_index.matching_face(fid);
-            if (other_fid != FaceId::invalid()) {
-                /* internal face, skip */
-                continue;
-            }
-
             LengthVector sum = LengthVector::zero();
             for (int vertex_index : shape->faces[fid.face].vertices) {
                 sum += mesh.nodes[element.nodes[vertex_index]].point
@@ -164,7 +212,11 @@ FaceSet compute_face_set_from_plc_bit(
                 + sum / shape->faces[fid.face].vertices.size();
 
             Plc3::SurfaceId surface_id =
-                plc_index.surface_closest_to_point(center);
+                plc_index.surface_containing_point(center);
+            if (surface_id == -1) {
+                /* internal face, not on any surface */
+                continue;
+            }
             Plc3::Bitset bitset = plc_index.plc->surfaces[surface_id].bitset;
             if (bitset[bit_index]) {
                 set.faces.insert(fid);

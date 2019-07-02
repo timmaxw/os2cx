@@ -105,6 +105,15 @@ void GuiModeResultStatic::construct_combo_box_disp_scale() {
         max_disp = std::max(max_disp, disp[ni].magnitude());
     }
 
+    if (max_disp == 0) {
+        combo_box_disp_scale->addItem(
+            tr("N/A (displacement is zero everywhere))"),
+            QVariant(static_cast<double>(1)));
+        combo_box_disp_scale->setEnabled(false);
+        disp_scale = 1.0;
+        return;
+    }
+
     double max_exaggeration_factor = (project->approx_scale / 3) / max_disp;
     if (max_exaggeration_factor < 1) {
         max_exaggeration_factor = 1;
@@ -220,7 +229,7 @@ void GuiModeResultStatic::set_color_subvariable(SubVariable new_subvar) {
         step.datasets.at(color_variable);
 
     double min_datum = std::numeric_limits<double>::max();
-    double max_datum = std::numeric_limits<double>::min();
+    double max_datum = std::numeric_limits<double>::lowest();
     NodeId node_begin = dataset.node_vector ?
         dataset.node_vector->key_begin() : dataset.node_matrix->key_begin();
     NodeId node_end = dataset.node_vector ?

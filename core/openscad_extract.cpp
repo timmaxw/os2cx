@@ -253,7 +253,7 @@ void do_select_surface_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 3, "select_surface");
+    check_arg_count(args, 4, "select_surface");
 
     Project::SelectSurfaceObjectName name =
         check_name_new(args[0], "surface", project);
@@ -264,9 +264,18 @@ void do_select_surface_directive(
     or equal to Plc3::num_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
-    object.direction_vector = check_vector_3(args[1]);
+    std::string mode = check_string(args[1]);
+    if (mode == "external") {
+        object.mode = Project::SelectSurfaceObject::Mode::External;
+    } else if (mode == "internal") {
+        object.mode = Project::SelectSurfaceObject::Mode::Internal;
+    } else {
+        throw BadEchoError("mode must be external or internal");
+    }
 
-    object.direction_angle_tolerance = check_number(args[2]);
+    object.direction_vector = check_vector_3(args[2]);
+
+    object.direction_angle_tolerance = check_number(args[3]);
 
     project->select_surface_objects.insert(std::make_pair(name, object));
 }
