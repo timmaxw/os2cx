@@ -80,7 +80,7 @@ void GuiOpenglWidget::initializeGL() {
     bool res = initializeOpenGLFunctions();
     assert(res);
 
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f); // Grey Background
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Background color
     glClearDepth(1.0f); // Depth Buffer Setup
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -129,7 +129,7 @@ void GuiOpenglWidget::paintGL() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    GLfloat light_dir[4] = {1, 1, 1, 0};
+    GLfloat light_dir[4] = {0.0, 1.0, 1.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, light_dir);
 
     glTranslatef(0, 0, -camera_dist);
