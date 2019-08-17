@@ -137,10 +137,22 @@ public:
         Vector *areas_out
     ) const;
 
+    /* Computes the center of mass and volume of the given element. */
+    void center_of_mass(
+        const Element3 &element,
+        Point *center_of_mass_out,
+        Volume *volume_out
+    ) const;
+
     ContiguousMap<NodeId, Node3> nodes;
     ContiguousMap<ElementId, Element3> elements;
 
 private:
+    Point point_for_shape_point(
+        const Element3 &element,
+        ElementTypeShape::ShapePoint uvw
+    ) const;
+
     Matrix jacobian(
         const Element3 &element,
         ElementTypeShape::ShapePoint uvw

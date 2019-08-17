@@ -318,5 +318,215 @@ ConcentratedLoad compute_load_from_face_set(
     return load;
 }
 
+void compute_slice(
+    Mesh3 *mesh,
+    Mesh3Index *mesh_index,
+    const FaceSet &face_set,
+    Slice *slice_out
+) {
+    /* For each node that we partition, we'll generate two or more "partitioned
+    nodes". After the slice operation is finished, these will just be regular
+    nodes; but during the slice operation, we use a different typedef for their
+    IDs, to make it easier to keep track of whether we're talking about pre-
+    partition or post-partition nodes. The post-partition node ID will also act
+    as a unique identifier for the partition itself. */
+    typedef NodeId PartitionedNodeId;
+
+    /* Identify all nodes that might be participating in the slice */
+    std::set<NodeId> nodes;
+    for (const FaceId &face : face_set.faces) {
+        const Element3 &element = mesh->elements[face.element_id];
+        for (int vertex :
+                element_type_shape(element.type).faces[face.face].vertices) {
+            nodes.insert(element.nodes[vertex]);
+        }
+    }
+
+    /* For each eligible node, build a data structure tracking all the elements
+    it participates in and which faces they share with each other. */
+    struct NodeElementData {
+        NodeElementData() {
+            for (int face = 0; face < ElementTypeShape::max_faces_per_element;
+                    ++face) {
+                adjacent[face] = ElementId::invalid();
+            }
+            partitioned_node_id = NodeId::invalid();
+        }
+
+        /* Where the node appears in the element */
+        int vertex;
+
+        /* For each face on this element: ElementId::invalid() if this node is
+        not part of the face or if the face is unmatched; otherwise, the element
+        the face matches to. */
+        ElementId adjacent[ElementTypeShape::max_faces_per_element];
+
+        /* For each entry in 'adjacent' thats not ElementId::invalid(), true if
+        the face in question was sliced */
+        bool adjacent_sliced[ElementTypeShape::max_faces_per_element];
+
+        /* Initially PartitionedNodeId::invalid(). After assigning the element
+        to a partition, we'll fill this in with the partitioned node ID. */
+        PartitionedNodeId partitioned_node_id;
+    };
+    std::map<NodeId, std::map<ElementId, NodeElementData> > node_element_data;
+    for (ElementId element_id = mesh->elements.key_begin();
+            element_id != mesh->elements.key_end(); ++element_id) {
+        const Element3 &element = mesh->elements[element_id];
+        const ElementTypeShape &shape = element_type_shape(element.type);
+        for (int face = 0; face < static_cast<int>(shape.faces.size());
+                ++face) {
+            FaceId face_id_1(element_id, face);
+            FaceId face_id_2 = mesh_index->matching_face(face_id_1);
+            if (face_id_2 == FaceId::invalid()) {
+                continue;
+            }
+            for (int vertex : shape.faces[face].vertices) {
+                NodeId node = element.nodes[vertex];
+                if (!nodes.count(node)) {
+                    continue;
+                }
+                NodeElementData *data = &node_element_data[node][element_id];
+                data->vertex = vertex;
+                data->adjacent[face] = face_id_2.element_id;
+                data->adjacent_sliced[face] =
+                    face_set.faces.count(face_id_1) ||
+                    face_set.faces.count(face_id_2);
+            }
+        }
+    }
+
+    /* Visit each node and consider partitioning it */
+    for (auto &pair : node_element_data) {
+        NodeId node_id = pair.first;
+        std::map<ElementId, NodeElementData> &element_data = pair.second;
+
+        /* Generate the partitions, assigning each element to one of the
+        partitions. Also create the partitioned nodes. */
+        std::vector<PartitionedNodeId> partitioned_node_ids;
+        for (auto &data_pair : element_data) {
+            ElementId element_id = data_pair.first;
+            NodeElementData &data = data_pair.second;
+            if (data.partitioned_node_id != PartitionedNodeId::invalid()) {
+                /* We've already visited this element */
+                continue;
+            }
+
+            /* Allocate a node ID for this partition */
+            PartitionedNodeId partitioned_node_id;
+            if (partitioned_node_ids.empty()) {
+                /* Reuse the existing node record */
+                partitioned_node_id = node_id;
+            } else {
+                /* Clone the existing node record with a new ID */
+                partitioned_node_id = mesh->nodes.key_end();
+                mesh->nodes.push_back(mesh->nodes[node_id]);
+            }
+            partitioned_node_ids.push_back(partitioned_node_id);
+
+            /* Iteratively find all elements that are reachable from this
+            element, and bring them into the partition */
+            std::deque<ElementId> queue;
+            queue.push_back(element_id);
+            while (!queue.empty()) {
+                ElementId next_element_id = queue.front();
+                queue.pop_front();
+                NodeElementData &next_data = element_data[next_element_id];
+                if (next_data.partitioned_node_id !=
+                        PartitionedNodeId::invalid()) {
+                    /* We've already visited this element */
+                    continue;
+                }
+                /* Mark this element with the node ID we chose for this
+                partition */
+                next_data.partitioned_node_id = partitioned_node_id;
+                /* Bring each adjacent non-sliced element into the partition */
+                for (int face = 0;
+                        face < ElementTypeShape::max_faces_per_element;
+                        ++face) {
+                    if (next_data.adjacent[face] != ElementId::invalid() &&
+                            !next_data.adjacent_sliced[face]) {
+                        queue.push_back(next_data.adjacent[face]);
+                    }
+                }
+            }
+        }
+
+        /* Update the actual element records to point at the partitioned nodes
+        */
+        for (const auto &data_pair : element_data) {
+            Element3 &element = mesh->elements[data_pair.first];
+            assert(element.nodes[data_pair.second.vertex] == node_id);
+            element.nodes[data_pair.second.vertex] =
+                data_pair.second.partitioned_node_id;
+        }
+
+        /* For each sliced face, figure out which pair of partitions it slices
+        between, and record the normal of the face, indexed by the pair of
+        partitions */
+        std::map<
+            std::pair<PartitionedNodeId, PartitionedNodeId>,
+            std::vector<Vector>
+            > partition_pair_areas;
+        for (const auto &data_pair : element_data) {
+            PartitionedNodeId partition1 = data_pair.second.partitioned_node_id;
+            for (int face = 0; face < ElementTypeShape::max_faces_per_element;
+                    ++face) {
+                ElementId element2 = data_pair.second.adjacent[face];
+                if (element2 == ElementId::invalid()) {
+                    /* The node we're partitioning isn't part of this face, or
+                    this face index is past the max face index of the element */
+                    continue;
+                }
+                PartitionedNodeId partition2 =
+                    element_data.at(element2).partitioned_node_id;
+                if (partition1 == partition2) {
+                    /* These two elements are in the same partition, so the face
+                    doesn't slice between two different partitions. */
+                    continue;
+                }
+                assert(data_pair.second.adjacent_sliced[face]);
+                if (partition2 < partition1) {
+                    /* We'll reach each pair of elements twice; to avoid double-
+                    counting, skip based on the partitions' order */
+                    continue;
+                }
+                std::pair<PartitionedNodeId, PartitionedNodeId> key(
+                    partition1, partition2);
+                Vector oriented_area =
+                    mesh->oriented_area(mesh->elements[data_pair.first], face);
+                Vector normal = oriented_area / oriented_area.magnitude();
+                partition_pair_areas[key].push_back(normal);
+            }
+        }
+
+        /* Emit slice pair records */
+        for (const auto &partition_pair_area_pair : partition_pair_areas) {
+            Slice::Pair slice_pair;
+            slice_pair.nodes[0] = partition_pair_area_pair.first.first;
+            slice_pair.nodes[1] = partition_pair_area_pair.first.second;
+
+            /* Set the slice pair normal to the average of all the face normals.
+            This will generally produce correct results, but it's not perfect;
+            it would be better to weight the face normals by the angle of the
+            vertex on the face. But this should be close enough except in really
+            weird cases. */
+            Vector normal_sum = Vector::zero();
+            for (const Vector &normal : partition_pair_area_pair.second) {
+                normal_sum += normal;
+            }
+            slice_pair.normal =
+                normal_sum / partition_pair_area_pair.second.size();
+
+            slice_out->pairs.push_back(slice_pair);
+        }
+    }
+
+    /* Regenerate the mesh index; it will be wrong because of the faces we've
+    sliced. (As a performance optimization, we could update it incrementally
+    instead, but this is simpler.) */
+    *mesh_index = Mesh3Index(mesh);
+}
+
 } /* namespace os2cx */
 

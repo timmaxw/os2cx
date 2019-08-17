@@ -178,6 +178,10 @@ public:
     bool operator!=(const Box &o) const {
         return !(*this == o);
     }
+    bool contains(Point p) const {
+        return (p.x >= xl && p.y >= yl && p.z >= zl &&
+            p.x <= xh && p.y <= yh && p.z <= zh);
+    }
 
     double xl, yl, zl, xh, yh, zh;
 };

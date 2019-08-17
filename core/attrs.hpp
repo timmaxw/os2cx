@@ -97,6 +97,22 @@ ConcentratedLoad compute_load_from_face_set(
     Vector force_total_or_per_area,
     bool force_is_per_area);
 
+class Slice {
+public:
+    class Pair {
+    public:
+        NodeId nodes[2];
+        Vector normal; // unit vector
+    };
+    std::vector<Pair> pairs;
+};
+
+void compute_slice(
+    Mesh3 *mesh,
+    Mesh3Index *mesh_index,
+    const FaceSet &face_set,
+    Slice *slice_out);
+
 } /* namespace os2cx */
 
 #endif

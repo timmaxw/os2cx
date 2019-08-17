@@ -89,6 +89,43 @@ void Mesh3::oriented_areas_for_nodes(
     }
 }
 
+/* Computes the center of mass and volume of the given element. */
+void Mesh3::center_of_mass(
+    const Element3 &element,
+    Point *center_of_mass_out,
+    Volume *volume_out
+) const {
+    Vector center_of_mass = Vector::zero();
+    double volume = 0;
+    const ElementTypeShape &shape = element_type_shape(element.type);
+    for (const auto &ip : shape.volume_integration_points) {
+        Point ip_center_of_mass = point_for_shape_point(element, ip.uvw);
+        double ip_volume = integrate_volume(element, ip);
+        center_of_mass += (ip_center_of_mass - Point::origin()) * ip_volume;
+        volume += ip_volume;
+    }
+    *center_of_mass_out = Point::origin() + center_of_mass / volume;
+    if (volume_out != nullptr) {
+        *volume_out = Volume(volume);
+    }
+}
+
+Point Mesh3::point_for_shape_point(
+    const Element3 &element,
+    ElementTypeShape::ShapePoint uvw
+) const {
+    const ElementTypeShape &shape = element_type_shape(element.type);
+    double sf[ElementTypeShape::max_vertices_per_element];
+    shape.shape_functions(uvw, sf);
+    Vector point = Vector::zero();
+    for (int vertex = 0; vertex < static_cast<int>(shape.vertices.size());
+            ++vertex) {
+        Point vertex_point = nodes[element.nodes[vertex]].point;
+        point += sf[vertex] * (vertex_point - Point::origin());
+    }
+    return Point::origin() + point;
+}
+
 Matrix Mesh3::jacobian(
     const Element3 &element,
     ElementTypeShape::ShapePoint uvw
