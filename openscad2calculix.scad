@@ -146,6 +146,22 @@ module os2cx_mesh(name, mesher="tetgen", max_element_size=undef) {
     }
 }
 
+module os2cx_slice(name, direction_vector, direction_angle_tolerance) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo("ERROR: os2cx_slice() first parameter must be a string");
+        }
+        # children();
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "slice_directive",
+            name,
+            direction_vector,
+            direction_angle_tolerance);
+    } else if (__openscad2calculix_mode == ["slice", name]) {
+        children();
+    }
+}
+
 module os2cx_select_volume(name) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {

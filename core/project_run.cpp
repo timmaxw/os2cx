@@ -46,6 +46,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             p, "mesh", pair.first);
         callbacks->project_run_checkpoint();
     }
+    for (auto &pair : p->slice_objects) {
+        callbacks->project_run_log("Loading slice '" + pair.first + "'...");
+        pair.second.mask = openscad_extract_poly3(
+            p, "slice", pair.first);
+        callbacks->project_run_checkpoint();
+    }
     for (auto &pair : p->select_volume_objects) {
         callbacks->project_run_log("Loading volume '" + pair.first + "'...");
         pair.second.mask = openscad_extract_poly3(
@@ -65,6 +71,14 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_log(
             "Preprocessing mesh '" + pair.first + "'...");
         PlcNef3 solid_nef = compute_plc_nef_for_solid(*pair.second.solid);
+        for (auto &slice_pair : p->slice_objects) {
+            compute_plc_nef_select_surface_internal(
+                &solid_nef,
+                *slice_pair.second.mask,
+                slice_pair.second.direction_vector,
+                slice_pair.second.direction_angle_tolerance,
+                slice_pair.second.bit_index);
+        }
         for (auto &select_volume_pair : p->select_volume_objects) {
             compute_plc_nef_select_volume(
                 &solid_nef,
@@ -113,38 +127,68 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 std::to_string(max_element_size));
         }
 
+        Mesh3 partial_mesh;
         switch(pair.second.mesher) {
         case Project::MeshObject::Mesher::Tetgen: {
-            pair.second.partial_mesh.reset(new Mesh3(mesher_tetgen(
+            partial_mesh = mesher_tetgen(
                 *pair.second.plc,
                 max_element_size
-            )));
+            );
             break;
         }
         case Project::MeshObject::Mesher::NaiveBricks: {
-            pair.second.partial_mesh.reset(new Mesh3(mesher_naive_bricks(
+            partial_mesh = mesher_naive_bricks(
                 *pair.second.plc,
                 max_element_size,
                 ElementType::C3D20R
-            )));
+            );
             break;
         }
         default: assert(false);
         }
+
+        /* Slicing mutates the mesh and invalidates node/element IDs, so do it
+        immediately after meshing, before we perform any operations that might
+        save a node/element ID */
+        for (auto &slice_pair : p->slice_objects) {
+            callbacks->project_run_log(
+                "Computing slice '" + slice_pair.first +
+                "' on mesh '" + pair.first + "'...");
+            FaceSet slice_face_set = compute_face_set_from_plc_bit(
+                *pair.second.plc_index,
+                partial_mesh,
+                partial_mesh.elements.key_begin(),
+                partial_mesh.elements.key_end(),
+                slice_pair.second.bit_index);
+            pair.second.partial_slices[slice_pair.first] =
+                std::make_shared<Slice>(compute_slice(
+                    &partial_mesh,
+                    slice_face_set
+                ));
+        }
+
+        pair.second.partial_mesh.reset(new Mesh3(std::move(partial_mesh)));
 
         callbacks->project_run_checkpoint();
     }
 
     {
         callbacks->project_run_log("Merging meshes...");
+
         Mesh3 combined_mesh;
+        std::map<Project::SliceObjectName, Slice> combined_slices;
+
         for (auto &pair : p->mesh_objects) {
-            combined_mesh.append_mesh(
-                *pair.second.partial_mesh,
-                &pair.second.node_begin,
-                &pair.second.node_end,
-                &pair.second.element_begin,
-                &pair.second.element_end);
+            MeshIdMapping id_mapping;
+            combined_mesh.append_mesh(*pair.second.partial_mesh, &id_mapping);
+            pair.second.node_begin = id_mapping.convert_node_id(
+                pair.second.partial_mesh->nodes.key_begin());
+            pair.second.node_end = id_mapping.convert_node_id(
+                pair.second.partial_mesh->nodes.key_end());
+            pair.second.element_begin = id_mapping.convert_element_id(
+                pair.second.partial_mesh->elements.key_begin());
+            pair.second.element_end = id_mapping.convert_element_id(
+                pair.second.partial_mesh->elements.key_end());
             pair.second.partial_mesh = nullptr;
 
             pair.second.element_set.reset(new ElementSet(
@@ -155,9 +199,23 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 compute_node_set_from_range(
                     pair.second.node_begin, pair.second.node_end)
             ));
+
+            for (auto &partial_slice_pair : pair.second.partial_slices) {
+                combined_slices[partial_slice_pair.first].append_slice(
+                    *partial_slice_pair.second,
+                    id_mapping);
+            }
+            pair.second.partial_slices.clear();
         }
+
         p->mesh.reset(new Mesh3(std::move(combined_mesh)));
-        p->mesh_index.reset(new Mesh3Index(p->mesh.get()));
+        p->mesh_index.reset(new Mesh3Index(*p->mesh));
+
+        for (auto &combined_slice_pair : combined_slices) {
+            p->slice_objects.at(combined_slice_pair.first).slice.reset(
+                new Slice(std::move(combined_slice_pair.second)));
+        }
+
         p->progress = Project::Progress::MeshDone;
         callbacks->project_run_checkpoint();
     }

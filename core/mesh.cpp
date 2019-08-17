@@ -4,32 +4,25 @@ namespace os2cx {
 
 void Mesh3::append_mesh(
     const Mesh3 &other,
-    NodeId *new_node_begin_out,
-    NodeId *new_node_end_out,
-    ElementId *new_element_begin_out,
-    ElementId *new_element_end_out
+    MeshIdMapping *id_mapping_out
 ) {
-    int node_id_offset = nodes.key_end().to_int()
-        - other.nodes.key_begin().to_int();
+    *id_mapping_out = MeshIdMapping(
+        nodes.key_end().to_int()- other.nodes.key_begin().to_int(),
+        elements.key_end().to_int() - other.elements.key_begin().to_int());
 
     nodes.reserve(nodes.size() + other.nodes.size());
-    *new_node_begin_out = nodes.key_end();
     for (const Node3 &node : other.nodes) {
         nodes.push_back(node);
     }
-    *new_node_end_out = nodes.key_end();
 
     elements.reserve(elements.size() + other.elements.size());
-    *new_element_begin_out = elements.key_end();
     for (const Element3 &element : other.elements) {
         Element3 copy = element;
         for (int i = 0; i < copy.num_nodes(); ++i) {
-            copy.nodes[i] = NodeId::from_int(
-                copy.nodes[i].to_int() + node_id_offset);
+            copy.nodes[i] = id_mapping_out->convert_node_id(copy.nodes[i]);
         }
         elements.push_back(copy);
     }
-    *new_element_end_out = elements.key_end();
 }
 
 Volume Mesh3::volume(const Element3 &element) const {

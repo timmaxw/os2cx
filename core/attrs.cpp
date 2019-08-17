@@ -318,11 +318,20 @@ ConcentratedLoad compute_load_from_face_set(
     return load;
 }
 
-void compute_slice(
+void Slice::append_slice(const Slice &other, const MeshIdMapping &id_mapping) {
+    pairs.reserve(pairs.size() + other.pairs.size());
+    for (const Slice::Pair &other_pair : other.pairs) {
+        Slice::Pair pair;
+        pair.nodes[0] = id_mapping.convert_node_id(other_pair.nodes[0]);
+        pair.nodes[1] = id_mapping.convert_node_id(other_pair.nodes[1]);
+        pair.normal = other_pair.normal;
+        pairs.push_back(pair);
+    }
+}
+
+Slice compute_slice(
     Mesh3 *mesh,
-    Mesh3Index *mesh_index,
-    const FaceSet &face_set,
-    Slice *slice_out
+    const FaceSet &face_set
 ) {
     /* For each node that we partition, we'll generate two or more "partitioned
     nodes". After the slice operation is finished, these will just be regular
@@ -331,6 +340,8 @@ void compute_slice(
     partition or post-partition nodes. The post-partition node ID will also act
     as a unique identifier for the partition itself. */
     typedef NodeId PartitionedNodeId;
+
+    Mesh3Index mesh_index(*mesh);
 
     /* Identify all nodes that might be participating in the slice */
     std::set<NodeId> nodes;
@@ -377,7 +388,7 @@ void compute_slice(
         for (int face = 0; face < static_cast<int>(shape.faces.size());
                 ++face) {
             FaceId face_id_1(element_id, face);
-            FaceId face_id_2 = mesh_index->matching_face(face_id_1);
+            FaceId face_id_2 = mesh_index.matching_face(face_id_1);
             if (face_id_2 == FaceId::invalid()) {
                 continue;
             }
@@ -395,6 +406,8 @@ void compute_slice(
             }
         }
     }
+
+    Slice slice;
 
     /* Visit each node and consider partitioning it */
     for (auto &pair : node_element_data) {
@@ -518,14 +531,11 @@ void compute_slice(
             slice_pair.normal =
                 normal_sum / partition_pair_area_pair.second.size();
 
-            slice_out->pairs.push_back(slice_pair);
+            slice.pairs.push_back(slice_pair);
         }
     }
 
-    /* Regenerate the mesh index; it will be wrong because of the faces we've
-    sliced. (As a performance optimization, we could update it incrementally
-    instead, but this is simpler.) */
-    *mesh_index = Mesh3Index(mesh);
+    return slice;
 }
 
 } /* namespace os2cx */

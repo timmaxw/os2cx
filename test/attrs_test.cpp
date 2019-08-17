@@ -92,10 +92,7 @@ TEST(AttrsTest, ComputeSlice) {
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
         bit_index_mask);
-    Mesh3Index mesh_index(&mesh);
-
-    Slice slice;
-    compute_slice(&mesh, &mesh_index, face_set, &slice);
+    Slice slice = compute_slice(&mesh, face_set);
 
     /* Sort the elements into which half they ended up in */
     std::map<ElementId, int> which_half;
@@ -112,6 +109,7 @@ TEST(AttrsTest, ComputeSlice) {
         volume_of_half[half] += volume;
     }
 
+    Mesh3Index mesh_index(mesh);
     for (ElementId element_id = mesh.elements.key_begin();
             element_id != mesh.elements.key_end(); ++element_id) {
         const Element3 &element = mesh.elements[element_id];

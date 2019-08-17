@@ -104,14 +104,17 @@ public:
         NodeId nodes[2];
         Vector normal; // unit vector
     };
+
+    void append_slice(const Slice &other, const MeshIdMapping &id_mapping);
+
     std::vector<Pair> pairs;
 };
 
-void compute_slice(
+Slice compute_slice(
+    /* Warning: Mutates 'mesh'! Any node IDs, element IDs, and/or Mesh3Index on
+    'mesh' will be invalidated. */
     Mesh3 *mesh,
-    Mesh3Index *mesh_index,
-    const FaceSet &face_set,
-    Slice *slice_out);
+    const FaceSet &face_set);
 
 } /* namespace os2cx */
 

@@ -24,3 +24,6 @@ SOURCES = $$CORE_SOURCES \
     mesher_naive_bricks_test.cpp \
     mesh_type_info_test.cpp
 
+DISTFILES += \
+    slice_test.scad
+

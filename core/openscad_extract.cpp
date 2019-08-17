@@ -89,6 +89,8 @@ std::string check_name_new(
         existing_object_type = "load";
     } else if (project->load_surface_objects.count(new_name)) {
         existing_object_type = "load";
+    } else if (project->slice_objects.count(new_name)) {
+        existing_object_type = "slice";
     }
     if (!existing_object_type.empty()) {
         throw UsageError("Can't declare a new " + new_object_type + " named '" +
@@ -229,6 +231,27 @@ void do_mesh_directive(
     }
 
     project->mesh_objects.insert(std::make_pair(name, object));
+}
+
+void do_slice_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 3, "slice");
+
+    Project::SliceObjectName name = check_name_new(args[0], "slice", project);
+
+    Project::SliceObject object;
+
+    /* If there are too many select_* directives, bit_index will be greater than
+    or equal to Plc3::num_bits; we'll check this later. */
+    object.bit_index = project->next_bit_index++;
+
+    object.direction_vector = check_vector_3(args[1]);
+
+    object.direction_angle_tolerance = check_number(args[2]);
+
+    project->slice_objects.insert(std::make_pair(name, object));
 }
 
 void do_select_volume_directive(
@@ -407,6 +430,8 @@ void openscad_extract_inventory(Project *project) {
                 do_load_volume_directive(project, args);
             } else if (echo[1].string_value == "load_surface_directive") {
                 do_load_surface_directive(project, args);
+            } else if (echo[1].string_value == "slice_directive") {
+                do_slice_directive(project, args);
             } else if (echo[1].string_value ==
                     "material_elastic_simple_directive") {
                 do_material_elastic_simple_directive(project, args);
@@ -427,13 +452,12 @@ void openscad_extract_inventory(Project *project) {
         }
     }
 
-    if (project->next_bit_index > Plc3::num_bits) {
+    if (project->next_bit_index - 1 > Plc3::num_bits - 1) {
         std::stringstream msg;
-        msg << "There are too many os2cx_select_volume() and/or "
-            << "os2cx_select_surface() directives. There are "
-            << (project->select_volume_objects.size() +
-                project->select_surface_objects.size())
-            << ", but the limit is " << Plc3::num_bits - 1 << ".";
+        msg << "There are too many os2cx_select_*() and/or "
+            << "os2cx_slice() directives. There are "
+            << (project->next_bit_index - 1)
+            << ", but the limit is " << (Plc3::num_bits - 1) << ".";
         throw UsageError(msg.str());
     }
 

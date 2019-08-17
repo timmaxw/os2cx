@@ -21,7 +21,7 @@ TEST(MeshIndexTest, Mesh3Index) {
         {n[0], n[2], n[1], n[4]}
     });
 
-    Mesh3Index index(&mesh);
+    Mesh3Index index(mesh);
 
     for (int i = 0; i < 2; ++i) {
         ElementId eid = ElementId::from_int(1 + i);

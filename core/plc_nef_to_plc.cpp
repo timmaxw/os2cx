@@ -418,18 +418,8 @@ public:
                     auto next_it = todo.lower_bound(std::make_pair(cur, 0));
                     if (next_it == todo.end() || next_it->first != cur) {
                         /* The outgoing link from here was already removed from
-                        'todo'. This should only happen if this border is a
-                        loop. */
-                        if (direction == 1) {
-                            /* We came back around to the start. */
-                            assert(cur == v0 && prev != v1);
-                        } else {
-                            /* We haven't gone anywhere because the very first
-                            link was already removed from 'todo' during the
-                            'direction == 1' phase. */
-                            assert(cur == v0 && prev == v1);
-                            assert(border.vertices.back() == v0);
-                        }
+                        'todo'. This can happen if the border forms a loop or
+                        the bitset is different. */
                         break;
                     }
 

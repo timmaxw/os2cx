@@ -55,6 +55,7 @@ public:
     typedef std::string SurfaceObjectName;
     typedef std::string LoadObjectName;
     typedef std::string MeshObjectName;
+    typedef std::string SliceObjectName;
     typedef std::string SelectVolumeObjectName;
     typedef std::string SelectSurfaceObjectName;
     typedef std::string LoadVolumeObjectName;
@@ -100,6 +101,15 @@ public:
         combined into the overall project mesh. */
         std::shared_ptr<const Mesh3> partial_mesh;
 
+        /* Each SliceObject is applied separately to each MeshObject, and the
+        results are stored temporarily in partial_slices. Later, all the Slices
+        from different MeshObjects for the same SliceObject are combined into
+        the top-level SliceObject's Slice. The nodes will be assigned new IDs
+        when the meshes are combined, so partial_slices shouldn't be used for
+        anything on its own. In addition, the partial_slices map will be cleared
+        after the Slices have been combined. */
+        std::map<SliceObjectName, std::shared_ptr<const Slice> > partial_slices;
+
         /* Once the partial meshes have been combined, we record here the ranges
         of node and element IDs in the combined mesh that corresponded to this
         mesh object. */
@@ -108,6 +118,17 @@ public:
     };
 
     std::map<MeshObjectName, MeshObject> mesh_objects;
+
+    class SliceObject {
+    public:
+        Plc3::BitIndex bit_index;
+        std::shared_ptr<const Poly3> mask;
+        Vector direction_vector;
+        double direction_angle_tolerance;
+        std::shared_ptr<const Slice> slice;
+    };
+
+    std::map<SliceObjectName, SliceObject> slice_objects;
 
     class SelectVolumeObject : public VolumeObject {
     public:

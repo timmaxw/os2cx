@@ -89,6 +89,22 @@ public:
     int face;
 };
 
+class MeshIdMapping {
+public:
+    MeshIdMapping() { }
+    MeshIdMapping(int nio, int eio) :
+        node_id_offset(nio), element_id_offset(eio) { }
+    NodeId convert_node_id(NodeId id) const {
+         return NodeId::from_int(id.to_int() + node_id_offset);
+    }
+    ElementId convert_element_id(ElementId id) const {
+         return ElementId::from_int(id.to_int() + element_id_offset);
+    }
+private:
+    int node_id_offset;
+    int element_id_offset;
+};
+
 /* Mesh3 is a collection of 3D nodes and elements suitable for use in a
 simulation.
 
@@ -104,12 +120,12 @@ public:
         elements(ElementId::from_int(1))
         { }
 
+    /* Appends the contents of 'other' into this mesh. Returns a mapping that
+    maps from node/element IDs of the original mesh, to the corresponding
+    node/element IDs of this mesh. */
     void append_mesh(
         const Mesh3 &other,
-        NodeId *new_node_begin_out,
-        NodeId *new_node_end_out,
-        ElementId *new_element_begin_out,
-        ElementId *new_element_end_out);
+        MeshIdMapping *id_mapping_out);
 
     /* Computes the volume of the given element. */
     Volume volume(const Element3 &element) const;
@@ -168,7 +184,6 @@ private:
         int face_index,
         const ElementTypeShape::IntegrationPoint &ip
     ) const;
-
 };
 
 } /* namespace os2cx */

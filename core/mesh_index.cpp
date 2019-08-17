@@ -60,7 +60,7 @@ public:
     NodeId nodes[ElementTypeShape::max_vertices_per_face];
 };
 
-Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
+Mesh3Index::Mesh3Index(const Mesh3 &mesh) {
     /* We want to build a map from FaceNodes to FaceId so that we can match
     faces. We use 'boost::container::flat_map' instead of 'std::map' in order to
     reduce memory allocations and improve memory locality. The FaceNodes
@@ -68,10 +68,10 @@ Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
     will further improve locality. */
     typedef boost::container::flat_map<FaceNodes, FaceId> MapType;
     MapType::sequence_type sequence;
-    for (ElementId element_id = mesh->elements.key_begin();
-            element_id != mesh->elements.key_end();
+    for (ElementId element_id = mesh.elements.key_begin();
+            element_id != mesh.elements.key_end();
             ++element_id) {
-        const Element3 &element = mesh->elements[element_id];
+        const Element3 &element = mesh.elements[element_id];
         const ElementTypeShape &shape = element_type_shape(element.type);
         for (int face = 0;
                 face < static_cast<int>(shape.faces.size()); ++face) {
@@ -91,8 +91,8 @@ Mesh3Index::Mesh3Index(const Mesh3 *mesh_) : mesh(mesh_) {
     assert(num_faces == static_cast<int>(map.size()));
 
     matching_faces = ContiguousMap<FaceId, FaceId>(
-        FaceId { mesh->elements.key_begin(), 0 },
-        FaceId { mesh->elements.key_end(), 0 },
+        FaceId { mesh.elements.key_begin(), 0 },
+        FaceId { mesh.elements.key_end(), 0 },
         FaceId::invalid()
     );
 
