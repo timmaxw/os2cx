@@ -126,6 +126,7 @@ public:
         Vector direction_vector;
         double direction_angle_tolerance;
         std::shared_ptr<const Slice> slice;
+        std::shared_ptr<const std::vector<LinearEquation> > equations;
     };
 
     std::map<SliceObjectName, SliceObject> slice_objects;

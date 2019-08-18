@@ -220,6 +220,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_checkpoint();
     }
 
+    for (auto &pair : p->slice_objects) {
+        pair.second.equations.reset(new std::vector<LinearEquation>(
+            compute_equations_for_slice(*pair.second.slice)));
+    }
+
     for (auto &pair : p->select_volume_objects) {
         callbacks->project_run_log("Computing volume '" + pair.first + "'...");
         ElementSet element_set;

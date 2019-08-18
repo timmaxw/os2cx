@@ -116,6 +116,27 @@ Slice compute_slice(
     Mesh3 *mesh,
     const FaceSet &face_set);
 
+class LinearEquation {
+public:
+    class Variable {
+    public:
+        Variable(NodeId n, Dimension d) : node_id(n), dimension(d) { }
+        NodeId node_id;
+        Dimension dimension;
+
+        bool operator==(Variable v) const {
+            return (node_id == v.node_id && dimension == v.dimension);
+        }
+        bool operator<(Variable v) const {
+            return (node_id < v.node_id)
+                || (node_id == v.node_id && dimension < v.dimension);
+        }
+    };
+    std::map<Variable, double> terms;
+};
+
+std::vector<LinearEquation> compute_equations_for_slice(const Slice &slice);
+
 } /* namespace os2cx */
 
 #endif

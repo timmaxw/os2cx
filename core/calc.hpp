@@ -188,6 +188,8 @@ public:
 
 std::ostream &operator<<(std::ostream &stream, Box box);
 
+enum class Dimension {X, Y, Z};
+
 } /* namespace os2cx */
 
 #endif

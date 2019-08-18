@@ -103,6 +103,54 @@ void write_calculix_material(
         << ", " << material.poissons_ratio << '\n';
 }
 
+inline int dimension_to_int(Dimension d){
+    switch (d) {
+    case Dimension::X: return 1;
+    case Dimension::Y: return 2;
+    case Dimension::Z: return 3;
+    default: assert(false);
+    }
+}
+
+void write_calculix_equation(
+    std::ostream &stream,
+    const LinearEquation &equation,
+    std::set<LinearEquation::Variable> *variables_used
+) {
+    /* Use the variable with the largest coefficient as the dependent variable,
+    as long as it's not already used */
+    LinearEquation::Variable dependent_variable(
+        NodeId::invalid(), Dimension::X);
+    double dependent_coefficient = 0;
+    int num_nonzero_terms = 0;
+    for (const auto &term : equation.terms) {
+        if (term.second == 0) continue;
+        ++num_nonzero_terms;
+        if (fabs(term.second) > fabs(dependent_coefficient)
+                && !variables_used->count(term.first)) {
+            dependent_variable = term.first;
+            dependent_coefficient = term.second;
+        }
+    }
+
+    assert(dependent_variable.node_id != NodeId::invalid());
+
+    stream << "*EQUATION\n" << num_nonzero_terms << '\n';
+    stream << dependent_variable.node_id.to_int() << ','
+        << dimension_to_int(dependent_variable.dimension) << ','
+        << dependent_coefficient << '\n';
+    for (const auto &term : equation.terms) {
+        if (term.first == dependent_variable) continue;
+        if (term.second == 0) continue;
+        stream << term.first.node_id.to_int() << ','
+            << dimension_to_int(term.first.dimension) << ','
+            << term.second << '\n';
+    }
+    stream << '\n';
+
+    variables_used->insert(dependent_variable);
+}
+
 void write_calculix_job(
     const FilePath &dir_path,
     const std::string &main_file_name,
@@ -116,6 +164,13 @@ void write_calculix_job(
                 geometry_stream, pair.first, *project.mesh,
                 pair.second.node_begin, pair.second.node_end,
                 pair.second.element_begin, pair.second.element_end);
+        }
+        std::set<LinearEquation::Variable> variables_used;
+        for (const auto &pair : project.slice_objects) {
+            for (const LinearEquation &equation : *pair.second.equations) {
+                write_calculix_equation(
+                    geometry_stream, equation, &variables_used);
+            }
         }
         for (const auto &pair : project.select_volume_objects) {
             write_calculix_nset(

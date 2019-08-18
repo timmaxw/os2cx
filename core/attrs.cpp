@@ -538,5 +538,26 @@ Slice compute_slice(
     return slice;
 }
 
+std::vector<LinearEquation> compute_equations_for_slice(const Slice &slice) {
+    std::vector<LinearEquation> equations;
+    for (const Slice::Pair &pair : slice.pairs) {
+        LinearEquation equation;
+        equation.terms[LinearEquation::Variable(pair.nodes[0], Dimension::X)] =
+            pair.normal.x;
+        equation.terms[LinearEquation::Variable(pair.nodes[0], Dimension::Y)] =
+            pair.normal.y;
+        equation.terms[LinearEquation::Variable(pair.nodes[0], Dimension::Z)] =
+            pair.normal.z;
+        equation.terms[LinearEquation::Variable(pair.nodes[1], Dimension::X)] =
+            -pair.normal.x;
+        equation.terms[LinearEquation::Variable(pair.nodes[1], Dimension::Y)] =
+            -pair.normal.y;
+        equation.terms[LinearEquation::Variable(pair.nodes[1], Dimension::Z)] =
+            -pair.normal.z;
+        equations.push_back(std::move(equation));
+    }
+    return equations;
+}
+
 } /* namespace os2cx */
 
