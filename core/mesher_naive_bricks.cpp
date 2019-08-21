@@ -59,7 +59,7 @@ public:
 };
 
 template<class Value>
-void apply_max_element_size(
+void subdivide_grid(
     double max_element_size,
     std::map<double, Value> *grid
 ) {
@@ -69,8 +69,10 @@ void apply_max_element_size(
         ++upper;
         if (upper == grid->end()) break;
 
-        int num_parts =
-            ceil((upper->first - lower->first) / max_element_size);
+        int num_parts = std::max(
+            static_cast<int>(ceil(
+                (upper->first - lower->first) / max_element_size)),
+            2); /* always split each grid cell into at least two parts */
         double part_size = (upper->first - lower->first) / num_parts;
         for (int i = 1; i < num_parts; ++i) {
             double split_point = lower->first + part_size * i;
@@ -132,9 +134,9 @@ void setup_grid(
         }
     }
 
-    apply_max_element_size(max_element_size, &x_grid_out->points);
-    apply_max_element_size(max_element_size, &y_grid_out->points);
-    apply_max_element_size(max_element_size, z_triangles_out);
+    subdivide_grid(max_element_size, &x_grid_out->points);
+    subdivide_grid(max_element_size, &y_grid_out->points);
+    subdivide_grid(max_element_size, z_triangles_out);
 
     x_grid_out->precompute_indexes();
     y_grid_out->precompute_indexes();
