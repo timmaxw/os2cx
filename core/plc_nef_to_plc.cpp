@@ -190,7 +190,7 @@ public:
                 CGAL::to_double(vi->point().x()),
                 CGAL::to_double(vi->point().y()),
                 CGAL::to_double(vi->point().z()));
-            vertex.bitset = vi->mark().bitset;
+            vertex.attrs = vi->mark().attrs;
             plc.vertices.push_back(vertex);
         }
     }
@@ -201,7 +201,7 @@ public:
         CGAL_forall_volumes(ci, nef) {
             assert(volume_index[ci] == plc.volumes.size());
             Plc3::Volume volume;
-            volume.bitset = ci->mark().bitset;
+            volume.attrs = ci->mark().attrs;
             plc.volumes.push_back(volume);
         }
 
@@ -279,7 +279,7 @@ public:
             Plc3::Surface surface;
             surface.volumes[0] = vol0;
             surface.volumes[1] = vol1;
-            surface.bitset = seed->mark().bitset;
+            surface.attrs = seed->mark().attrs;
 
             /* Breadth-first search to find all the facets that should be part
             of this surface */
@@ -294,7 +294,7 @@ public:
                 assert(h->incident_volume() == seed->incident_volume());
                 assert(h->twin()->incident_volume() ==
                     seed->twin()->incident_volume());
-                assert(h->mark().bitset == seed->mark().bitset);
+                assert(h->mark().attrs == seed->mark().attrs);
 
                 /* Check whether we already visited this facet */
                 int index = halffacet_index[h];
@@ -381,7 +381,7 @@ public:
             }
 
             Plc3::Border border;
-            border.bitset = hi->mark().bitset;
+            border.attrs = hi->mark().attrs;
 
             /* Calculate the surfaces incident to this border */
             CgalNef3Plc::SHalfedge_const_handle
@@ -408,9 +408,9 @@ public:
                     else border.vertices.push_back(cur);
 
                     if (vertex_counts[cur] != 2 ||
-                            plc.vertices[cur].bitset != border.bitset) {
+                            plc.vertices[cur].attrs != border.attrs) {
                         /* End the sequence if we found a dead end, a multi-way
-                        junction, or a vertex with different bits set */
+                        junction, or a vertex with different attrs set */
                         break;
                     }
 
@@ -419,7 +419,7 @@ public:
                     if (next_it == todo.end() || next_it->first != cur) {
                         /* The outgoing link from here was already removed from
                         'todo'. This can happen if the border forms a loop or
-                        the bitset is different. */
+                        the attrs are different. */
                         break;
                     }
 

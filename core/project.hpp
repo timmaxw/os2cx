@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#include "attrs.hpp"
+#include "compute_attrs.hpp"
 #include "mesh.hpp"
 #include "mesh_index.hpp"
 #include "plc.hpp"
@@ -33,7 +33,7 @@ public:
         temp_dir(temp_dir_),
         progress(Progress::NothingDone),
         errored(false),
-        next_bit_index(bit_index_solid() + 1),
+        next_bit_index(attr_bit_solid() + 1),
         approx_scale(Length(0))
         { }
 
@@ -49,7 +49,7 @@ public:
 
     std::vector<std::string> calculix_deck;
 
-    Plc3::BitIndex next_bit_index;
+    AttrBitIndex next_bit_index;
 
     typedef std::string VolumeObjectName;
     typedef std::string SurfaceObjectName;
@@ -121,7 +121,7 @@ public:
 
     class SliceObject {
     public:
-        Plc3::BitIndex bit_index;
+        AttrBitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
         Vector direction_vector;
         double direction_angle_tolerance;
@@ -133,7 +133,7 @@ public:
 
     class SelectVolumeObject : public VolumeObject {
     public:
-        Plc3::BitIndex bit_index;
+        AttrBitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
     };
 
@@ -141,7 +141,7 @@ public:
 
     class SelectSurfaceObject : public SurfaceObject {
     public:
-        Plc3::BitIndex bit_index;
+        AttrBitIndex bit_index;
         std::shared_ptr<const Poly3> mask;
         enum class Mode { External, Internal } mode;
         Vector direction_vector;

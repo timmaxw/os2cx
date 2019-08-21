@@ -154,7 +154,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             callbacks->project_run_log(
                 "Computing slice '" + slice_pair.first +
                 "' on mesh '" + pair.first + "'...");
-            FaceSet slice_face_set = compute_face_set_from_plc_bit(
+            FaceSet slice_face_set = compute_face_set_from_attr_bit(
                 *pair.second.plc_index,
                 partial_mesh,
                 partial_mesh.elements.key_begin(),
@@ -229,7 +229,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_log("Computing volume '" + pair.first + "'...");
         ElementSet element_set;
         for (auto &mesh_pair : p->mesh_objects) {
-            ElementSet partial_element_set = compute_element_set_from_plc_bit(
+            ElementSet partial_element_set = compute_element_set_from_attr_bit(
                 *mesh_pair.second.plc_index,
                 *p->mesh,
                 mesh_pair.second.element_begin,
@@ -253,7 +253,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         callbacks->project_run_log("Computing surface '" + pair.first + "'...");
         FaceSet face_set;
         for (auto &mesh_pair : p->mesh_objects) {
-            FaceSet partial_face_set = compute_face_set_from_plc_bit(
+            FaceSet partial_face_set = compute_face_set_from_attr_bit(
                 *mesh_pair.second.plc_index,
                 *p->mesh,
                 mesh_pair.second.element_begin,

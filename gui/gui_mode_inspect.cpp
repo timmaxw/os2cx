@@ -138,14 +138,14 @@ public:
         const Project::MeshObject &mesh_object =
             project->mesh_objects.at(mesh_object_name);
         const Plc3::Surface &surface = mesh_object.plc->surfaces[surface_id];
-        Plc3::Bitset bitset = surface.bitset;
-        bitset |= mesh_object.plc->volumes[surface.volumes[0]].bitset;
-        bitset |= mesh_object.plc->volumes[surface.volumes[1]].bitset;
-        bitset.reset(bit_index_solid());
+        AttrBitset attrs = surface.attrs;
+        attrs |= mesh_object.plc->volumes[surface.volumes[0]].attrs;
+        attrs |= mesh_object.plc->volumes[surface.volumes[1]].attrs;
+        attrs.reset(attr_bit_solid());
 
         bool focus = (mesh_object_name == focus_mesh)
-            || (bitset & focus_bitset).any();
-        bool has_any_attribute = bitset.any();
+            || (attrs & focus_attrs).any();
+        bool has_any_attribute = attrs.any();
 
         if (focus) {
             *color_out = focus_color;
@@ -160,7 +160,7 @@ public:
 
     const Project *project;
     std::string focus_mesh;
-    Plc3::Bitset focus_bitset;
+    AttrBitset focus_attrs;
     QColor focus_color;
 };
 
@@ -176,11 +176,11 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
         callback.focus_mesh = focus_name;
         break;
     case Focus::SelectVolume:
-        callback.focus_bitset[
+        callback.focus_attrs[
             project->select_volume_objects.at(focus_name).bit_index] = true;
         break;
     case Focus::SelectSurface:
-        callback.focus_bitset[
+        callback.focus_attrs[
             project->select_surface_objects.at(focus_name).bit_index] = true;
         break;
     case Focus::LoadVolume: {
@@ -189,7 +189,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
         if (project->mesh_objects.count(volume)) {
             callback.focus_mesh = volume;
         } else {
-            callback.focus_bitset[
+            callback.focus_attrs[
                 project->select_volume_objects.at(volume).bit_index] = true;
         }
         break;
@@ -197,7 +197,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
     case Focus::LoadSurface: {
         Project::SurfaceObjectName surface =
             project->load_surface_objects.at(focus_name).surface;
-        callback.focus_bitset[
+        callback.focus_attrs[
             project->select_surface_objects.at(surface).bit_index] = true;
         break;
     }

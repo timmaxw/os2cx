@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "attrs.hpp"
+#include "compute_attrs.hpp"
 #include "mesher_tetgen.hpp"
 #include "plc_nef_to_plc.hpp"
 
@@ -9,13 +9,13 @@ namespace os2cx {
 TEST(AttrsTest, LoadVolume) {
     PlcNef3 solid_nef =
         compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
-    Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
+    AttrBitIndex bit_index_mask = attr_bit_solid() + 1;
     compute_plc_nef_select_volume(
         &solid_nef, Poly3::from_box(Box(0, 0, 1, 1, 1, 3)), bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
-    ElementSet element_set = compute_element_set_from_plc_bit(
+    ElementSet element_set = compute_element_set_from_attr_bit(
         plc_index,
         mesh,
         mesh.elements.key_begin(),
@@ -39,7 +39,7 @@ TEST(AttrsTest, LoadVolume) {
 TEST(AttrsTest, LoadSurface) {
     PlcNef3 solid_nef =
         compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
-    Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
+    AttrBitIndex bit_index_mask = attr_bit_solid() + 1;
     compute_plc_nef_select_surface_external(
         &solid_nef,
         Poly3::from_box(Box(-0.1, -0.1, 1, 1.1, 1.1, 2.1)),
@@ -49,7 +49,7 @@ TEST(AttrsTest, LoadSurface) {
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
-    FaceSet face_set = compute_face_set_from_plc_bit(
+    FaceSet face_set = compute_face_set_from_attr_bit(
         plc_index,
         mesh,
         mesh.elements.key_begin(),
@@ -76,7 +76,7 @@ TEST(AttrsTest, ComputeSlice) {
     Z=1 plane */
     Box solid_box(0, 0, 0, 1, 1, 2);
     PlcNef3 solid_nef = compute_plc_nef_for_solid(Poly3::from_box(solid_box));
-    Plc3::BitIndex bit_index_mask = bit_index_solid() + 1;
+    AttrBitIndex bit_index_mask = attr_bit_solid() + 1;
     compute_plc_nef_select_surface_internal(
         &solid_nef,
         Poly3::from_box(Box(-0.1, -0.1, -0.1, 1.1, 1.1, 1.0)),
@@ -86,7 +86,7 @@ TEST(AttrsTest, ComputeSlice) {
     Plc3 plc = plc_nef_to_plc(solid_nef);
     Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
-    FaceSet face_set = compute_face_set_from_plc_bit(
+    FaceSet face_set = compute_face_set_from_attr_bit(
         plc_index,
         mesh,
         mesh.elements.key_begin(),

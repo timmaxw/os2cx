@@ -17,37 +17,37 @@ public:
     PlcNef3Mark() { }
 
     PlcNef3Mark(bool b) {
-        if (b) bitset.set();
-        else bitset.reset();
+        if (b) attrs.set();
+        else attrs.reset();
     }
 
-    explicit PlcNef3Mark(PlcNef3::Bitset s) : bitset(s) { }
+    explicit PlcNef3Mark(AttrBitset s) : attrs(s) { }
 
     bool operator==(PlcNef3Mark other) const {
-        return bitset == other.bitset;
+        return attrs == other.attrs;
     }
     bool operator!=(PlcNef3Mark other) const {
-        return bitset != other.bitset;
+        return attrs != other.attrs;
     }
 
     PlcNef3Mark operator!() const {
-        return PlcNef3Mark(~bitset);
+        return PlcNef3Mark(~attrs);
     }
     PlcNef3Mark operator&&(PlcNef3Mark other) const {
-        return PlcNef3Mark(bitset & other.bitset);
+        return PlcNef3Mark(attrs & other.attrs);
     }
     PlcNef3Mark operator||(PlcNef3Mark other) const {
-        return PlcNef3Mark(bitset | other.bitset);
+        return PlcNef3Mark(attrs | other.attrs);
     }
 
-    PlcNef3::Bitset bitset;
+    AttrBitset attrs;
 };
 
 inline std::ostream &operator<<(std::ostream &stream, PlcNef3Mark marks) {
     stream << '[';
-    for (int i = 0; i < Plc3::num_bits; ++i) {
+    for (int i = 0; i < num_attr_bits; ++i) {
         bool is_first = true;
-        if (marks.bitset[i]) {
+        if (marks.attrs[i]) {
             if (is_first) is_first = false;
             else stream << ' ';
             stream << i;

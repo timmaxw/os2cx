@@ -1,11 +1,11 @@
 #ifndef OS2CX_PLC_HPP_
 #define OS2CX_PLC_HPP_
 
-#include <bitset>
 #include <deque>
 #include <vector>
 #include <set>
 
+#include "attrs.hpp"
 #include "calc.hpp"
 
 namespace os2cx {
@@ -13,22 +13,18 @@ namespace os2cx {
 class Plc3
 {
 public:
-    static const int num_bits = 64;
-    typedef int BitIndex;
-    typedef std::bitset<num_bits> Bitset;
-
     typedef int VertexId;
     class Vertex {
     public:
         Point point;
-        Bitset bitset;
+        AttrBitset attrs;
     };
     std::vector<Vertex> vertices;
 
     typedef int VolumeId;
     class Volume {
     public:
-        Bitset bitset;
+        AttrBitset attrs;
     };
     std::vector<Volume> volumes;
     VolumeId volume_outside;
@@ -44,7 +40,7 @@ public:
         };
         std::vector<Triangle> triangles;
         VolumeId volumes[2];
-        Bitset bitset;
+        AttrBitset attrs;
     };
     std::vector<Surface> surfaces;
 
@@ -53,7 +49,7 @@ public:
     public:
         std::deque<VertexId> vertices;
         std::vector<SurfaceId> surfaces;
-        Bitset bitset;
+        AttrBitset attrs;
     };
     std::vector<Border> borders;
 

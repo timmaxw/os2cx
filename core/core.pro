@@ -25,7 +25,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 DEFINES += CGAL_DISABLE_ROUNDING_MATH_CHECK=ON
 
 SOURCES += \
-    attrs.cpp \
     calc.cpp \
     calculix_frd_read.cpp \
     calculix_inp_read.cpp \
@@ -49,10 +48,11 @@ SOURCES += \
     result.cpp \
     units.cpp \
     project_run.cpp \
-    mesher_naive_bricks.cpp
+    mesher_naive_bricks.cpp \
+    compute_attrs.cpp \
+    attrs.cpp
 
 HEADERS += \
-    attrs.hpp \
     calc.hpp \
     calculix_frd_read.hpp \
     calculix_inp_read.hpp \
@@ -78,7 +78,9 @@ HEADERS += \
     plc_index.hpp \
     units.hpp \
     project_run.hpp \
-    mesher_naive_bricks.hpp
+    mesher_naive_bricks.hpp \
+    compute_attrs.hpp \
+    attrs.hpp
 
 # The "gui" and "test" projects include all the same headers and sources as
 # "core", minus "main.cpp". Prepare variables for them to use from this file.

@@ -10,16 +10,16 @@
 namespace os2cx {
 
 TEST(PlcTest, PlcNefToPlc) {
-    Plc3::Bitset bitset_solid, bitset_mask;
-    bitset_solid.set(0);
-    bitset_mask.set(1);
+    AttrBitset attrs_solid, attrs_mask;
+    attrs_solid.set(0);
+    attrs_mask.set(1);
     PlcNef3 solid = PlcNef3::from_poly(Poly3::from_box(Box(0, 0, 0, 1, 1, 3)));
     PlcNef3 mask = PlcNef3::from_poly(Poly3::from_box(Box(-1, -1, 1, 2, 2, 2)));
-    solid.binarize(bitset_solid, Plc3::Bitset());
-    mask.binarize(bitset_mask, Plc3::Bitset());
+    solid.binarize(attrs_solid, AttrBitset());
+    mask.binarize(attrs_mask, AttrBitset());
     PlcNef3 plc_nef = solid.binary_or(mask);
-    plc_nef.map_everywhere([&](Plc3::Bitset bs, PlcNef3::FeatureType) {
-        if (bs == bitset_mask) return Plc3::Bitset();
+    plc_nef.map_everywhere([&](AttrBitset bs, PlcNef3::FeatureType) {
+        if (bs == attrs_mask) return AttrBitset();
         else return bs;
     });
 
@@ -44,10 +44,10 @@ TEST(PlcTest, PlcNefToPlc) {
     EXPECT_EQ(out, out2);
     EXPECT_EQ(plc.volume_outside, out);
     EXPECT_NE(box1, box3);
-    EXPECT_EQ(Plc3::Bitset(), plc.volumes[out].bitset);
-    EXPECT_EQ(bitset_solid, plc.volumes[box1].bitset);
-    EXPECT_EQ(bitset_solid | bitset_mask, plc.volumes[box2].bitset);
-    EXPECT_EQ(bitset_solid, plc.volumes[box3].bitset);
+    EXPECT_EQ(AttrBitset(), plc.volumes[out].attrs);
+    EXPECT_EQ(attrs_solid, plc.volumes[box1].attrs);
+    EXPECT_EQ(attrs_solid | attrs_mask, plc.volumes[box2].attrs);
+    EXPECT_EQ(attrs_solid, plc.volumes[box3].attrs);
 
     Plc3::SurfaceId box1_out =
         ind.surface_containing_point(Point(0, 0, 0.5));

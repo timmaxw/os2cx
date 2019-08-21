@@ -244,7 +244,7 @@ void do_slice_directive(
     Project::SliceObject object;
 
     /* If there are too many select_* directives, bit_index will be greater than
-    or equal to Plc3::num_bits; we'll check this later. */
+    or equal to num_attr_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
     object.direction_vector = check_vector_3(args[1]);
@@ -266,7 +266,7 @@ void do_select_volume_directive(
     Project::SelectVolumeObject object;
 
     /* If there are too many select_volume directives, bit_index will be greater
-    than or equal to Plc3::num_bits; we'll check this later. */
+    than or equal to num_attr_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
     project->select_volume_objects.insert(std::make_pair(name, object));
@@ -284,7 +284,7 @@ void do_select_surface_directive(
     Project::SelectSurfaceObject object;
 
     /* If there are too many select_* directives, bit_index will be greater than
-    or equal to Plc3::num_bits; we'll check this later. */
+    or equal to num_attr_bits; we'll check this later. */
     object.bit_index = project->next_bit_index++;
 
     std::string mode = check_string(args[1]);
@@ -452,12 +452,12 @@ void openscad_extract_inventory(Project *project) {
         }
     }
 
-    if (project->next_bit_index - 1 > Plc3::num_bits - 1) {
+    if (project->next_bit_index - 1 > num_attr_bits - 1) {
         std::stringstream msg;
         msg << "There are too many os2cx_select_*() and/or "
             << "os2cx_slice() directives. There are "
             << (project->next_bit_index - 1)
-            << ", but the limit is " << (Plc3::num_bits - 1) << ".";
+            << ", but the limit is " << (num_attr_bits - 1) << ".";
         throw UsageError(msg.str());
     }
 

@@ -1,7 +1,6 @@
 #ifndef OS2CX_PLC_NEF_HPP_
 #define OS2CX_PLC_NEF_HPP_
 
-#include <bitset>
 #include <functional>
 #include <memory>
 
@@ -12,8 +11,8 @@
 namespace os2cx {
 
 /* PlcNef3 is a piecewise-linear complex where each volume, surface, edge, and
-vertex is annotated with a bitset. It supports arbitrary boolean operations that
-combine overlapping PlcNef3s and alter their bitsets. */
+vertex is annotated with an AttrsBitset. It supports arbitrary boolean
+operations that combine overlapping PlcNef3s and alter their attrs. */
 
 /* PlcNef3 is internally implemented as a CGAL::Nef_polyhedron_3 with a custom
 Marks type, but CGAL headers take a long time to compile, so the implementation
@@ -23,7 +22,6 @@ class PlcNef3Internal;
 class PlcNef3
 {
 public:
-    typedef Plc3::Bitset Bitset;
     enum class FeatureType { Volume, Face, Edge, Vertex };
 
     PlcNef3(); /* Returns an invalid PlcNef3 */
@@ -40,31 +38,31 @@ public:
     static PlcNef3 from_poly(const Poly3 &poly);
 
     /* Applies the given function to the bits of every volume, in place */
-    void map_volumes(const std::function<Bitset(Bitset)> &func);
+    void map_volumes(const std::function<AttrBitset(AttrBitset)> &func);
 
     /* Applies the given function to the bits of every face, in place. */
     void map_faces(
-        const std::function<Bitset(
-            Bitset current_bitset,
-            Bitset volume1_bitset,
-            Bitset volume2_bitset,
+        const std::function<AttrBitset(
+            AttrBitset current_attrs,
+            AttrBitset volume1_attrs,
+            AttrBitset volume2_attrs,
             Vector normal_towards_volume1
         )> &func);
 
     /* Applies the given function to the bits of every edge, in place */
-    void map_edges(const std::function<Bitset(Bitset)> &func);
+    void map_edges(const std::function<AttrBitset(AttrBitset)> &func);
 
     /* Applies the given function to the bits of every vertex, in place */
-    void map_vertices(const std::function<Bitset(Bitset)> &func);
+    void map_vertices(const std::function<AttrBitset(AttrBitset)> &func);
 
     /* Applies the given function to the bits of every feature, in place. */
-    void map_everywhere(const std::function<Bitset(Bitset, FeatureType)> &func);
+    void map_everywhere(const std::function<AttrBitset(AttrBitset, FeatureType)> &func);
 
-    /* Replaces every non-zero bitset with bitset_one, and every all-zeroes
-    bitset with bitset_zero. */
-    void binarize(Bitset bitset_one, Bitset bitset_zero);
+    /* Replaces every non-zero attrs bitset with attrs_one, and every all-zeroes
+    attrs bitset with attrs_zero. */
+    void binarize(AttrBitset attrs_one, AttrBitset attrs_zero);
 
-    /* For each edge of each face, do 'edge.bitset |= face.bitset', and the same
+    /* For each edge of each face, do 'edge.attrs |= face.attrs', and the same
     with each vertex of each face. */
     void outline_faces();
 
@@ -75,7 +73,7 @@ public:
     PlcNef3 binary_and_not(const PlcNef3 &other) const;
     PlcNef3 binary_xor(const PlcNef3 &other) const;
 
-    Bitset get_bitset(Point point) const;
+    AttrBitset get_attrs(Point point) const;
 
     std::unique_ptr<PlcNef3Internal> i;
 };
