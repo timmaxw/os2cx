@@ -121,6 +121,7 @@ void try_mnb(
     const std::vector<Box> &boxes_out,
     int transform,
     double max_element_size = 1e6,
+    int min_subdivision = 1,
     ElementType element_type = ElementType::C3D8
 ) {
     PlcNef3 example = PlcNef3::empty();
@@ -130,7 +131,8 @@ void try_mnb(
     }
     Plc3 plc = plc_nef_to_plc(example);
 
-    Mesh3 mesh = mesher_naive_bricks(plc, max_element_size, element_type);
+    Mesh3 mesh = mesher_naive_bricks(
+        plc, max_element_size, min_subdivision, element_type);
 
     std::set<Box, BoxLess> expected_boxes;
     for (const Box &box : boxes_out) {
@@ -165,7 +167,7 @@ TEST(MesherNaiveBricksTest, SingleBrick) {
     );
 }
 
-TEST(MesherNaiveBricksTest, SingleBrickSubdivided) {
+TEST(MesherNaiveBricksTest, SingleBrickMaxElementSize) {
     try_mnb(
         {Box(0, 0, 0, 1, 2, 3)},
         {
@@ -181,12 +183,32 @@ TEST(MesherNaiveBricksTest, SingleBrickSubdivided) {
     );
 }
 
+TEST(MesherNaiveBricksTest, SingleBrickMinSubdivision) {
+    try_mnb(
+        {Box(0, 0, 0, 1, 2, 3)},
+        {
+            Box(0.0, 0.0, 0.0, 0.5, 1.0, 1.5),
+            Box(0.5, 0.0, 0.0, 1.0, 1.0, 1.5),
+            Box(0.0, 1.0, 0.0, 0.5, 2.0, 1.5),
+            Box(0.5, 1.0, 0.0, 1.0, 2.0, 1.5),
+            Box(0.0, 0.0, 1.5, 0.5, 1.0, 3.0),
+            Box(0.5, 0.0, 1.5, 1.0, 1.0, 3.0),
+            Box(0.0, 1.0, 1.5, 0.5, 2.0, 3.0),
+            Box(0.5, 1.0, 1.5, 1.0, 2.0, 3.0)
+        },
+        IDENTITY,
+        1e6,
+        2 /* override min_subdivision to force subdivision */
+    );
+}
+
 TEST(MesherNaiveBricksTest, SingleBrickSecondOrder) {
     try_mnb(
         {Box(0, 0, 0, 1, 2, 3)},
         {Box(0, 0, 0, 1, 2, 3)},
         IDENTITY,
         1e6,
+        1,
         ElementType::C3D20R
     );
 }

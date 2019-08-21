@@ -2,6 +2,16 @@
 
 namespace os2cx {
 
+Length Plc3::compute_approx_scale() const {
+    double max_dist = 0;
+    for (const Plc3::Vertex &vertex : vertices) {
+        max_dist = std::max(max_dist, fabs(vertex.point.x));
+        max_dist = std::max(max_dist, fabs(vertex.point.y));
+        max_dist = std::max(max_dist, fabs(vertex.point.z));
+    }
+    return Length(max_dist);
+}
+
 void Plc3::debug(std::ostream &stream) const {
     stream << "VERTICES " << vertices.size() << std::endl;
     for (Plc3::VertexId vid = 0;

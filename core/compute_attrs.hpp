@@ -40,7 +40,6 @@ public:
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end);
 
 ElementSet compute_element_set_from_attr_bit(
-    const Plc3Index &plc_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
@@ -52,7 +51,6 @@ public:
 };
 
 FaceSet compute_face_set_from_attr_bit(
-    const Plc3Index &plc_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,

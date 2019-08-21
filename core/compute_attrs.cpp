@@ -156,7 +156,6 @@ ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {
 }
 
 ElementSet compute_element_set_from_attr_bit(
-    const Plc3Index &plc_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
@@ -166,17 +165,7 @@ ElementSet compute_element_set_from_attr_bit(
     ElementSet set;
     for (ElementId eid = element_begin; eid != element_end; ++eid) {
         const Element3 &element = mesh.elements[eid];
-
-        LengthVector sum = LengthVector::zero();
-        int num_nodes = element.num_nodes();
-        for (int i = 0; i < num_nodes; ++i) {
-            sum += mesh.nodes[element.nodes[i]].point - Point::origin();
-        }
-        Point center = Point::origin() + sum / num_nodes;
-
-        Plc3::VolumeId volume_id = plc_index.volume_containing_point(center);
-        AttrBitset attrs = plc_index.plc->volumes[volume_id].attrs;
-        if (attrs[attr_bit]) {
+        if (element.attrs[attr_bit]) {
             set.elements.insert(eid);
         }
     }
@@ -184,7 +173,6 @@ ElementSet compute_element_set_from_attr_bit(
 }
 
 FaceSet compute_face_set_from_attr_bit(
-    const Plc3Index &plc_index,
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
@@ -199,21 +187,7 @@ FaceSet compute_face_set_from_attr_bit(
         const ElementTypeShape *shape = &element_type_shape(element.type);
         for (fid.face = 0; fid.face < static_cast<int>(shape->faces.size());
                 ++fid.face) {
-            LengthVector sum = LengthVector::zero();
-            for (int vertex_index : shape->faces[fid.face].vertices) {
-                sum += mesh.nodes[element.nodes[vertex_index]].point
-                    - Point::origin();
-            }
-            Point center = Point::origin()
-                + sum / shape->faces[fid.face].vertices.size();
-
-            Plc3::SurfaceId surface_id =
-                plc_index.surface_containing_point(center);
-            if (surface_id == -1) {
-                /* internal face, not on any surface */
-                continue;
-            }
-            AttrBitset attrs = plc_index.plc->surfaces[surface_id].attrs;
+            AttrBitset attrs = element.face_attrs[fid.face];
             if (attrs[attr_bit]) {
                 set.faces.insert(fid);
             }

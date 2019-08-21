@@ -15,8 +15,6 @@ public:
     Plc3Index(const Plc3 *plc);
     ~Plc3Index();
 
-    Length approx_scale() const;
-
     Plc3::VolumeId volume_containing_point(Point p) const;
 
     /* If the point is on a surface (to within some epsilon), returns that

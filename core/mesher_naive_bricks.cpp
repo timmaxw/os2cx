@@ -3,6 +3,8 @@
 #include <limits>
 #include <map>
 
+#include "mesher_tetgen.hpp"
+
 #define NAIVE_BRICKS_DEBUG(x) (void)0
 
 namespace os2cx {
@@ -61,6 +63,7 @@ public:
 template<class Value>
 void subdivide_grid(
     double max_element_size,
+    int min_subdivision,
     std::map<double, Value> *grid
 ) {
     auto lower = grid->begin();
@@ -72,7 +75,7 @@ void subdivide_grid(
         int num_parts = std::max(
             static_cast<int>(ceil(
                 (upper->first - lower->first) / max_element_size)),
-            2); /* always split each grid cell into at least two parts */
+            min_subdivision);
         double part_size = (upper->first - lower->first) / num_parts;
         for (int i = 1; i < num_parts; ++i) {
             double split_point = lower->first + part_size * i;
@@ -90,6 +93,7 @@ void subdivide_grid(
 void setup_grid(
     const Plc3 &plc,
     double max_element_size,
+    double min_subdivision,
     GridAxis *x_grid_out,
     GridAxis *y_grid_out,
     std::map<double, std::vector<TriangleRef> > *z_triangles_out
@@ -134,9 +138,9 @@ void setup_grid(
         }
     }
 
-    subdivide_grid(max_element_size, &x_grid_out->points);
-    subdivide_grid(max_element_size, &y_grid_out->points);
-    subdivide_grid(max_element_size, z_triangles_out);
+    subdivide_grid(max_element_size, min_subdivision, &x_grid_out->points);
+    subdivide_grid(max_element_size, min_subdivision, &y_grid_out->points);
+    subdivide_grid(max_element_size, min_subdivision, z_triangles_out);
 
     x_grid_out->precompute_indexes();
     y_grid_out->precompute_indexes();
@@ -421,11 +425,14 @@ void create_bricks(
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
     double max_element_size,
+    int min_subdivision,
     ElementType element_type
 ) {
     GridAxis x_grid, y_grid;
     std::map<double, std::vector<TriangleRef> > z_triangles;
-    setup_grid(plc, max_element_size, &x_grid, &y_grid, &z_triangles);
+    setup_grid(
+        plc, max_element_size, min_subdivision,
+        &x_grid, &y_grid, &z_triangles);
 
     Mesh3 mesh;
     if (z_triangles.empty()) {
@@ -478,6 +485,8 @@ Mesh3 mesher_naive_bricks(
 
         z_lower = z_upper;
     }
+
+    transfer_attrs(plc, &mesh);
 
     return mesh;
 }

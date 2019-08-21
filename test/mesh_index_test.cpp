@@ -11,14 +11,20 @@ TEST(MeshIndexTest, Mesh3Index) {
         n[i] = mesh.nodes.key_end();
         mesh.nodes.push_back(Node3());
     }
+    AttrBitset attrs;
+    attrs.set(attr_bit_solid());
 
     mesh.elements.push_back(Element3 {
         ElementType::C3D4,
-        {n[0], n[1], n[2], n[3]}
+        {n[0], n[1], n[2], n[3]},
+        attrs,
+        {attrs, attrs, attrs, attrs}
     });
     mesh.elements.push_back(Element3 {
         ElementType::C3D4,
-        {n[0], n[2], n[1], n[4]}
+        {n[0], n[2], n[1], n[4]},
+        attrs,
+        {attrs, attrs, attrs, attrs}
     });
 
     Mesh3Index index(mesh);

@@ -105,7 +105,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         }
 
         pair.second.plc.reset(new Plc3(plc_nef_to_plc(solid_nef)));
-        pair.second.plc_index.reset(new Plc3Index(pair.second.plc.get()));
 
         callbacks->project_run_checkpoint();
     }
@@ -113,7 +112,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     for (auto &pair : p->mesh_objects) {
         p->approx_scale = std::max(
             p->approx_scale,
-            pair.second.plc_index->approx_scale());
+            pair.second.plc->compute_approx_scale());
     }
     p->progress = Project::Progress::PolyAttrsDone;
     callbacks->project_run_checkpoint();
@@ -140,6 +139,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             partial_mesh = mesher_naive_bricks(
                 *pair.second.plc,
                 max_element_size,
+                2,
                 ElementType::C3D20R
             );
             break;
@@ -155,7 +155,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 "Computing slice '" + slice_pair.first +
                 "' on mesh '" + pair.first + "'...");
             FaceSet slice_face_set = compute_face_set_from_attr_bit(
-                *pair.second.plc_index,
                 partial_mesh,
                 partial_mesh.elements.key_begin(),
                 partial_mesh.elements.key_end(),
@@ -230,7 +229,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         ElementSet element_set;
         for (auto &mesh_pair : p->mesh_objects) {
             ElementSet partial_element_set = compute_element_set_from_attr_bit(
-                *mesh_pair.second.plc_index,
                 *p->mesh,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,
@@ -254,7 +252,6 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         FaceSet face_set;
         for (auto &mesh_pair : p->mesh_objects) {
             FaceSet partial_face_set = compute_face_set_from_attr_bit(
-                *mesh_pair.second.plc_index,
                 *p->mesh,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,

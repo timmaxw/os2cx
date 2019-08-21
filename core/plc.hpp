@@ -53,6 +53,8 @@ public:
     };
     std::vector<Border> borders;
 
+    Length compute_approx_scale() const;
+
     void debug(std::ostream &) const;
 };
 

@@ -106,17 +106,6 @@ Plc3Index::Plc3Index(const Plc3 *plc_) : plc(plc_)
 
 Plc3Index::~Plc3Index() { }
 
-Length Plc3Index::approx_scale() const {
-    double size = 0;
-    size = std::max(size, i->tree.bbox().xmax());
-    size = std::max(size, -i->tree.bbox().xmin());
-    size = std::max(size, i->tree.bbox().ymax());
-    size = std::max(size, -i->tree.bbox().ymin());
-    size = std::max(size, i->tree.bbox().zmax());
-    size = std::max(size, -i->tree.bbox().zmin());
-    return Length(size);
-}
-
 Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
     CGAL::Random_points_on_sphere_3<CGAL::Point_3<KS> > random;
     CGAL::Vector_3<KS> direction(CGAL::ORIGIN, *random);

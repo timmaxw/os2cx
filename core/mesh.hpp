@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "attrs.hpp"
 #include "calc.hpp"
 #include "mesh_type_info.hpp"
 #include "util.hpp"
@@ -39,6 +40,8 @@ public:
 
     ElementType type;
     NodeId nodes[ElementTypeShape::max_vertices_per_element];
+    AttrBitset attrs;
+    AttrBitset face_attrs[ElementTypeShape::max_faces_per_element];
 };
 
 class ElementId {

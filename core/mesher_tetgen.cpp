@@ -5,6 +5,8 @@
 #define TETLIBRARY
 #include <tetgen.h>
 
+#include "plc_index.hpp"
+
 namespace os2cx {
 
 void convert_input(const Plc3 &plc, tetgenio *tetgen) {
@@ -98,6 +100,47 @@ Mesh3 convert_output(tetgenio *tetgen) {
     return mesh;
 }
 
+void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
+    Plc3Index plc_index(&plc);
+
+    for (ElementId eid = mesh->elements.key_begin();
+            eid != mesh->elements.key_end(); ++eid) {
+        Element3 *element = &mesh->elements[eid];
+
+        LengthVector sum = LengthVector::zero();
+        int num_nodes = element->num_nodes();
+        for (int i = 0; i < num_nodes; ++i) {
+            sum += mesh->nodes[element->nodes[i]].point - Point::origin();
+        }
+        Point center = Point::origin() + sum / num_nodes;
+
+        Plc3::VolumeId volume_id = plc_index.volume_containing_point(center);
+        element->attrs = plc.volumes[volume_id].attrs;
+
+        FaceId fid;
+        fid.element_id = eid;
+        const ElementTypeShape *shape = &element_type_shape(element->type);
+        for (fid.face = 0; fid.face < static_cast<int>(shape->faces.size());
+                ++fid.face) {
+            LengthVector sum = LengthVector::zero();
+            for (int vertex_index : shape->faces[fid.face].vertices) {
+                sum += mesh->nodes[element->nodes[vertex_index]].point
+                    - Point::origin();
+            }
+            Point center = Point::origin()
+                + sum / shape->faces[fid.face].vertices.size();
+
+            Plc3::SurfaceId surface_id =
+                plc_index.surface_containing_point(center);
+            if (surface_id == -1) {
+                /* internal face, not on any surface */
+                continue;
+            }
+            element->face_attrs[fid.face] = plc.surfaces[surface_id].attrs;
+        }
+    }
+}
+
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
     double max_element_size
@@ -123,7 +166,11 @@ Mesh3 mesher_tetgen(
         &tetgen_input,
         &tetgen_output);
 
-    return convert_output(&tetgen_output);
+    Mesh3 mesh = convert_output(&tetgen_output);
+
+    transfer_attrs(plc, &mesh);
+
+    return mesh;
 }
 
 double suggest_max_element_size(const Plc3 &plc) {

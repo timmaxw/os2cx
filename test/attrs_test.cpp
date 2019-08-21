@@ -13,10 +13,8 @@ TEST(AttrsTest, LoadVolume) {
     compute_plc_nef_select_volume(
         &solid_nef, Poly3::from_box(Box(0, 0, 1, 1, 1, 3)), bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
-    Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
     ElementSet element_set = compute_element_set_from_attr_bit(
-        plc_index,
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
@@ -47,10 +45,8 @@ TEST(AttrsTest, LoadSurface) {
         180,
         bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
-    Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
     FaceSet face_set = compute_face_set_from_attr_bit(
-        plc_index,
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
@@ -84,10 +80,8 @@ TEST(AttrsTest, ComputeSlice) {
         180,
         bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
-    Plc3Index plc_index(&plc);
     Mesh3 mesh = mesher_tetgen(plc, 0.1);
     FaceSet face_set = compute_face_set_from_attr_bit(
-        plc_index,
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),

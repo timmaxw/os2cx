@@ -92,7 +92,6 @@ public:
 
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Plc3> plc;
-        std::shared_ptr<const Plc3Index> plc_index;
 
         /* The partial_meshes of all the individual MeshObjects will be combined
         to form the overall project mesh. The nodes and elements will be
