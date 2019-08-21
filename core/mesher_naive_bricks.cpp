@@ -1,14 +1,17 @@
 #include "mesher_naive_bricks.hpp"
 
+#include <algorithm>
+#include <functional>
 #include <limits>
 #include <map>
 
 #include "mesher_tetgen.hpp"
 
-#define NAIVE_BRICKS_DEBUG(x) (void)0
+#define NAIVE_BRICKS_DEBUG(x) x
 
 namespace os2cx {
 
+/* A pointer to a specific triangle on a specific surface in the Plc3 */
 class TriangleRef {
 public:
     TriangleRef() { }
@@ -19,10 +22,18 @@ public:
 };
 
 static const Plc3::VolumeId VOLUME_ID_UNSET = -1;
+static const Plc3::SurfaceId SURFACE_ID_UNSET = -1;
 
+/* Tracks a mapping between X/Y/Z coordinates and grid indexes. */
 class GridAxis {
 public:
     typedef std::map<double, int>::const_iterator const_iterator;
+    GridAxis(const std::map<double, std::vector<TriangleRef> > &triangles) {
+        for (const auto &pair : triangles) {
+            points[pair.first] = points.size();
+            points_by_index.push_back(pair.first);
+        }
+    }
     int num_points() const {
         return points.size();
     }
@@ -47,24 +58,19 @@ public:
         assert(it != points.end());
         return it;
     }
-    void add_point(double p) {
-        points[p];
-    }
-    void precompute_indexes() {
-        int i = 0;
-        for (auto &pair : points) {
-            pair.second = i;
-            ++i;
-        }
+    double point_at_index(int index) const {
+        return points_by_index.at(index);
     }
     std::map<double, int> points;
+    std::vector<double> points_by_index;
 };
 
-template<class Value>
+/* Given a grid (expressed as a map of X/Y/Z coordinates to lists of triangles)
+applies max_element_size and min_subdivision to that grid. */
 void subdivide_grid(
     double max_element_size,
     int min_subdivision,
-    std::map<double, Value> *grid
+    std::map<double, std::vector<TriangleRef> > *grid
 ) {
     auto lower = grid->begin();
     while (true) {
@@ -90,12 +96,15 @@ void subdivide_grid(
     }
 }
 
+/* Confirms that all triangles and borders in the Plc3 are aligned with the
+X/Y/Z axes. Emits x/y/z_triangles_out, where keys are grid locations and values
+are the triangles in the given plane. */
 void setup_grid(
     const Plc3 &plc,
     double max_element_size,
     double min_subdivision,
-    GridAxis *x_grid_out,
-    GridAxis *y_grid_out,
+    std::map<double, std::vector<TriangleRef> > *x_triangles_out,
+    std::map<double, std::vector<TriangleRef> > *y_triangles_out,
     std::map<double, std::vector<TriangleRef> > *z_triangles_out
 ) {
     for (Plc3::SurfaceId sid = 0;
@@ -108,9 +117,9 @@ void setup_grid(
             Point p1 = plc.vertices[tri.vertices[1]].point;
             Point p2 = plc.vertices[tri.vertices[2]].point;
             if (p0.x == p1.x && p0.x == p2.x) {
-                x_grid_out->add_point(p0.x);
+                (*x_triangles_out)[p0.x].push_back(TriangleRef(sid, tix));
             } else if (p0.y == p1.y && p0.y == p2.y) {
-                y_grid_out->add_point(p0.y);
+                (*y_triangles_out)[p0.y].push_back(TriangleRef(sid, tix));
             } else if (p0.z == p1.z && p0.z == p2.z) {
                 (*z_triangles_out)[p0.z].push_back(TriangleRef(sid, tix));
             } else {
@@ -124,28 +133,26 @@ void setup_grid(
             Point p0 = plc.vertices[border.vertices[i]].point;
             Point p1 = plc.vertices[border.vertices[i + 1]].point;
             if (p0.x == p1.x && p0.y == p1.y) {
-                x_grid_out->add_point(p0.x);
-                y_grid_out->add_point(p0.y);
+                (*x_triangles_out)[p0.x]; /* make sure entry in map exists */
+                (*y_triangles_out)[p0.y];
             } else if (p0.x == p1.x && p0.z == p1.z) {
-                x_grid_out->add_point(p0.x);
-                (*z_triangles_out)[p0.z]; /* make sure entry in map exists */
+                (*x_triangles_out)[p0.x];
+                (*z_triangles_out)[p0.z];
             } else if (p0.y == p1.y && p0.z == p1.z) {
-                y_grid_out->add_point(p0.y);
-                (*z_triangles_out)[p0.z]; /* make sure entry in map exists */
+                (*y_triangles_out)[p0.y];
+                (*z_triangles_out)[p0.z];
             } else {
                 throw NaiveBricksAlignmentError(p0, p1);
             }
         }
     }
 
-    subdivide_grid(max_element_size, min_subdivision, &x_grid_out->points);
-    subdivide_grid(max_element_size, min_subdivision, &y_grid_out->points);
+    subdivide_grid(max_element_size, min_subdivision, x_triangles_out);
+    subdivide_grid(max_element_size, min_subdivision, y_triangles_out);
     subdivide_grid(max_element_size, min_subdivision, z_triangles_out);
-
-    x_grid_out->precompute_indexes();
-    y_grid_out->precompute_indexes();
 }
 
+/* Helper class for tracking the minimum and maximum of a set of numbers */
 class MinMaxSet {
 public:
     MinMaxSet() :
@@ -161,38 +168,68 @@ public:
     double current_min, current_max;
 };
 
-inline void interpolate_y_from_x(
+/* Consider the line segment from p0 to p1. Some subset of that line segment
+will have U-coordinate between u_lower and u_upper. interpolate_v_from_u()
+calculates the V-coordinates of that segment, and inserts into the given
+MinMaxSet. U and V can be arbitrary Dimensions. */
+inline void interpolate_v_from_u(
+    Dimension dim_u,
+    Dimension dim_v,
     Point p0,
     Point p1,
-    double x_lower,
-    double x_upper,
-    MinMaxSet *y_out
+    double u_lower,
+    double u_upper,
+    MinMaxSet *v_out
 ) {
-    if (p0.x > p1.x) {
+    if (p0.at(dim_u) > p1.at(dim_u)) {
         std::swap(p0, p1);
     }
-    if (x_upper < p0.x || x_lower > p1.x) {
+    if (u_upper < p0.at(dim_u) || u_lower > p1.at(dim_u)) {
         return;
     }
-    if (x_lower <= p0.x) {
-        y_out->insert(p0.y);
+    if (u_lower <= p0.at(dim_u)) {
+        v_out->insert(p0.at(dim_v));
     } else {
-        y_out->insert(p0.y + (x_lower - p0.x) / (p1.x - p0.x) * (p1.y - p0.y));
+        v_out->insert(p0.at(dim_v)
+            + (u_lower - p0.at(dim_u))
+                / (p1.at(dim_u) - p0.at(dim_u))
+                * (p1.at(dim_v) - p0.at(dim_v)));
     }
-    if (x_upper >= p1.x) {
-        y_out->insert(p1.y);
+    if (u_upper >= p1.at(dim_u)) {
+        v_out->insert(p1.at(dim_v));
     } else {
-        y_out->insert(p0.y + (x_upper - p0.x) / (p1.x - p0.x) * (p1.y - p0.y));
+        v_out->insert(p0.at(dim_v)
+            + (u_upper - p0.at(dim_u))
+                / (p1.at(dim_u) - p0.at(dim_u))
+                * (p1.at(dim_v) - p0.at(dim_v)));
     }
 }
 
+/* Generic function for taking a list of triangles that all lie within the same
+W-plane, and projecting them onto a U/V-grid, determining which grid cells each
+triangle overlaps with and calling the callback for each overlap. Note that the
+callback may be called multiple times for the same grid cell, with different
+triangles. */
 void apply_triangles(
     const Plc3 &plc,
-    const GridAxis &x_grid,
-    const GridAxis &y_grid,
+    Dimension dim_u,
+    Dimension dim_v,
+    Dimension dim_w,
+    const GridAxis &u_grid,
+    const GridAxis &v_grid,
     const std::vector<TriangleRef> &triangles,
-    const Array2D<Plc3::VolumeId> &volume_ids_before,
-    Array2D<Plc3::VolumeId> *volume_ids_after
+    const std::function<void(
+        /* The index of the U-interval that the triangle overlaps with */
+        int u_index,
+        /* The index of the V-interval that the triangle overlaps with */
+        int v_index,
+        /* The surface ID of the surface holding the triangle */
+        Plc3::SurfaceId surface,
+        /* The volume ID on the negative-W side of the surface */
+        Plc3::VolumeId volume_before,
+        /* The volume ID on the positive-W side of the surface */
+        Plc3::VolumeId volume_after
+    )> &callback
 ) {
     for (const TriangleRef &tri_ref : triangles) {
         const Plc3::Surface &surface =
@@ -204,7 +241,7 @@ void apply_triangles(
         Point p2 = plc.vertices[triangle.vertices[2]].point;
 
         Plc3::VolumeId volume_before, volume_after;
-        if ((p1 - p0).cross(p2 - p0).z < 0) {
+        if ((p1 - p0).cross(p2 - p0).at(dim_w) < 0) {
             volume_before = surface.volumes[0];
             volume_after = surface.volumes[1];
         } else {
@@ -218,64 +255,96 @@ void apply_triangles(
             << ", vib = " << volume_before << ", via = " << volume_after
             << std::endl);
 
-        MinMaxSet x_minmax;
-        x_minmax.insert(p0.x);
-        x_minmax.insert(p1.x);
-        x_minmax.insert(p2.x);
+        MinMaxSet u_minmax;
+        u_minmax.insert(p0.at(dim_u));
+        u_minmax.insert(p1.at(dim_u));
+        u_minmax.insert(p2.at(dim_u));
 
         /* Shrink the area by epsilon to prevent rounding errors wherein a
         triangle overlaps the wrong area by a tiny amount */
         static const double epsilon = 1e-20;
 
-        GridAxis::const_iterator x_min =
-            x_grid.find_point_lte(x_minmax.min() + epsilon);
-        GridAxis::const_iterator x_max =
-            x_grid.find_point_gte(x_minmax.max() - epsilon);
-        for (auto x_lower = x_min; x_lower != x_max; ++x_lower) {
-            auto x_upper = x_lower;
-            ++x_upper;
+        GridAxis::const_iterator u_min =
+            u_grid.find_point_lte(u_minmax.min() + epsilon);
+        GridAxis::const_iterator u_max =
+            u_grid.find_point_gte(u_minmax.max() - epsilon);
+        for (auto u_lower = u_min; u_lower != u_max; ++u_lower) {
+            auto u_upper = u_lower;
+            ++u_upper;
 
-            MinMaxSet y_minmax;
-            interpolate_y_from_x(
-                p0, p1, x_lower->first, x_upper->first, &y_minmax);
-            interpolate_y_from_x(
-                p1, p2, x_lower->first, x_upper->first, &y_minmax);
-            interpolate_y_from_x(
-                p2, p0, x_lower->first, x_upper->first, &y_minmax);
+            MinMaxSet v_minmax;
+            interpolate_v_from_u(dim_u, dim_v,
+                p0, p1, u_lower->first, u_upper->first, &v_minmax);
+            interpolate_v_from_u(dim_u, dim_v,
+                p1, p2, u_lower->first, u_upper->first, &v_minmax);
+            interpolate_v_from_u(dim_u, dim_v,
+                p2, p0, u_lower->first, u_upper->first, &v_minmax);
 
             NAIVE_BRICKS_DEBUG(std::cerr << "considering strip "
-                << "x = (" << x_lower->first << ", " << x_upper->first << "), "
-                << "y = (" << y_minmax.min() << ", " << y_minmax.max() << ")"
+                << "x = (" << u_lower->first << ", " << u_upper->first << "), "
+                << "y = (" << v_minmax.min() << ", " << v_minmax.max() << ")"
                 << std::endl);
 
-            GridAxis::const_iterator y_min =
-                y_grid.find_point_lte(y_minmax.min() + epsilon);
-            GridAxis::const_iterator y_max =
-                y_grid.find_point_gte(y_minmax.max() - epsilon);
+            GridAxis::const_iterator v_min =
+                v_grid.find_point_lte(v_minmax.min() + epsilon);
+            GridAxis::const_iterator v_max =
+                v_grid.find_point_gte(v_minmax.max() - epsilon);
 
-            for (auto y_lower = y_min; y_lower != y_max; ++y_lower) {
-                auto y_upper = y_lower;
-                ++y_upper;
+            for (auto v_lower = v_min; v_lower != v_max; ++v_lower) {
+                auto v_upper = v_lower;
+                ++v_upper;
                 NAIVE_BRICKS_DEBUG(std::cerr << "applying at cell "
-                    << "x = (" << x_lower->first
-                    << ", " << x_upper->first << "), "
-                    << "y = (" << y_lower->first
-                    << ", " << y_upper->first << ")"
+                    << "u = (" << u_lower->first
+                    << ", " << u_upper->first << "), "
+                    << "v = (" << v_lower->first
+                    << ", " << v_upper->first << ")"
                     << std::endl);
 
-                int x_index = x_lower->second;
-                int y_index = y_lower->second;
-                assert(volume_ids_before(x_index, y_index) == volume_before);
-                if ((*volume_ids_after)(x_index, y_index) == VOLUME_ID_UNSET) {
-                    (*volume_ids_after)(x_index, y_index) = volume_after;
-                } else {
-                    assert(
-                        (*volume_ids_after)(x_index, y_index) == volume_after);
-                }
+                int u_index = u_lower->second;
+                int v_index = v_lower->second;
+                callback(
+                    u_index,
+                    v_index,
+                    tri_ref.surface_id,
+                    volume_before,
+                    volume_after);
             }
         }
     }
+}
 
+/* Given a set of triangles that all lie in the same Z-plane, computes the
+volume IDs for the grid cells immediately in the positive-Z direction of that
+Z-plane. */
+void apply_triangles_to_update_volume_ids(
+    const Plc3 &plc,
+    const GridAxis &x_grid,
+    const GridAxis &y_grid,
+    const std::vector<TriangleRef> &triangles,
+    /* Volume IDs for the grid cells in the negative-Z direction of the Z-plane,
+    used for sanity checking. */
+    const Array2D<Plc3::VolumeId> &volume_ids_before,
+    Array2D<Plc3::VolumeId> *volume_ids_after
+) {
+    apply_triangles(
+        plc,
+        Dimension::X, Dimension::Y, Dimension::Z,
+        x_grid, y_grid,
+        triangles,
+        [&](int x_index, int y_index,
+            Plc3::SurfaceId,
+            Plc3::VolumeId volume_before,
+            Plc3::VolumeId volume_after
+        ) {
+            assert(volume_ids_before(x_index, y_index) == volume_before);
+            if ((*volume_ids_after)(x_index, y_index) == VOLUME_ID_UNSET) {
+                (*volume_ids_after)(x_index, y_index) = volume_after;
+            } else {
+                assert(
+                    (*volume_ids_after)(x_index, y_index) == volume_after);
+            }
+        }
+    );
     for (int x = 0; x < x_grid.num_intervals(); ++x) {
         for (int y = 0; y < y_grid.num_intervals(); ++y) {
             if ((*volume_ids_after)(x, y) == VOLUME_ID_UNSET) {
@@ -285,6 +354,7 @@ void apply_triangles(
     }
 }
 
+/* Helper function to create a single node */
 NodeId create_node(
     const std::pair<double, int> &xp,
     const std::pair<double, int> &yp,
@@ -303,6 +373,7 @@ NodeId create_node(
     return node_id;
 }
 
+/* Helper function to create a single brick */
 void create_brick(
     ElementType element_type,
     int order,
@@ -315,6 +386,7 @@ void create_brick(
     Array2D<NodeId> *z_lower_node_ids,
     Array2D<NodeId> *z_middle_node_ids,
     Array2D<NodeId> *z_upper_node_ids,
+    AttrBitset attrs,
     Mesh3 *mesh
 ) {
     Element3 element;
@@ -358,11 +430,19 @@ void create_brick(
         element.nodes[19] = create_node(xp_lower,  yp_upper,  zp_middle, mesh);
     }
 
+    element.attrs = attrs;
+    for (int face = 0; face < 6; ++face) {
+        /* Initialize face attrs the same as volume attrs. This is sometimes
+        inaccurate; we'll fix those cases in update_face_attrs. */
+        element.face_attrs[face] = attrs;
+    }
+
     mesh->elements.push_back(element);
 
     NAIVE_BRICKS_DEBUG(std::cerr << "created brick" << std::endl);
 }
 
+/* Creates all the bricks in a single Z-interval of the grid. */
 void create_bricks(
     const Plc3 &plc,
     ElementType element_type,
@@ -399,19 +479,21 @@ void create_bricks(
             ++y_upper;
             if (y_upper == y_grid.end_points()) break;
 
+            Plc3::VolumeId vid = volume_ids(x_lower->second, y_lower->second);
+
             NAIVE_BRICKS_DEBUG(std::cerr
                 << "x = (" << x_lower->first << ", " << x_upper->first << "), "
                 << "y = (" << y_lower->first << ", " << y_upper->first << "), "
                 << "z = (" << z_lower << ", " << z_upper << "), "
-                << "vid = " << volume_ids(x_lower->second, y_lower->second)
+                << "vid = " << vid
                 << std::endl);
 
-            if (volume_ids(x_lower->second, y_lower->second) !=
-                    plc.volume_outside) {
+            if (vid != plc.volume_outside) {
                 create_brick(
                     element_type, order,
                     x_lower, x_upper, y_lower, y_upper, z_lower, z_upper,
                     z_lower_node_ids, &z_middle_node_ids, z_upper_node_ids,
+                    plc.volumes[vid].attrs,
                     mesh);
             }
 
@@ -422,29 +504,157 @@ void create_bricks(
     }
 }
 
+/* Finds the element ID of the brick whose 0-th node is at 'point'. This is
+efficient by taking advantage of the fact that the bricks are always created in
+lexicographical order on [x, y, z]. */
+ElementId find_brick(const Mesh3 &mesh, Point point) {
+    Element3 dummy_element;
+    dummy_element.nodes[0] = NodeId::invalid();
+    auto iterator_pair = std::equal_range(
+        mesh.elements.begin(),
+        mesh.elements.end(),
+        dummy_element,
+        [&](const Element3 &element_a, const Element3 &element_b) {
+            Point point_a = (element_a.nodes[0] == NodeId::invalid())
+                ? point
+                : mesh.nodes[element_a.nodes[0]].point;
+            Point point_b = (element_b.nodes[0] == NodeId::invalid())
+                ? point
+                : mesh.nodes[element_b.nodes[0]].point;
+            if (point_a.z < point_b.z) return true;
+            if (point_a.z > point_b.z) return false;
+            if (point_a.y < point_b.y) return true;
+            if (point_a.y > point_b.y) return false;
+            return (point_a.x < point_b.x);
+        }
+    );
+    if (iterator_pair.first == iterator_pair.second) {
+        return ElementId::invalid();
+    } else {
+        int offset = iterator_pair.first - mesh.elements.begin();
+        return ElementId::from_int(mesh.elements.key_begin().to_int() + offset);
+    }
+}
+
+/* Sweeps through the entire grid in order of increasing W-dimension. For each
+face of a brick in 'mesh' for which that face lies in the W-plane, and is part
+of a surface, sets the attrs for that face to the surface's attrs. (Note that
+for faces that are not part of surfaces, create_brick() should have already
+initialized the attrs.) */
+void update_face_attrs(
+    const Plc3 &plc,
+    Dimension dim_u, Dimension dim_v, Dimension dim_w,
+    /* The face index of the face on the negative-W side of the brick */
+    int face_before,
+    /* The face index of the face on the positive-W side of the brick */
+    int face_after,
+    GridAxis u_grid, GridAxis v_grid,
+    std::map<double, std::vector<TriangleRef> > w_triangles,
+    Mesh3 *mesh
+) {
+    NAIVE_BRICKS_DEBUG(std::cerr
+        << "update_face_attrs in dimension w=" << dim_w << std::endl);
+
+    /* Store the element IDs for the previous W-interval of the grid.
+    ElementId::invalid() indicates that cell was empty. */
+    Array2D<ElementId> element_ids(
+        u_grid.num_intervals(),
+        v_grid.num_intervals(),
+        ElementId::invalid());
+
+    for (const auto &w_triangles_pair : w_triangles) {
+        Point point;
+        point.set_at(dim_w, w_triangles_pair.first);
+
+        NAIVE_BRICKS_DEBUG(std::cerr
+            << "update_face_attrs w=" << w_triangles_pair.first << std::endl);
+
+        /* Surface IDs indexed by grid cell. We use this to sanity-check that
+        no two triangles with different surface IDs overlap the same grid cell.
+        */
+        Array2D<Plc3::SurfaceId> surface_ids(
+            u_grid.num_intervals(),
+            v_grid.num_intervals(),
+            SURFACE_ID_UNSET);
+
+        apply_triangles(
+            plc,
+            dim_u, dim_v, dim_w,
+            u_grid, v_grid, w_triangles_pair.second,
+            [&](int u_index, int v_index,
+                Plc3::SurfaceId surface_id, Plc3::VolumeId, Plc3::VolumeId
+            ) {
+                NAIVE_BRICKS_DEBUG(std::cerr
+                    << "update_face_attrs"
+                    << " u_index=" << u_index
+                    << " v_index=" << v_index
+                    << " surface_id=" << surface_id << std::endl);
+
+                /* Sanity-check surface IDs. */
+                if (surface_ids(u_index, v_index) != SURFACE_ID_UNSET) {
+                    assert(surface_ids(u_index, v_index) == surface_id);
+                    return;
+                } else {
+                    surface_ids(u_index, v_index) = surface_id;
+                }
+
+                AttrBitset attrs = plc.surfaces[surface_id].attrs;
+
+                /* Apply face attrs to the element we are leaving */
+                ElementId prev_eid = element_ids(u_index, v_index);
+                NAIVE_BRICKS_DEBUG(std::cerr
+                    << "prev_eid=" << prev_eid.to_int() << std::endl);
+                if (prev_eid != ElementId::invalid()) {
+                    mesh->elements[prev_eid].face_attrs[face_after] = attrs;
+                }
+
+                /* Apply face attrs to the element we are entering */
+                point.set_at(dim_u, u_grid.point_at_index(u_index));
+                point.set_at(dim_v, v_grid.point_at_index(v_index));
+                ElementId next_eid = find_brick(*mesh, point);
+                NAIVE_BRICKS_DEBUG(std::cerr
+                    << "point=" << point
+                    << " next_eid=" << next_eid.to_int() << std::endl);
+                if (next_eid != ElementId::invalid()) {
+                    mesh->elements[next_eid].face_attrs[face_before] = attrs;
+                }
+                element_ids(u_index, v_index) = next_eid;
+            }
+        );
+
+        XXX FIXME we might actually have to update element_ids even if there
+        wasn't a triangle there at all.
+    }
+}
+
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
     double max_element_size,
     int min_subdivision,
     ElementType element_type
 ) {
-    GridAxis x_grid, y_grid;
-    std::map<double, std::vector<TriangleRef> > z_triangles;
+    std::map<double, std::vector<TriangleRef> >
+        x_triangles, y_triangles, z_triangles;
     setup_grid(
         plc, max_element_size, min_subdivision,
-        &x_grid, &y_grid, &z_triangles);
+        &x_triangles, &y_triangles, &z_triangles);
 
     Mesh3 mesh;
     if (z_triangles.empty()) {
         return mesh;
     }
 
+    GridAxis x_grid(x_triangles), y_grid(y_triangles), z_grid(z_triangles);
+
     NAIVE_BRICKS_DEBUG(std::cerr
         << "volume_outside = " << plc.volume_outside << std::endl);
 
     Array2D<Plc3::VolumeId> volume_ids(
-        x_grid.num_intervals(), y_grid.num_intervals(), plc.volume_outside);
+        x_grid.num_intervals(),
+        y_grid.num_intervals(),
+        plc.volume_outside);
     Array2D<NodeId> node_ids(
+        /* num_points + num_intervals for second order bricks */
         x_grid.num_points() + x_grid.num_intervals(),
         y_grid.num_points() + y_grid.num_intervals(),
         NodeId::invalid());
@@ -459,11 +669,11 @@ Mesh3 mesher_naive_bricks(
             << "apply_triangles at z = " << z_lower->first << std::endl);
         Array2D<Plc3::VolumeId> volume_ids_2(
             x_grid.num_intervals(), y_grid.num_intervals(), VOLUME_ID_UNSET);
-        apply_triangles(
+        apply_triangles_to_update_volume_ids(
             plc,
-            x_grid, y_grid,
-            z_lower->second,
-            volume_ids, &volume_ids_2);
+            x_grid, y_grid, z_lower->second,
+            volume_ids, &volume_ids_2
+        );
         volume_ids = std::move(volume_ids_2);
 
         NAIVE_BRICKS_DEBUG(std::cerr
@@ -486,7 +696,24 @@ Mesh3 mesher_naive_bricks(
         z_lower = z_upper;
     }
 
-    transfer_attrs(plc, &mesh);
+    update_face_attrs(
+        plc,
+        Dimension::X, Dimension::Y, Dimension::Z,
+        0, 1,
+        x_triangles, y_grid, z_triangles,
+        &mesh);
+    update_face_attrs(
+        plc,
+        Dimension::Y, Dimension::Z, Dimension::X,
+        5, 3,
+        y_grid, z_grid, x_triangles,
+        &mesh);
+    update_face_attrs(
+        plc,
+        Dimension::Z, Dimension::X, Dimension::Y,
+        2, 4,
+        z_grid, x_grid, y_triangles,
+        &mesh);
 
     return mesh;
 }

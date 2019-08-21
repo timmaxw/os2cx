@@ -1,6 +1,7 @@
 #ifndef OS2CX_CALC_HPP_
 #define OS2CX_CALC_HPP_
 
+#include <assert.h>
 #include <math.h>
 
 #include <iostream>
@@ -9,6 +10,10 @@ namespace os2cx {
 
 typedef double Length;
 typedef double Volume;
+
+enum class Dimension {X, Y, Z};
+
+std::ostream &operator<<(std::ostream &stream, Dimension dimension);
 
 class Vector {
 public:
@@ -76,6 +81,22 @@ public:
             z * other.x - x * other.z,
             x * other.y - y * other.x);
     }
+    double at(Dimension d) const {
+        switch (d) {
+        case Dimension::X: return x;
+        case Dimension::Y: return y;
+        case Dimension::Z: return z;
+        default: assert(false);
+        }
+    }
+    void set_at(Dimension d, double value) {
+        switch (d) {
+        case Dimension::X: x = value; break;
+        case Dimension::Y: y = value; break;
+        case Dimension::Z: z = value; break;
+        default: assert(false);
+        }
+    }
 
     double x, y, z;
 };
@@ -119,6 +140,22 @@ public:
     }
     bool operator!=(Point other) const {
         return x != other.x || y != other.y || z != other.z;
+    }
+    double at(Dimension d) const {
+        switch (d) {
+        case Dimension::X: return x;
+        case Dimension::Y: return y;
+        case Dimension::Z: return z;
+        default: assert(false);
+        }
+    }
+    void set_at(Dimension d, double value) {
+        switch (d) {
+        case Dimension::X: x = value; break;
+        case Dimension::Y: y = value; break;
+        case Dimension::Z: z = value; break;
+        default: assert(false);
+        }
     }
 
     double x, y, z;
@@ -187,8 +224,6 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &stream, Box box);
-
-enum class Dimension {X, Y, Z};
 
 } /* namespace os2cx */
 

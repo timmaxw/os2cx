@@ -134,9 +134,11 @@ void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
                 plc_index.surface_containing_point(center);
             if (surface_id == -1) {
                 /* internal face, not on any surface */
-                continue;
+                element->face_attrs[fid.face] = plc.volumes[volume_id].attrs;
+            } else {
+                /* copy attrs of the surface */
+                element->face_attrs[fid.face] = plc.surfaces[surface_id].attrs;
             }
-            element->face_attrs[fid.face] = plc.surfaces[surface_id].attrs;
         }
     }
 }

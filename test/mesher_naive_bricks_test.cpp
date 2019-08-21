@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "compute_attrs.hpp"
 #include "mesher_naive_bricks.hpp"
 #include "plc_nef_to_plc.hpp"
 
@@ -38,7 +39,7 @@ enum BoxTransform {
     INVERT_Z = 32
 };
 
-Box box_transform(const Box &b, int t) {
+Box transform_box(const Box &b, int t) {
     Box b2;
     switch (t & PERMUTE_MASK) {
     case IDENTITY:
@@ -77,6 +78,38 @@ Box box_transform(const Box &b, int t) {
     }
 
     return b3;
+}
+
+Vector transform_vector(const Vector &v, int t) {
+    Vector v2;
+    switch (t & PERMUTE_MASK) {
+    case IDENTITY:
+        v2 = v;
+        break;
+    case PERMUTE_YZX:
+        v2 = Vector(v.y, v.z, v.x);
+        break;
+    case PERMUTE_ZXY:
+        v2 = Vector(v.z, v.x, v.y);
+        break;
+    case PERMUTE_ZYX:
+        v2 = Vector(v.z, v.y, v.x);
+        break;
+    case PERMUTE_YXZ:
+        v2 = Vector(v.y, v.x, v.z);
+        break;
+    case PERMUTE_XZY:
+        v2 = Vector(v.x, v.z, v.y);
+        break;
+    default: assert(false);
+    }
+
+    Vector v3 = v2;
+    if (t & INVERT_X) v3.x = -v2.x;
+    if (t & INVERT_Y) v3.y = -v2.y;
+    if (t & INVERT_Z) v3.z = -v2.z;
+
+    return v3;
 }
 
 Box element_to_box(const Mesh3 &mesh, const Element3 &element) {
@@ -126,7 +159,7 @@ void try_mnb(
 ) {
     PlcNef3 example = PlcNef3::empty();
     for (const Box &box : boxes_in) {
-        Box box2 = box_transform(box, transform);
+        Box box2 = transform_box(box, transform);
         example = example.binary_or(PlcNef3::from_poly(Poly3::from_box(box2)));
     }
     Plc3 plc = plc_nef_to_plc(example);
@@ -136,7 +169,7 @@ void try_mnb(
 
     std::set<Box, BoxLess> expected_boxes;
     for (const Box &box : boxes_out) {
-        Box box2 = box_transform(box, transform);
+        Box box2 = transform_box(box, transform);
         expected_boxes.insert(box2);
     }
     std::set<Box, BoxLess> unmatched_boxes = expected_boxes;
@@ -342,6 +375,114 @@ TEST(MesherNaiveBricksTest, IBeamZY) {
 }
 TEST(MesherNaiveBricksTest, IBeamXZ) {
     try_mnb(ibeam_in, ibeam_out, PERMUTE_XZY);
+}
+
+int unit_vector_to_brick_face_index(Vector vector) {
+    if (vector == Vector(1, 0, 0)) {
+        return 3;
+    } else if (vector == Vector(-1, 0, 0)) {
+        return 5;
+    } else if (vector == Vector(0, 1, 0)) {
+        return 4;
+    } else if (vector == Vector(0, -1, 0)) {
+        return 2;
+    } else if (vector == Vector(0, 0, 1)) {
+        return 1;
+    } else if (vector == Vector(0, 0, -1)) {
+        return 0;
+    } else {
+        assert(false);
+    }
+}
+
+void try_mnb_attr(int transform) {
+    Box solid_box = transform_box(Box(0, 0, 0, 10, 1, 1), transform);
+    PlcNef3 solid = compute_plc_nef_for_solid(Poly3::from_box(solid_box));
+
+    Plc3 plc0 = plc_nef_to_plc(solid);
+
+    AttrBitset attr_solid;
+    attr_solid.set(attr_bit_solid());
+
+    Box mask_box = transform_box(Box(-0.1, -0.1, -0.1, 2, 1.1, 1.1), transform);
+    Poly3 mask = Poly3::from_box(mask_box);
+
+    AttrBitIndex attr_bit_volume = 2;
+    AttrBitset attr_volume;
+    attr_volume.set(attr_bit_volume);
+    compute_plc_nef_select_volume(&solid, mask, attr_bit_volume);
+
+    Plc3 plc1 = plc_nef_to_plc(solid);
+
+    Vector vector_external = transform_vector(Vector(-1, 0, 0), transform);
+    AttrBitIndex attr_bit_surface_external = 3;
+    AttrBitset attr_surface_external;
+    attr_surface_external.set(attr_bit_surface_external);
+    compute_plc_nef_select_surface_external(
+        &solid, mask, vector_external, 45, attr_bit_surface_external);
+
+    Plc3 plc2 = plc_nef_to_plc(solid);
+
+    Vector vector_internal = transform_vector(Vector(1, 0, 0), transform);
+    AttrBitIndex attr_bit_surface_internal = 4;
+    AttrBitset attr_surface_internal;
+    attr_surface_internal.set(attr_bit_surface_internal);
+    compute_plc_nef_select_surface_internal(
+        &solid, mask, vector_internal, 45, attr_bit_surface_internal);
+
+    Plc3 plc = plc_nef_to_plc(solid);
+
+    Mesh3 mesh = mesher_naive_bricks(plc, 5, 1, ElementType::C3D8);
+
+    int face1 = unit_vector_to_brick_face_index(vector_external);
+    int face2 = unit_vector_to_brick_face_index(vector_internal);
+
+    for (const Element3 &element : mesh.elements) {
+        Box box = element_to_box(mesh, element);
+        if (box == transform_box(Box(0, 0, 0, 2, 1, 1), transform)) {
+            ASSERT_EQ(attr_solid|attr_volume,
+                element.attrs);
+            ASSERT_EQ(attr_solid|attr_surface_external,
+                element.face_attrs[face1]);
+            ASSERT_EQ(attr_solid|attr_surface_internal,
+                element.face_attrs[face2]);
+        } else if (box == transform_box(Box(2, 0, 0, 6, 1, 1), transform)) {
+            ASSERT_EQ(attr_solid,
+                element.attrs);
+            ASSERT_EQ(attr_solid|attr_surface_internal,
+                element.face_attrs[face1]);
+            ASSERT_EQ(attr_solid,
+                element.face_attrs[face2]);
+        } else if (box == transform_box(Box(6, 0, 0, 10, 1, 1), transform)) {
+            ASSERT_EQ(attr_solid,
+                element.attrs);
+            ASSERT_EQ(attr_solid,
+                element.face_attrs[face1]);
+            ASSERT_EQ(attr_solid,
+                element.face_attrs[face2]);
+        } else {
+            FAIL() << "unexpected box: " << box;
+        }
+    }
+}
+
+TEST(MesherNaiveBricksTest, AttrX) {
+    try_mnb_attr(IDENTITY);
+}
+TEST(MesherNaiveBricksTest, AttrY) {
+    try_mnb_attr(PERMUTE_YXZ);
+}
+TEST(MesherNaiveBricksTest, AttrZ) {
+    try_mnb_attr(PERMUTE_ZYX);
+}
+TEST(MesherNaiveBricksTest, AttrXInverse) {
+    try_mnb_attr(INVERT_X);
+}
+TEST(MesherNaiveBricksTest, AttrYInverse) {
+    try_mnb_attr(PERMUTE_YXZ|INVERT_Y);
+}
+TEST(MesherNaiveBricksTest, AttrZInverse) {
+    try_mnb_attr(PERMUTE_ZYX|INVERT_Z);
 }
 
 } /* namespace os2cx */
