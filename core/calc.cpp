@@ -4,6 +4,15 @@
 
 namespace os2cx {
 
+std::ostream &operator<<(std::ostream &stream, Dimension dimension) {
+    switch (dimension) {
+    case Dimension::X: return stream << "X";
+    case Dimension::Y: return stream << "Y";
+    case Dimension::Z: return stream << "Z";
+    default: assert(false);
+    }
+}
+
 std::ostream &operator<<(std::ostream &stream, Vector vector) {
     return stream << '['
         << vector.x << ' '
