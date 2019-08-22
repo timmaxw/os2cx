@@ -396,15 +396,17 @@ int unit_vector_to_brick_face_index(Vector vector) {
 }
 
 void try_mnb_attr(int transform) {
-    Box solid_box = transform_box(Box(0, 0, 0, 10, 1, 1), transform);
-    PlcNef3 solid = compute_plc_nef_for_solid(Poly3::from_box(solid_box));
+    Box solid_box1 = transform_box(Box(0, 0, 0, 3, 1, 1), transform);
+    Box solid_box2 = transform_box(Box(0, 0, 0, 1, 2, 1), transform);
+    PlcNef3 solid = compute_plc_nef_for_solid(Poly3::from_box(solid_box1))
+        .binary_or(compute_plc_nef_for_solid(Poly3::from_box(solid_box2)));
 
     Plc3 plc0 = plc_nef_to_plc(solid);
 
     AttrBitset attr_solid;
     attr_solid.set(attr_bit_solid());
 
-    Box mask_box = transform_box(Box(-0.1, -0.1, -0.1, 2, 1.1, 1.1), transform);
+    Box mask_box = transform_box(Box(-0.1, -0.1, -0.1, 2, 2.1, 1.1), transform);
     Poly3 mask = Poly3::from_box(mask_box);
 
     AttrBitIndex attr_bit_volume = 2;
@@ -432,31 +434,38 @@ void try_mnb_attr(int transform) {
 
     Plc3 plc = plc_nef_to_plc(solid);
 
-    Mesh3 mesh = mesher_naive_bricks(plc, 5, 1, ElementType::C3D8);
+    Mesh3 mesh = mesher_naive_bricks(plc, 1e6, 1, ElementType::C3D8);
 
     int face1 = unit_vector_to_brick_face_index(vector_external);
     int face2 = unit_vector_to_brick_face_index(vector_internal);
 
     for (const Element3 &element : mesh.elements) {
         Box box = element_to_box(mesh, element);
-        if (box == transform_box(Box(0, 0, 0, 2, 1, 1), transform)) {
+        if (box == transform_box(Box(0, 0, 0, 1, 1, 1), transform)) {
             ASSERT_EQ(attr_solid|attr_volume,
                 element.attrs);
             ASSERT_EQ(attr_solid|attr_surface_external,
                 element.face_attrs[face1]);
-            ASSERT_EQ(attr_solid|attr_surface_internal,
+            ASSERT_EQ(attr_solid|attr_volume,
                 element.face_attrs[face2]);
-        } else if (box == transform_box(Box(2, 0, 0, 6, 1, 1), transform)) {
-            ASSERT_EQ(attr_solid,
+        } else if (box == transform_box(Box(0, 1, 0, 1, 2, 1), transform)) {
+            ASSERT_EQ(attr_solid|attr_volume,
                 element.attrs);
-            ASSERT_EQ(attr_solid|attr_surface_internal,
+            ASSERT_EQ(attr_solid|attr_surface_external,
                 element.face_attrs[face1]);
             ASSERT_EQ(attr_solid,
                 element.face_attrs[face2]);
-        } else if (box == transform_box(Box(6, 0, 0, 10, 1, 1), transform)) {
+        } else if (box == transform_box(Box(1, 0, 0, 2, 1, 1), transform)) {
+            ASSERT_EQ(attr_solid|attr_volume,
+                element.attrs);
+            ASSERT_EQ(attr_solid|attr_volume,
+                element.face_attrs[face1]);
+            ASSERT_EQ(attr_solid|attr_surface_internal,
+                element.face_attrs[face2]);
+        } else if (box == transform_box(Box(2, 0, 0, 3, 1, 1), transform)) {
             ASSERT_EQ(attr_solid,
                 element.attrs);
-            ASSERT_EQ(attr_solid,
+            ASSERT_EQ(attr_solid|attr_surface_internal,
                 element.face_attrs[face1]);
             ASSERT_EQ(attr_solid,
                 element.face_attrs[face2]);

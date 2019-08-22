@@ -7,7 +7,9 @@
 
 #include "mesher_tetgen.hpp"
 
-#define NAIVE_BRICKS_DEBUG(x) x
+/* uncomment to enable debug output */
+// #define NAIVE_BRICKS_DEBUG(x) x
+#define NAIVE_BRICKS_DEBUG(x) (void)0
 
 namespace os2cx {
 
@@ -506,7 +508,7 @@ void create_bricks(
 
 /* Finds the element ID of the brick whose 0-th node is at 'point'. This is
 efficient by taking advantage of the fact that the bricks are always created in
-lexicographical order on [x, y, z]. */
+lexicographical order on [z, x, y]. */
 ElementId find_brick(const Mesh3 &mesh, Point point) {
     Element3 dummy_element;
     dummy_element.nodes[0] = NodeId::invalid();
@@ -523,16 +525,25 @@ ElementId find_brick(const Mesh3 &mesh, Point point) {
                 : mesh.nodes[element_b.nodes[0]].point;
             if (point_a.z < point_b.z) return true;
             if (point_a.z > point_b.z) return false;
-            if (point_a.y < point_b.y) return true;
-            if (point_a.y > point_b.y) return false;
-            return (point_a.x < point_b.x);
+            if (point_a.x < point_b.x) return true;
+            if (point_a.x > point_b.x) return false;
+            return (point_a.y < point_b.y);
         }
     );
+
     if (iterator_pair.first == iterator_pair.second) {
         return ElementId::invalid();
+
     } else {
         int offset = iterator_pair.first - mesh.elements.begin();
-        return ElementId::from_int(mesh.elements.key_begin().to_int() + offset);
+        ElementId eid = ElementId::from_int(
+            mesh.elements.key_begin().to_int() + offset);
+
+        /* Sanity check that we actually found the right element */
+        const Element3 &element = mesh.elements[eid];
+        assert(mesh.nodes[element.nodes[0]].point == point);
+
+        return eid;
     }
 }
 
@@ -569,14 +580,11 @@ void update_face_attrs(
         NAIVE_BRICKS_DEBUG(std::cerr
             << "update_face_attrs w=" << w_triangles_pair.first << std::endl);
 
-        /* Surface IDs indexed by grid cell. We use this to sanity-check that
-        no two triangles with different surface IDs overlap the same grid cell.
-        */
+        /* Compute surface ID for each grid cell in this W-plane */
         Array2D<Plc3::SurfaceId> surface_ids(
             u_grid.num_intervals(),
             v_grid.num_intervals(),
             SURFACE_ID_UNSET);
-
         apply_triangles(
             plc,
             dim_u, dim_v, dim_w,
@@ -585,7 +593,7 @@ void update_face_attrs(
                 Plc3::SurfaceId surface_id, Plc3::VolumeId, Plc3::VolumeId
             ) {
                 NAIVE_BRICKS_DEBUG(std::cerr
-                    << "update_face_attrs"
+                    << "update_face_attrs applying triangles"
                     << " u_index=" << u_index
                     << " v_index=" << v_index
                     << " surface_id=" << surface_id << std::endl);
@@ -597,33 +605,42 @@ void update_face_attrs(
                 } else {
                     surface_ids(u_index, v_index) = surface_id;
                 }
-
-                AttrBitset attrs = plc.surfaces[surface_id].attrs;
-
-                /* Apply face attrs to the element we are leaving */
-                ElementId prev_eid = element_ids(u_index, v_index);
-                NAIVE_BRICKS_DEBUG(std::cerr
-                    << "prev_eid=" << prev_eid.to_int() << std::endl);
-                if (prev_eid != ElementId::invalid()) {
-                    mesh->elements[prev_eid].face_attrs[face_after] = attrs;
-                }
-
-                /* Apply face attrs to the element we are entering */
-                point.set_at(dim_u, u_grid.point_at_index(u_index));
-                point.set_at(dim_v, v_grid.point_at_index(v_index));
-                ElementId next_eid = find_brick(*mesh, point);
-                NAIVE_BRICKS_DEBUG(std::cerr
-                    << "point=" << point
-                    << " next_eid=" << next_eid.to_int() << std::endl);
-                if (next_eid != ElementId::invalid()) {
-                    mesh->elements[next_eid].face_attrs[face_before] = attrs;
-                }
-                element_ids(u_index, v_index) = next_eid;
             }
         );
 
-        XXX FIXME we might actually have to update element_ids even if there
-        wasn't a triangle there at all.
+        /* For each grid cell, update element_ids and apply attrs to the faces
+        of the elements */
+        for (int u_index = 0; u_index < u_grid.num_intervals(); ++u_index) {
+            for (int v_index = 0; v_index < v_grid.num_intervals(); ++v_index) {
+                /* Update element_ids */
+                ElementId prev_eid = element_ids(u_index, v_index);
+                point.set_at(dim_u, u_grid.point_at_index(u_index));
+                point.set_at(dim_v, v_grid.point_at_index(v_index));
+                ElementId next_eid = find_brick(*mesh, point);
+                element_ids(u_index, v_index) = next_eid;
+
+                Plc3::SurfaceId surface_id = surface_ids(u_index, v_index);
+                NAIVE_BRICKS_DEBUG(std::cerr
+                    << "update_face_attrs updating elements"
+                    << " u_index=" << u_index
+                    << " v_index=" << v_index
+                    << " prev_eid=" << prev_eid.to_int()
+                    << " point=" << point
+                    << " next_eid=" << next_eid.to_int()
+                    << " surface_id=" << surface_id << std::endl);
+                if (surface_id != SURFACE_ID_UNSET) {
+                    AttrBitset attrs = plc.surfaces[surface_id].attrs;
+                    if (prev_eid != ElementId::invalid()) {
+                        mesh->elements[prev_eid].face_attrs[face_after] =
+                            attrs;
+                    }
+                    if (next_eid != ElementId::invalid()) {
+                        mesh->elements[next_eid].face_attrs[face_before] =
+                            attrs;
+                    }
+                }
+            }
+        }
     }
 }
 
