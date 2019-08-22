@@ -264,12 +264,12 @@ void apply_triangles(
 
         /* Shrink the area by epsilon to prevent rounding errors wherein a
         triangle overlaps the wrong area by a tiny amount */
-        static const double epsilon = 1e-20;
-
+        double u_epsilon = (u_minmax.max() - u_minmax.min()) * 1e-10;
         GridAxis::const_iterator u_min =
-            u_grid.find_point_lte(u_minmax.min() + epsilon);
+            u_grid.find_point_lte(u_minmax.min() + u_epsilon);
         GridAxis::const_iterator u_max =
-            u_grid.find_point_gte(u_minmax.max() - epsilon);
+            u_grid.find_point_gte(u_minmax.max() - u_epsilon);
+
         for (auto u_lower = u_min; u_lower != u_max; ++u_lower) {
             auto u_upper = u_lower;
             ++u_upper;
@@ -283,14 +283,15 @@ void apply_triangles(
                 p2, p0, u_lower->first, u_upper->first, &v_minmax);
 
             NAIVE_BRICKS_DEBUG(std::cerr << "considering strip "
-                << "x = (" << u_lower->first << ", " << u_upper->first << "), "
-                << "y = (" << v_minmax.min() << ", " << v_minmax.max() << ")"
+                << "u = (" << u_lower->first << ", " << u_upper->first << "), "
+                << "v = (" << v_minmax.min() << ", " << v_minmax.max() << ")"
                 << std::endl);
 
+            double v_epsilon = (v_minmax.max() - v_minmax.min()) * 1e-10;
             GridAxis::const_iterator v_min =
-                v_grid.find_point_lte(v_minmax.min() + epsilon);
+                v_grid.find_point_lte(v_minmax.min() + v_epsilon);
             GridAxis::const_iterator v_max =
-                v_grid.find_point_gte(v_minmax.max() - epsilon);
+                v_grid.find_point_gte(v_minmax.max() - v_epsilon);
 
             for (auto v_lower = v_min; v_lower != v_max; ++v_lower) {
                 auto v_upper = v_lower;
