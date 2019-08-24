@@ -123,18 +123,29 @@ void GuiMainWindow::refresh_combo_box_modes() {
 
     if (project->progress < Project::Progress::ResultsDone) {
         modes.push_back({tr("Results..."), nullptr});
+    } else if (project->results->results.empty()) {
+        modes.push_back({tr("No results emitted"), nullptr});
     } else {
         first_result_mode_name = QString();
-        for (const auto &pair : project->results->static_steps) {
-            std::string result_name = pair.first;
-            QString name = tr("Result ") + QString(result_name.c_str());
+        int i = 1;
+        for (const Results::Result &result : project->results->results) {
+            QString name;
+            if (result.type == Results::Result::Type::Static) {
+                name = tr("Result %1 (static)");
+            } else if (result.type == Results::Result::Type::Eigenmode) {
+                name = tr("Result %1 (eigenmodes)");
+            } else if (result.type == Results::Result::Type::ModalDynamic) {
+                name = tr("Result %1 (modal dynamic)");
+            } else {
+                assert(false);
+            }
+            name = name.arg(i);
+            ++i;
+            const Results::Result *result_ptr = &result;
             modes.push_back({
                 name,
-                [this, project, result_name]() {
-                    return new GuiModeResultStatic(
-                        left_panel,
-                        project,
-                        result_name);
+                [this, project, result_ptr]() {
+                    return new GuiModeResult(left_panel, project, result_ptr);
                 }
             });
             if (first_result_mode_name.isNull()) {

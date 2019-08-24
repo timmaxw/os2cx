@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include <complex>
 #include <iostream>
 
 namespace os2cx {
@@ -105,9 +106,9 @@ inline Vector operator*(double a, Vector b) {
     return b * a;
 }
 
-typedef Vector LengthVector;
-
 std::ostream &operator<<(std::ostream &stream, Vector vector);
+
+typedef Vector LengthVector;
 
 class Point {
 public:
@@ -168,6 +169,98 @@ inline Point operator+(LengthVector a, Point b) {
 Vector triangle_normal(Point p1, Point p2, Point p3);
 
 std::ostream &operator<<(std::ostream &stream, Point point);
+
+class ComplexVector {
+public:
+    static ComplexVector zero() {
+        return ComplexVector(0, 0, 0);
+    }
+
+    ComplexVector() { }
+    ComplexVector(
+        std::complex<double> x_,
+        std::complex<double> y_,
+        std::complex<double> z_
+    ) : x(x_), y(y_), z(z_) { }
+
+    ComplexVector operator+(ComplexVector other) const {
+        return ComplexVector(x + other.x, y + other.y, z + other.z);
+    }
+    ComplexVector operator-(ComplexVector other) const {
+        return ComplexVector(x - other.x, y - other.y, z - other.z);
+    }
+    ComplexVector operator-() const {
+        return ComplexVector(-x, -y, -z);
+    }
+    ComplexVector &operator+=(ComplexVector other) {
+        x += other.x;
+        y += other.y;
+        z += other.z;
+        return *this;
+    }
+    ComplexVector &operator-=(ComplexVector other) {
+        x -= other.x;
+        y -= other.y;
+        z -= other.z;
+        return *this;
+    }
+    ComplexVector operator*(std::complex<double> other) const {
+        return ComplexVector(x * other, y * other, z * other);
+    }
+    ComplexVector operator/(std::complex<double> other) const {
+        return ComplexVector(x / other, y / other, z / other);
+    }
+    ComplexVector &operator*=(std::complex<double> other) {
+        x *= other;
+        y *= other;
+        z *= other;
+        return *this;
+    }
+    ComplexVector &operator/=(std::complex<double> other) {
+        x /= other;
+        y /= other;
+        z /= other;
+        return *this;
+    }
+    bool operator==(ComplexVector other) const {
+        return x == other.x && y == other.y && z == other.z;
+    }
+    bool operator!=(ComplexVector other) const {
+        return !(*this == other);
+    }
+    double magnitude() const {
+        return sqrt(std::norm(x) + std::norm(y) + std::norm(z));
+    }
+    std::complex<double> dot(ComplexVector other) const {
+        return x * std::conj(other.x)
+             + y * std::conj(other.y)
+             + z * std::conj(other.z);
+    }
+    std::complex<double> at(Dimension d) const {
+        switch (d) {
+        case Dimension::X: return x;
+        case Dimension::Y: return y;
+        case Dimension::Z: return z;
+        default: assert(false);
+        }
+    }
+    void set_at(Dimension d, std::complex<double> value) {
+        switch (d) {
+        case Dimension::X: x = value; break;
+        case Dimension::Y: y = value; break;
+        case Dimension::Z: z = value; break;
+        default: assert(false);
+        }
+    }
+
+    std::complex<double> x, y, z;
+};
+
+inline ComplexVector operator*(std::complex<double> a, ComplexVector b) {
+    return b * a;
+}
+
+std::ostream &operator<<(std::ostream &stream, ComplexVector vector);
 
 class Matrix {
 public:

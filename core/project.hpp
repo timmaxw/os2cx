@@ -177,6 +177,7 @@ public:
     public:
         WithUnit<double> youngs_modulus;
         double poissons_ratio;
+        WithUnit<double> density;
     };
 
     std::map<MaterialObjectName, MaterialObject> material_objects;

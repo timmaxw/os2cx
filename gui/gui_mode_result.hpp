@@ -9,19 +9,20 @@
 
 namespace os2cx {
 
-class GuiModeResultStatic :
+class GuiModeResult :
     public GuiModeAbstract,
     private GuiOpenglMeshCallback
 {
 public:
-    GuiModeResultStatic(
+    GuiModeResult(
         QWidget *parent,
         std::shared_ptr<const Project> project,
-        const std::string &result_name);
+        const Results::Result *result);
 
 private:
     enum class SubVariable {
         VectorMagnitude, VectorX, VectorY, VectorZ,
+        ComplexVectorMagnitude,
         MatrixXX, MatrixYY, MatrixZZ, MatrixXY, MatrixYZ, MatrixZX
     };
 
@@ -31,7 +32,14 @@ private:
         NodeId node_id);
     static UnitType guess_unit_type(const std::string &dataset_name);
 
-    void construct_combo_box_disp_scale();
+    /* All the steps have the same datasets, so we often use the first step as
+    a "prototypical step" to see which datasets exist. */
+    const Results::Result::Step *first_step() {
+        return &result->steps.front();
+    }
+
+    void maybe_setup_frequency();
+    void maybe_setup_disp();
 
     void set_color_variable(const std::string &new_var);
     void set_color_subvariable(SubVariable new_subvar);
@@ -45,8 +53,12 @@ private:
 
     std::shared_ptr<const GuiOpenglScene> make_scene();
 
-    std::string result_name;
+    const Results::Result *result;
 
+    QComboBox *combo_box_frequency;
+    int step_index;
+
+    std::string disp_key;
     QComboBox *combo_box_disp_scale;
     double disp_scale;
 

@@ -20,6 +20,13 @@ std::ostream &operator<<(std::ostream &stream, Vector vector) {
         << vector.z << ']';
 }
 
+std::ostream &operator<<(std::ostream &stream, ComplexVector vector) {
+    return stream << '['
+        << vector.x << ' '
+        << vector.y << ' '
+        << vector.z << ']';
+}
+
 Vector triangle_normal(Point p1, Point p2, Point p3) {
     LengthVector v1 = p2 - p1;
     LengthVector v2 = p3 - p1;

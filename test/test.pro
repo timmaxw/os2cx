@@ -25,5 +25,6 @@ SOURCES = $$CORE_SOURCES \
     mesh_type_info_test.cpp
 
 DISTFILES += \
-    slice_test.scad
+    slice_test.scad \
+    steady_state_dynamics_test.scad
 

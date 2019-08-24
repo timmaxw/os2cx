@@ -369,7 +369,7 @@ void do_material_elastic_simple_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 3, "material_elastic_simple");
+    check_arg_count(args, 4, "material_elastic_simple");
 
     Project::MaterialObjectName name =
         check_name_new(args[0], "material", project);
@@ -377,6 +377,8 @@ void do_material_elastic_simple_directive(
         check_number_with_unit(args[1], UnitType::Pressure);
     project->material_objects[name].poissons_ratio =
         check_number(args[2]);
+    project->material_objects[name].density =
+        check_number_with_unit(args[3], UnitType::Density);
 }
 
 void do_check_existing_directive(

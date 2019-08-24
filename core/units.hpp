@@ -17,6 +17,7 @@ enum class UnitType {
     Time,
 
     Area,
+    Density,
     Force,
     ForcePerVolume,
     Pressure,

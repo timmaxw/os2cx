@@ -20,6 +20,9 @@ Unit unit_in() {
 Unit unit_g() {
     return Unit("g", UnitType::Mass, 1e-3, Unit::Metric);
 }
+Unit unit_kg() {
+    return Unit("kg", UnitType::Mass, 1, Unit::Metric);
+}
 Unit unit_lbm() {
     return Unit("lbm", UnitType::Mass, 4.5359237e-1, Unit::Imperial);
 }
@@ -184,6 +187,16 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
         throw UnitParseError("'" + name + "' is not a valid area unit. " \
             "Valid area units are of the form '<length>^2'.");
 
+    case UnitType::Density:
+        if (parse_unit_ratio(
+                name,
+                UnitType::Mass,
+                UnitType::Volume,
+                UnitType::Density,
+                &output)) return output;
+        throw UnitParseError("'" + name + "' is not a valid density unit. " \
+            "Valid density units are of the form '<mass>/<volume>'.");
+
     case UnitType::Force:
         if (parse_unit_si_prefixed(name, unit_N(), &output)) return output;
         if (name == "lbf") return unit_lbf();
@@ -233,6 +246,8 @@ UnitSystem::UnitSystem(
     const std::string &mass_or_force_name,
     const std::string &time_name
 ) {
+    units_in_si[UnitType::Dimensionless] = 1;
+
     length_unit = Unit::from_name(UnitType::Length, length_name);
     assert(length_unit.style == Unit::Metric
         || length_unit.style == Unit::Imperial);
@@ -264,6 +279,8 @@ UnitSystem::UnitSystem(
 
     units_in_si[UnitType::Area] = pow(length_unit.unit_in_si, 2);
     units_in_si[UnitType::Volume] = pow(length_unit.unit_in_si, 3);
+    units_in_si[UnitType::Density] =
+        units_in_si[UnitType::Mass] / units_in_si[UnitType::Volume];
     units_in_si[UnitType::Pressure] =
         units_in_si[UnitType::Force] / units_in_si[UnitType::Area];
     units_in_si[UnitType::ForcePerVolume] =
@@ -355,6 +372,18 @@ Unit UnitSystem::suggest_unit(
         }
     case UnitType::Area:
         return unit_power(length_unit, 2, UnitType::Area);
+    case UnitType::Density:
+        if (style == Unit::Metric) {
+            return unit_ratio(
+                unit_kg(),
+                unit_power(unit_m(), 3, UnitType::Volume),
+                UnitType::Density);
+        } else {
+            return unit_ratio(
+                unit_lbm(),
+                unit_power(unit_in(), 3, UnitType::Volume),
+                UnitType::Density);
+        }
     case UnitType::Force:
         if (style == Unit::Metric) {
             return suggest_unit_si_prefixed(unit_N(), si_value_for_scale);

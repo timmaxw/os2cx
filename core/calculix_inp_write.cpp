@@ -100,7 +100,9 @@ void write_calculix_material(
     stream << "*MATERIAL, Name=" << name << '\n'
         << "*ELASTIC\n"
         << project.unit_system.unit_to_system(material.youngs_modulus)
-        << ", " << material.poissons_ratio << '\n';
+        << ", " << material.poissons_ratio << '\n'
+        << "*DENSITY\n"
+        << project.unit_system.unit_to_system(material.density) << '\n';
 }
 
 inline int dimension_to_int(Dimension d){

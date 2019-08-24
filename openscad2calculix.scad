@@ -126,6 +126,74 @@ module os2cx_analysis_static_simple(
     ], unit_system=[length_unit, "kg", "s"]);
 }
 
+module os2cx_analysis_steady_state_dynamics(
+    mesh=undef,
+    material=undef,
+    fixed=undef,
+    load=undef,
+    length_unit=undef,
+    num_eigenfrequencies=10,
+    min_frequency=undef,
+    max_frequency=undef,
+) {
+    __os2cx_check_existing(
+        "mesh",
+        "os2cx_analysis_steady_state_dynamics() 'mesh' parameter",
+        mesh);
+    __os2cx_check_existing(
+        "material",
+        "os2cx_analysis_steady_state_dynamics() 'material' parameter",
+        material);
+    __os2cx_check_existing(
+        "surface",
+        "os2cx_analysis_steady_state_dynamics() 'fixed' parameter",
+        fixed);
+    __os2cx_check_existing(
+        "load",
+        "os2cx_analysis_steady_state_dynamics() 'load' parameter",
+        load);
+    if (!__os2cx_is_string(length_unit)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics() 'length_unit' ",
+            "parameter must be a string"));
+    }
+    if (!__os2cx_is_number(num_eigenfrequencies)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics() ",
+            "'num_eigenfrequencies' parameter must be a number"));
+    }
+    if (!__os2cx_is_number_with_unit(min_frequency) ||
+            min_frequency[1] != "Hz") {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics() ",
+            "'min_frequency' parameter must be [a number, \"Hz\"]"));
+    }
+    if (!__os2cx_is_number_with_unit(max_frequency) ||
+            max_frequency[1] != "Hz") {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics() ",
+            "'max_frequency' parameter must be [a number, \"Hz\"]"));
+    }
+    os2cx_analysis_custom([
+        "*INCLUDE, INPUT=objects.inp",
+        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        "*BOUNDARY",
+        str("N", fixed, ",1,3"),
+        "*STEP",
+        "*FREQUENCY,STORAGE=yes",
+        str(num_eigenfrequencies),
+        str("*NODE FILE, Nset=N", mesh),
+        "U",
+        "*END STEP",
+        "*STEP",
+        "*STEADY STATE DYNAMICS",
+        str(min_frequency[0], ",", max_frequency[0], ",", 10),
+        "*CLOAD",
+        str("*INCLUDE, INPUT=", load, ".clo"),
+        str("*NODE FILE, Nset=N", mesh),
+        "PU,U",
+        "*EL FILE",
+        "S",
+        "*END STEP"
+    ], unit_system=[length_unit, "kg", "s"]);
+}
+
 module os2cx_mesh(name, mesher="tetgen", max_element_size=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
@@ -289,7 +357,7 @@ module os2cx_load_surface(
 }
 
 module os2cx_material_elastic_simple(
-    name, youngs_modulus=undef, poissons_ratio=undef
+    name, youngs_modulus=undef, poissons_ratio=undef, density=undef
 ) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
@@ -304,12 +372,16 @@ module os2cx_material_elastic_simple(
             echo(str("ERROR: os2cx_material_elastic_simple() 'poissons_ratio' ",
                 "parameter must be a number."));
         }
+        if (!__os2cx_is_number_with_unit(density)) {
+            echo(str("ERROR: os2cx_material_elastic_simple() 'density' ",
+                "parameter must be a [number, unit] pair."));
+        }
         if ($children != 0) {
             echo(str("ERROR: os2cx_material_elastic_simple() shouldn't have ",
                 "any children"));
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "material_elastic_simple_directive",
-            name, youngs_modulus, poissons_ratio);
+            name, youngs_modulus, poissons_ratio, density);
     }
 }
