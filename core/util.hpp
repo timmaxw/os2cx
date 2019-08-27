@@ -3,6 +3,7 @@
 
 #include <assert.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -103,6 +104,51 @@ public:
 private:
     int xs, ys;
     std::vector<Value> vector;
+};
+
+template<class Value>
+class ReservoirSampler {
+public:
+    explicit ReservoirSampler(int num_samples) :
+        samples(num_samples), total(0), next_to_keep(-1), sorted(true) { }
+    void insert(Value value) {
+        if (total < static_cast<int>(samples.size())) {
+            samples[total] = value;
+        } else if (total < static_cast<int>(samples.size()) * 10) {
+            int i = rand() % total;
+            if (i < static_cast<int>(samples.size())) {
+                samples[i] = value;
+            }
+        } else {
+            /* When total is very large, use an approximation to avoid having to
+            call rand() every time. Instead of each sample having an independent
+            1/N chance of being kept, we randomly preselect one of the next N
+            samples for keeping. */
+            if (next_to_keep == -1) {
+                next_to_keep = total + rand() % (total / samples.size());
+            }
+            if (total == next_to_keep) {
+                samples[rand() % samples.size()] = value;
+                next_to_keep = -1;
+            }
+        }
+        ++total;
+        sorted = false;
+    }
+    Value percentile(int p) {
+        assert(p > 0 && p < 100);
+        int n = std::min(static_cast<int>(samples.size()), total);
+        if (!sorted) {
+            std::sort(samples.begin(), samples.begin() + n);
+            sorted = true;
+        }
+        return samples[n * p / 100];
+    }
+private:
+    std::vector<Value> samples;
+    int total;
+    int next_to_keep;
+    bool sorted;
 };
 
 } /* namespace os2cx */

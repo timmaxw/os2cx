@@ -135,6 +135,7 @@ module os2cx_analysis_steady_state_dynamics(
     num_eigenfrequencies=10,
     min_frequency=undef,
     max_frequency=undef,
+    damping_ratio=undef
 ) {
     __os2cx_check_existing(
         "mesh",
@@ -170,6 +171,10 @@ module os2cx_analysis_steady_state_dynamics(
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics() ",
             "'max_frequency' parameter must be [a number, \"Hz\"]"));
     }
+    if (!__os2cx_is_number(damping_ratio)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics() ",
+            "'damping_ratio' parameter must be a number"));
+    }
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
         str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
@@ -182,6 +187,8 @@ module os2cx_analysis_steady_state_dynamics(
         "U",
         "*END STEP",
         "*STEP",
+        "*MODAL DAMPING",
+        str("1", ",", num_eigenfrequencies, ",", damping_ratio),
         "*STEADY STATE DYNAMICS",
         str(min_frequency[0], ",", max_frequency[0], ",", 10),
         "*CLOAD",

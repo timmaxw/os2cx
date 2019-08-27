@@ -31,5 +31,6 @@ os2cx_analysis_steady_state_dynamics(
     load="load",
     length_unit="m",
     min_frequency=[1, "Hz"],
-    max_frequency=[100, "Hz"]
+    max_frequency=[100, "Hz"],
+    damping_ratio=0.01
 );

@@ -78,9 +78,10 @@ double GuiModeResult::subvariable_value(
 UnitType GuiModeResult::guess_unit_type(
     const std::string &dataset_name
 ) {
-    if (dataset_name == "DISP") {
+    if (dataset_name == "DISP" || dataset_name == "IDISP"
+            || dataset_name == "PDISP") {
         return UnitType::Length;
-    } else if (dataset_name == "STRESS") {
+    } else if (dataset_name == "STRESS" || dataset_name == "ISTRESS") {
         return UnitType::Pressure;
     } else {
         /* This is a sane fallback for values of any unit type, because they
@@ -132,43 +133,80 @@ void GuiModeResult::maybe_setup_disp() {
     combo_box_disp_scale = new QComboBox(this);
     layout->addWidget(combo_box_disp_scale);
 
+    /* We want to heuristically suggest reasonable values for the displacement
+    exaggeration factor. Typically, we want to choose exaggeration factors such
+    that the displacement is around 1/10 to 1/3 of the model's overall scale. */
+
+    /* In a multi-step calculation, the displacement for the different steps
+    might differ by an order of magnitude. Start by calculating the displacement
+    for each step. */
+    double min_disp = std::numeric_limits<double>::max();
     double max_disp = 0;
     for (const Results::Result::Step &step : result->steps) {
         const ContiguousMap<NodeId, Vector> &disp =
             *step.datasets.at(disp_key).node_vector;
+        double step_disp = 0;
         for (NodeId ni = disp.key_begin(); ni != disp.key_end(); ++ni) {
-            max_disp = std::max(max_disp, disp[ni].magnitude());
+            double magnitude = disp[ni].magnitude();
+            if (isnan(magnitude)) {
+                continue;
+            }
+            step_disp = std::max(step_disp, magnitude);
         }
+        if (step_disp != 0) {
+            min_disp = std::min(min_disp, step_disp);
+        }
+        max_disp = std::max(max_disp, step_disp);
     }
 
     if (max_disp == 0) {
+        /* The displacement is always zero in every step, so the displacement
+        exaggeration factor is meaningless. */
         combo_box_disp_scale->addItem(
-            tr("N/A (displacement is zero everywhere))"),
+            tr("N/A (displacement is always zero)"),
             QVariant(static_cast<double>(1)));
         combo_box_disp_scale->setEnabled(false);
         disp_scale = 1.0;
         return;
     }
 
-    double max_exaggeration_factor = (project->approx_scale / 3) / max_disp;
-    if (max_exaggeration_factor < 1) {
-        max_exaggeration_factor = 1;
+    /* Choose exaggeration factors that make the min/max disps work out to about
+    1/3 the overall size of the model. */
+    double max_exaggeration_factor = (project->approx_scale / 3) / min_disp;
+    double min_exaggeration_factor = (project->approx_scale / 3) / max_disp;
+
+    /* Discretize the exaggeration factors on a log scale */
+    int max_exaggeration_num = round(log10(max_exaggeration_factor) * 3);
+    int min_exaggeration_num = round(log10(min_exaggeration_factor) * 3);
+
+    /* Move the minimum two steps down, in case the user wants to view the
+    displacement at <1/3 the overall size of the model. */
+    min_exaggeration_num -= 2;
+
+    /* Ensure we're never "un-exaggerating" the displacement to be smaller than
+    it actually is */
+    max_exaggeration_num = std::max(0, max_exaggeration_num);
+    min_exaggeration_num = std::max(0, min_exaggeration_num);
+
+    /* We'll let the user pick any discrete exaggeration factor in the range */
+    std::set<int> exaggeration_nums;
+    for (int i = min_exaggeration_num; i <= max_exaggeration_num; ++i) {
+        exaggeration_nums.insert(i);
     }
 
-    int max_exaggeration_num = round(log10(max_exaggeration_factor) * 3);
-    std::set<int> exaggeration_nums;
-    exaggeration_nums.insert(max_exaggeration_num);
-    exaggeration_nums.insert(max_exaggeration_num - 1);
-    exaggeration_nums.insert(max_exaggeration_num - 2);
+    /* Make sure to allow "no exaggeration" as an option */
     exaggeration_nums.insert(0);
 
+    /* Default to "no exaggeration", to avoid misleading novice users */
+    disp_scale = 1.0;
+
+    /* Also allow a special option of "0x exaggeration", which would correspond
+    to an exaggeration number of "-infinity". */
     combo_box_disp_scale->addItem(
         tr(u8"0\u00D7 (undisplaced shape)"), QVariant(static_cast<double>(0)));
 
-    /* Default to not exaggerating, to avoid misleading novice users */
-    disp_scale = 1.0;
-
     for (int exaggeration_num : exaggeration_nums) {
+        /* Convert exaggeration nums into nice round factors like 2x, 5x, 10x */
         int exp_part = exaggeration_num / 3;
         int digit_part = exaggeration_num - exp_part * 3;
         if (digit_part < 0) {
@@ -261,19 +299,21 @@ void GuiModeResult::set_color_variable(const std::string &new_var) {
 void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
     color_subvariable = new_subvar;
 
-    double min_datum = std::numeric_limits<double>::max();
-    double max_datum = std::numeric_limits<double>::lowest();
+    ReservoirSampler<double> datum_sampler(1000);
     for (const Results::Result::Step &step : result->steps) {
         const Results::Dataset &dataset = step.datasets.at(color_variable);
         for (NodeId ni = dataset.node_begin(); ni != dataset.node_end(); ++ni) {
             double value = subvariable_value(dataset, color_subvariable, ni);
-            min_datum = std::min(min_datum, value);
-            max_datum = std::max(max_datum, value);
+            datum_sampler.insert(value);
         }
     }
 
+    double max_datum = datum_sampler.percentile(90);
+    double min_datum;
     if (color_subvariable == SubVariable::VectorMagnitude) {
         min_datum = 0;
+    } else{
+        min_datum = datum_sampler.percentile(10);
     }
 
     color_scale->set_range(
