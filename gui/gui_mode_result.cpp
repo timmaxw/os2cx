@@ -350,6 +350,8 @@ void GuiModeResult::maybe_setup_measurements() {
         ->setSectionResizeMode(0, QHeaderView::Stretch);
     measurement_table->horizontalHeader()
         ->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    measurement_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    measurement_table->setDragEnabled(false);
     layout->addWidget(measurement_table);
 
     refresh_measurements();
