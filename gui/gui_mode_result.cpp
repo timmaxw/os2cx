@@ -310,7 +310,8 @@ void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
 
     double max_datum = datum_sampler.percentile(90);
     double min_datum;
-    if (color_subvariable == SubVariable::VectorMagnitude) {
+    if (color_subvariable == SubVariable::VectorMagnitude ||
+            color_subvariable == SubVariable::ComplexVectorMagnitude) {
         min_datum = 0;
     } else{
         min_datum = datum_sampler.percentile(10);

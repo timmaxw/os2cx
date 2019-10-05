@@ -139,7 +139,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             partial_mesh = mesher_naive_bricks(
                 *pair.second.plc,
                 max_element_size,
-                2,
+                1,
                 ElementType::C3D20R
             );
             break;

@@ -208,7 +208,7 @@ public:
         /* Construct a test point that has a smaller x-coordinate than of any of
         the vertices of the PlcNef3, so it's guaranteed to lie in the outside
         volume */
-        KE::FT min_x;
+        KE::FT min_x(0);
         CgalNef3Plc::Vertex_const_iterator vi;
         CGAL_forall_vertices(vi, nef) {
             min_x = std::min(min_x, vi->point().x());
