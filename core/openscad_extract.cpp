@@ -381,6 +381,24 @@ void do_material_elastic_simple_directive(
         check_number_with_unit(args[3], UnitType::Density);
 }
 
+void do_measure_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 3, "measure");
+
+    Project::MeasureObjectName name =
+        check_name_new(args[0], "measure", project);
+
+    project->measure_objects[name].volume = check_name_existing(
+        args[1],
+        "volume",
+        project,
+        "Measure '" + name + "'");
+
+    project->measure_objects[name].dataset = check_string(args[2]);
+}
+
 void do_check_existing_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
@@ -437,6 +455,8 @@ void openscad_extract_inventory(Project *project) {
             } else if (echo[1].string_value ==
                     "material_elastic_simple_directive") {
                 do_material_elastic_simple_directive(project, args);
+            } else if (echo[1].string_value == "measure_directive") {
+                do_measure_directive(project, args);
             } else if (echo[1].string_value == "check_existing_directive") {
                 do_check_existing_directive(project, args);
             } else {

@@ -392,3 +392,25 @@ module os2cx_material_elastic_simple(
             name, youngs_modulus, poissons_ratio, density);
     }
 }
+
+module os2cx_measure(
+    name, volume, variable
+) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo(str("ERROR: os2cx_measure() first parameter must be a ",
+                "string"));
+        }
+        if (!__os2cx_is_string(volume)) {
+            echo(str("ERROR: os2cx_measure() second parameter must be a ",
+                "string"));
+        }
+        if (!__os2cx_is_string(variable)) {
+            echo(str("ERROR: os2cx_measure() third parameter must be a ",
+                "string"));
+        }
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "measure_directive",
+            name, volume, variable);
+    }
+}

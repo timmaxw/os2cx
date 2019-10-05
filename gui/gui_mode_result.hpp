@@ -2,6 +2,7 @@
 #define OS2CX_GUI_MODE_RESULT_HPP_
 
 #include <QComboBox>
+#include <QTableWidget>
 
 #include "gui_color_scale.hpp"
 #include "gui_mode_abstract.hpp"
@@ -23,6 +24,7 @@ private:
     enum class SubVariable {
         VectorMagnitude, VectorX, VectorY, VectorZ,
         ComplexVectorMagnitude,
+        MatrixVonMisesStress,
         MatrixXX, MatrixYY, MatrixZZ, MatrixXY, MatrixYZ, MatrixZX
     };
 
@@ -43,6 +45,9 @@ private:
 
     void set_color_variable(const std::string &new_var);
     void set_color_subvariable(SubVariable new_subvar);
+
+    void maybe_setup_measurements();
+    void refresh_measurements();
 
     void calculate_attributes(
         ElementId element_id,
@@ -69,6 +74,8 @@ private:
     SubVariable color_subvariable;
 
     GuiColorScale *color_scale;
+
+    QTableWidget *measurement_table;
 };
 
 } /* namespace os2cx */

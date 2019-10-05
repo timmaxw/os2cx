@@ -61,6 +61,7 @@ public:
     typedef std::string LoadVolumeObjectName;
     typedef std::string LoadSurfaceObjectName;
     typedef std::string MaterialObjectName;
+    typedef std::string MeasureObjectName;
 
     class VolumeObject {
     public:
@@ -181,6 +182,14 @@ public:
     };
 
     std::map<MaterialObjectName, MaterialObject> material_objects;
+
+    class MeasureObject {
+    public:
+        VolumeObjectName volume;
+        std::string dataset;
+    };
+
+    std::map<MeasureObjectName, MeasureObject> measure_objects;
 
     std::shared_ptr<const Results> results;
 

@@ -1,5 +1,7 @@
 #include "gui_mode_result.hpp"
 
+#include <QHeaderView>
+
 namespace os2cx {
 
 GuiModeResult::GuiModeResult(
@@ -41,6 +43,8 @@ GuiModeResult::GuiModeResult(
     layout->addWidget(color_scale);
 
     set_color_variable(first_step()->datasets.begin()->first);
+
+    maybe_setup_measurements();
 }
 
 double GuiModeResult::subvariable_value(
@@ -59,6 +63,8 @@ double GuiModeResult::subvariable_value(
         return (*dataset.node_vector)[node_id].z;
     case SubVariable::ComplexVectorMagnitude:
         return (*dataset.node_complex_vector)[node_id].magnitude();
+    case SubVariable::MatrixVonMisesStress:
+        return von_mises_stress((*dataset.node_matrix)[node_id]);
     case SubVariable::MatrixXX:
         return (*dataset.node_matrix)[node_id].cols[0].x;
     case SubVariable::MatrixYY:
@@ -115,6 +121,7 @@ void GuiModeResult::maybe_setup_frequency() {
     connect(combo_box_frequency, QOverload<int>::of(&QComboBox::activated),
     [this](int new_index) {
         step_index = new_index;
+        refresh_measurements();
         emit refresh_scene();
     });
 
@@ -267,6 +274,10 @@ void GuiModeResult::set_color_variable(const std::string &new_var) {
         combo_box_color_subvariable->addItem(tr("Magnitude"),
             QVariant(static_cast<int>(SubVariable::ComplexVectorMagnitude)));
     } else if (dataset.node_matrix) {
+        if (color_variable == "STRESS" || color_variable == "ISTRESS") {
+            combo_box_color_subvariable->addItem(tr("Von Mises Stress"),
+                QVariant(static_cast<int>(SubVariable::MatrixVonMisesStress)));
+        }
         combo_box_color_subvariable->addItem(tr("XX Component"),
             QVariant(static_cast<int>(SubVariable::MatrixXX)));
         combo_box_color_subvariable->addItem(tr("YY Component"),
@@ -299,22 +310,21 @@ void GuiModeResult::set_color_variable(const std::string &new_var) {
 void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
     color_subvariable = new_subvar;
 
-    ReservoirSampler<double> datum_sampler(1000);
+    double min_datum = std::numeric_limits<double>::max();
+    double max_datum = std::numeric_limits<double>::lowest();
     for (const Results::Result::Step &step : result->steps) {
         const Results::Dataset &dataset = step.datasets.at(color_variable);
         for (NodeId ni = dataset.node_begin(); ni != dataset.node_end(); ++ni) {
-            double value = subvariable_value(dataset, color_subvariable, ni);
-            datum_sampler.insert(value);
+            double datum = subvariable_value(dataset, color_subvariable, ni);
+            min_datum = std::min(min_datum, datum);
+            max_datum = std::max(max_datum, datum);
         }
     }
 
-    double max_datum = datum_sampler.percentile(90);
-    double min_datum;
     if (color_subvariable == SubVariable::VectorMagnitude ||
-            color_subvariable == SubVariable::ComplexVectorMagnitude) {
+            color_subvariable == SubVariable::ComplexVectorMagnitude ||
+            color_subvariable == SubVariable::MatrixVonMisesStress) {
         min_datum = 0;
-    } else{
-        min_datum = datum_sampler.percentile(10);
     }
 
     color_scale->set_range(
@@ -324,6 +334,89 @@ void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
         guess_unit_type(color_variable));
 
     emit refresh_scene();
+}
+
+void GuiModeResult::maybe_setup_measurements() {
+    if (project->measure_objects.empty()) {
+        return;
+    }
+
+    create_widget_label(tr("Measurements"));
+    measurement_table = new QTableWidget(0, 2, this);
+    measurement_table->verticalHeader()->hide();
+    measurement_table->horizontalHeader()->hide();
+    measurement_table->setSelectionMode(QAbstractItemView::NoSelection);
+    measurement_table->horizontalHeader()
+        ->setSectionResizeMode(0, QHeaderView::Stretch);
+    measurement_table->horizontalHeader()
+        ->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    layout->addWidget(measurement_table);
+
+    refresh_measurements();
+}
+
+void GuiModeResult::refresh_measurements() {
+    if (project->measure_objects.empty()) {
+        return;
+    }
+
+    const Results::Result::Step &step = result->steps[step_index];
+
+    measurement_table->setRowCount(project->measure_objects.size());
+    int row = 0;
+    for (const auto &measure_pair : project->measure_objects) {
+        measurement_table->setItem(row, 0, new QTableWidgetItem(
+            QString(measure_pair.first.c_str())));
+
+        double max_datum;
+        auto dataset_it = step.datasets.find(measure_pair.second.dataset);
+        if (dataset_it == step.datasets.end()) {
+            max_datum = NAN;
+        } else {
+            max_datum = 0;
+            const Results::Dataset &dataset = dataset_it->second;
+            SubVariable measure_subvariable;
+            if (dataset.node_vector) {
+                measure_subvariable = SubVariable::VectorMagnitude;
+            } else if (dataset.node_complex_vector) {
+                measure_subvariable = SubVariable::ComplexVectorMagnitude;
+            } else if (dataset.node_matrix) {
+                measure_subvariable = SubVariable::MatrixVonMisesStress;
+            } else {
+                assert(false);
+            }
+            std::shared_ptr<const NodeSet> node_set =
+                project->find_volume_object(measure_pair.second.volume)
+                    ->node_set;
+            for (NodeId node_id : node_set->nodes) {
+                double datum = subvariable_value(
+                    dataset,
+                    measure_subvariable,
+                    node_id);
+                if (isnan(datum)) {
+                    max_datum = NAN;
+                    break;
+                } else {
+                    max_datum = std::max(datum, max_datum);
+                }
+            }
+        }
+
+        if (isnan(max_datum)) {
+            measurement_table->setItem(row, 1, new QTableWidgetItem(tr("N/A")));
+        } else {
+            Unit unit = project->unit_system.suggest_unit(
+                guess_unit_type(measure_pair.second.dataset),
+                max_datum);
+            WithUnit<double> max_datum_2 =
+                project->unit_system.system_to_unit(unit, max_datum);
+            measurement_table->setItem(row, 1, new QTableWidgetItem(
+                QString("%1%2")
+                    .arg(max_datum_2.value_in_unit)
+                    .arg(unit.name.c_str())));
+        }
+        ++row;
+    }
 }
 
 void GuiModeResult::calculate_attributes(

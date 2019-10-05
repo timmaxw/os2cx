@@ -279,6 +279,8 @@ public:
     Vector cols[3];
 };
 
+double von_mises_stress(const Matrix &m);
+
 class AffineTransform {
 public:
     AffineTransform() { }

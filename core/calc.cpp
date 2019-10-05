@@ -98,6 +98,17 @@ Matrix Matrix::cofactor_matrix() const
     return m;
 }
 
+double von_mises_stress(const Matrix &m) {
+    double j2 =
+        0.5 * pow(m.cols[0].x - m.cols[1].y, 2)
+      + 0.5 * pow(m.cols[1].y - m.cols[2].z, 2)
+      + 0.5 * pow(m.cols[2].z - m.cols[0].x, 2)
+      + 3 * pow(m.cols[0].y, 2)
+      + 3 * pow(m.cols[1].z, 2)
+      + 3 * pow(m.cols[2].x, 2);
+    return sqrt(3 * j2);
+}
+
 std::ostream &operator<<(std::ostream &stream, Box box) {
     return stream << "Box("
         << box.xl << ", " << box.yl << ", " << box.zl << ", "
