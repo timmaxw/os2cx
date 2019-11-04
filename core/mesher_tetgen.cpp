@@ -150,23 +150,53 @@ Mesh3 mesher_tetgen(
     tetgenio tetgen_input;
     convert_input(plc, &tetgen_input);
 
+    double bbox_volume = compute_bbox_volume(plc);
+
     /* Tetgen doesn't let us limit tetrahedron length, but it does let us limit
     tetrahedron volume. Convert max_element_size into a roughly equivalent
     max_tet_volume. */
     double max_tet_volume = pow(max_element_size, 3) / 6.0;
 
+    /* Tetgen always respects the PLC exactly. If the PLC is malformed such that
+    it e.g. has two edges that are very close together, then Tetgen may try to
+    generate an enormous number of tiny tetrahedra to model this accurately. Cap
+    the number of Steiner points that Tetgen is allowed to insert, in order to
+    force Tetgen to abort if this happens. */
+    int max_steiner_points = std::max(
+        3 * static_cast<int>(bbox_volume / max_tet_volume),
+        100);
+
     std::string flags;
     flags += "p";
     flags += "q1.414";
     flags += "a" + std::to_string(max_tet_volume);
-    flags += "Q";
+    flags += "S" + std::to_string(max_steiner_points);
     flags += "o2";
+    flags += "V";
 
     tetgenio tetgen_output;
-    tetrahedralize(
-        const_cast<char *>(flags.c_str()),
-        &tetgen_input,
-        &tetgen_output);
+    try {
+        tetrahedralize(
+            const_cast<char *>(flags.c_str()),
+            &tetgen_input,
+            &tetgen_output);
+    } catch (int error_code) {
+        if (error_code == 1) {
+            throw std::bad_alloc();
+        } else if (error_code == 2) {
+            throw TetgenError("Tetgen has a bug in it");
+        } else if (error_code == 3) {
+            throw TetgenError("Tetgen found self-intersection");
+        } else if (error_code == 4) {
+            throw TetgenError("Tetgen found very small input feature");
+        } else if (error_code == 5) {
+            throw TetgenError("Tetgen found very close input facets");
+        } else if (error_code == 10) {
+            throw TetgenError("Tetgen input was not valid");
+        } else {
+            throw TetgenError("Tetgen threw an unknown error");
+        }
+    }
 
     Mesh3 mesh = convert_output(&tetgen_output);
 
@@ -175,7 +205,7 @@ Mesh3 mesher_tetgen(
     return mesh;
 }
 
-double suggest_max_element_size(const Plc3 &plc) {
+double compute_bbox_volume(const Plc3 &plc) {
     double xmin, xmax, ymin, ymax, zmin, zmax;
     xmin = ymin = zmin = std::numeric_limits<double>::max();
     xmax = ymax = zmax = std::numeric_limits<double>::min();
@@ -187,7 +217,11 @@ double suggest_max_element_size(const Plc3 &plc) {
         zmax = std::max(zmax, v.point.z);
         zmin = std::min(zmin, v.point.z);
     }
-    double bbox_volume = (xmax - xmin) * (ymax - ymin) * (zmax - zmin);
+    return (xmax - xmin) * (ymax - ymin) * (zmax - zmin);
+}
+
+double suggest_max_element_size(const Plc3 &plc) {
+    double bbox_volume = compute_bbox_volume(plc);
 
     /* Simulating 10,000 second-order tetrahedra takes a few seconds of CPU
     time and a less than a gigabyte of RAM, which makes it a safe default. */
