@@ -220,7 +220,9 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     length_unit=undef,
     num_eigenfrequencies=10,
     min_frequency=undef,
-    max_frequency=undef
+    max_frequency=undef,
+    rayleigh_damping_alpha=undef,
+    rayleigh_damping_beta=undef,
 ) {
     __os2cx_check_existing(
         "mesh",
@@ -260,6 +262,14 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
             "'max_frequency' parameter must be [a number, \"Hz\"]"));
     }
+    if (!__os2cx_is_number(rayleigh_damping_alpha)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'rayleigh_damping_alpha' parameter must be a number"));
+    }
+    if (!__os2cx_is_number(rayleigh_damping_beta)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'rayleigh_damping_beta' parameter must be a number"));
+    }
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
         str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
@@ -273,7 +283,7 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
         "*END STEP",
         "*STEP",
         "*MODAL DAMPING,RAYLEIGH",
-        ",,5000.,0.",
+        str(",,", rayleigh_damping_alpha, ",", rayleigh_damping_beta),
         "*STEADY STATE DYNAMICS",
         str(min_frequency[0], ",", max_frequency[0], ",", 10),
         "*BOUNDARY",
