@@ -12,17 +12,19 @@ class GuiOpenglScene {
 public:
     GuiOpenglScene();
 
-    void add_triangle(const Point *points, const Vector *deltas, const QColor *colors);
-    void add_line(const Point *points, const Vector *deltas);
+    void add_triangle(
+        const Point *points, const ComplexVector *deltas, const QColor *colors);
+    void add_line(
+        const Point *points, const ComplexVector *deltas);
 
     int num_triangles;
     std::vector<Point> triangle_points;
-    std::vector<Vector> triangle_deltas;
+    std::vector<ComplexVector> triangle_deltas;
     std::vector<GLubyte> triangle_colors;
 
     int num_lines;
     std::vector<Point> line_points;
-    std::vector<Vector> line_deltas;
+    std::vector<ComplexVector> line_deltas;
 
     enum class AnimateMode {
         None,
@@ -47,8 +49,8 @@ public slots:
 
 private:
     void compute_fov();
-    double compute_animate_multiplier();
-    void compute_points_and_normals(double multiplier);
+    std::complex<double> compute_animate_multiplier();
+    void compute_points_and_normals(std::complex<double> multiplier);
 
     void initializeGL();
     void resizeGL(int viewport_width, int viewport_height);

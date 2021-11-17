@@ -75,13 +75,13 @@ void GuiModeProgress::calculate_attributes(
     int face_index,
     NodeId node_id,
     QColor *color_out,
-    Vector *displacement_out
+    ComplexVector *displacement_out
 ) const {
     (void)element_id;
     (void)face_index;
     (void)node_id;
     *color_out = QColor(0x80, 0x80, 0x80);
-    *displacement_out = Vector::zero();
+    *displacement_out = ComplexVector::zero();
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {

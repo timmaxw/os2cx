@@ -57,7 +57,7 @@ private:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        Vector *displacement_out) const;
+        ComplexVector *displacement_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();
 
@@ -66,7 +66,7 @@ private:
     QComboBox *combo_box_frequency;
     int step_index;
 
-    std::string disp_key;
+    std::string disp_key, dispi_key;
     QComboBox *combo_box_disp_scale;
     double disp_scale;
     QCheckBox *checkbox_animate;

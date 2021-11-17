@@ -86,7 +86,8 @@ double GuiModeResult::subvariable_value(
 UnitType GuiModeResult::guess_unit_type(
     const std::string &dataset_name
 ) {
-    if (dataset_name == "DISP" || dataset_name == "IDISP"
+    if (dataset_name == "DISP"
+            || dataset_name == "DISPI"
             || dataset_name == "PDISP") {
         return UnitType::Length;
     } else if (dataset_name == "STRESS" || dataset_name == "ISTRESS") {
@@ -103,6 +104,7 @@ void GuiModeResult::maybe_setup_frequency() {
     if (result->type != Results::Result::Type::Eigenmode &&
             result->type != Results::Result::Type::ModalDynamic) {
         step_index = 0;
+        combo_box_frequency = nullptr;
         return;
     }
 
@@ -134,8 +136,13 @@ void GuiModeResult::maybe_setup_frequency() {
 void GuiModeResult::maybe_setup_disp() {
     if (first_step()->datasets.count("DISP")) {
         disp_key = "DISP";
+        if (first_step()->datasets.count("DISPI")) {
+            dispi_key = "DISPI";
+        } else {
+            dispi_key = "";
+        }
     } else {
-        disp_key = "";
+        disp_key = dispi_key = "";
         return;
     }
 
@@ -153,15 +160,24 @@ void GuiModeResult::maybe_setup_disp() {
     double min_disp = std::numeric_limits<double>::max();
     double max_disp = 0;
     for (const Results::Result::Step &step : result->steps) {
-        const ContiguousMap<NodeId, Vector> &disp =
-            *step.datasets.at(disp_key).node_vector;
         double step_disp = 0;
-        for (NodeId ni = disp.key_begin(); ni != disp.key_end(); ++ni) {
-            double magnitude = disp[ni].magnitude();
-            if (isnan(magnitude)) {
+        const ContiguousMap<NodeId, Vector> *disp =
+            step.datasets.at(disp_key).node_vector.get();
+        const ContiguousMap<NodeId, Vector> *dispi =
+            dispi_key.empty()
+            ? nullptr
+            : step.datasets.at(dispi_key).node_vector.get();
+        for (NodeId ni = disp->key_begin(); ni != disp->key_end(); ++ni) {
+            double mag;
+            if (dispi == nullptr) {
+                mag = (*disp)[ni].magnitude();
+            } else {
+                mag = ComplexVector((*disp)[ni], (*dispi)[ni]).magnitude();
+            }
+            if (isnan(mag)) {
                 continue;
             }
-            step_disp = std::max(step_disp, magnitude);
+            step_disp = std::max(step_disp, mag);
         }
         if (step_disp != 0) {
             min_disp = std::min(min_disp, step_disp);
@@ -465,7 +481,7 @@ void GuiModeResult::calculate_attributes(
     int face_index,
     NodeId node_id,
     QColor *color_out,
-    Vector *displacement_out
+    ComplexVector *displacement_out
 ) const {
     (void)element_id;
     (void)face_index;
@@ -480,15 +496,25 @@ void GuiModeResult::calculate_attributes(
         *color_out = color_scale->color(color_datum);
     }
 
-    if (!disp_key.empty()) {
+    if (!dispi_key.empty()) {
+        Vector disp = (*step.datasets.at(disp_key).node_vector)[node_id];
+        Vector dispi = (*step.datasets.at(dispi_key).node_vector)[node_id];
+        if (isnan(disp.x) || isnan(disp.y) || isnan(disp.z)
+            || isnan(dispi.x) || isnan(dispi.y) || isnan(dispi.z)) {
+            *displacement_out = ComplexVector::zero();
+        } else {
+            *displacement_out = ComplexVector(disp, dispi) * disp_scale;
+        }
+    } else if (!disp_key.empty()) {
         Vector disp = (*step.datasets.at(disp_key).node_vector)[node_id];
         if (isnan(disp.x) || isnan(disp.y) || isnan(disp.z)) {
-            *displacement_out = Vector::zero();
+            *displacement_out = ComplexVector::zero();
         } else {
-            *displacement_out = disp * disp_scale;
+            *displacement_out =
+                ComplexVector(disp * disp_scale, Vector::zero());
         }
     } else {
-        *displacement_out = Vector::zero();
+        *displacement_out = ComplexVector::zero();
     }
 }
 

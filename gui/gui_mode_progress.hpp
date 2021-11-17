@@ -42,7 +42,7 @@ private:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        Vector *displacement_out) const;
+        ComplexVector *displacement_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();
 

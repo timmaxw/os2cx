@@ -32,13 +32,14 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
 
             for (const Plc3::Surface::Triangle &tri : surface.triangles) {
                 Point ps[3];
+                ComplexVector ds[3];
                 for (int i = 0; i < 3; ++i) {
                     ps[i] = plc->vertices[tri.vertices[i]].point;
+                    ds[i] = ComplexVector::zero();
                 }
                 if (outside_volume_index == 1) {
                     std::swap(ps[2], ps[1]);
                 }
-                Vector ds[3] = {Vector::zero(), Vector::zero(), Vector::zero()};
                 scene.add_triangle(ps, ds, colors);
             }
         }

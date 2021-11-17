@@ -13,7 +13,7 @@ public:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        Vector *displacement_out) const = 0;
+        ComplexVector *displacement_out) const = 0;
 };
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(

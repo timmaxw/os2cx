@@ -19,7 +19,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
         }
 
         Point ps[ElementTypeShape::max_vertices_per_face];
-        Vector ds[ElementTypeShape::max_vertices_per_face];
+        ComplexVector ds[ElementTypeShape::max_vertices_per_face];
         QColor cs[ElementTypeShape::max_vertices_per_face];
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
             ps[i] = project.mesh->nodes[node_ids[i]].point;
@@ -53,9 +53,12 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
             assert(false);
         }
         for (int i = 0; i < n; ++i) {
-            Point subps[3] = {ps[ixs[i][0]], ps[ixs[i][1]], ps[ixs[i][2]]};
-            Vector subds[3] = {ds[ixs[i][0]], ds[ixs[i][1]], ds[ixs[i][2]]};
-            QColor subcs[3] = {cs[ixs[i][0]], cs[ixs[i][1]], cs[ixs[i][2]]};
+            Point subps[3] =
+                {ps[ixs[i][0]], ps[ixs[i][1]], ps[ixs[i][2]]};
+            ComplexVector subds[3] =
+                {ds[ixs[i][0]], ds[ixs[i][1]], ds[ixs[i][2]]};
+            QColor subcs[3] =
+                {cs[ixs[i][0]], cs[ixs[i][1]], cs[ixs[i][2]]};
             scene.add_triangle(subps, subds, subcs);
         }
 
@@ -66,7 +69,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
             directions so that we don't draw each line twice. */
             if (node_ids[i].to_int() > node_ids[j].to_int()) {
                 Point line_ps[2] = {ps[i], ps[j]};
-                Vector line_ds[2] = {ds[i], ds[j]};
+                ComplexVector line_ds[2] = {ds[i], ds[j]};
                 scene.add_line(line_ps, line_ds);
             }
         }

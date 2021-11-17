@@ -214,7 +214,7 @@ public:
         int face_index,
         NodeId node_id,
         QColor *color_out,
-        Vector *displacement_out
+        ComplexVector *displacement_out
     ) const {
         (void)node_id;
 
@@ -247,7 +247,7 @@ public:
             *color_out = color_out->darker(120);
         }
 
-        *displacement_out = Vector::zero();
+        *displacement_out = ComplexVector::zero();
     }
 
     const Project *project;

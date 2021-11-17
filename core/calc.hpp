@@ -182,6 +182,8 @@ public:
         std::complex<double> y_,
         std::complex<double> z_
     ) : x(x_), y(y_), z(z_) { }
+    ComplexVector(Vector r, Vector i)
+        : x(r.x, i.x), y(r.y, i.y), z(r.z, i.z) { }
 
     ComplexVector operator+(ComplexVector other) const {
         return ComplexVector(x + other.x, y + other.y, z + other.z);
@@ -230,6 +232,12 @@ public:
     }
     double magnitude() const {
         return sqrt(std::norm(x) + std::norm(y) + std::norm(z));
+    }
+    Vector real() const {
+        return Vector(x.real(), y.real(), z.real());
+    }
+    Vector imag() const {
+        return Vector(x.imag(), y.imag(), z.imag());
     }
     std::complex<double> dot(ComplexVector other) const {
         return x * std::conj(other.x)

@@ -10,7 +10,7 @@ GuiOpenglScene::GuiOpenglScene() :
 { }
 
 void GuiOpenglScene::add_triangle(
-    const Point *points, const Vector *deltas, const QColor *colors
+    const Point *points, const ComplexVector *deltas, const QColor *colors
 ) {
     ++num_triangles;
     for (int i = 0; i < 3; ++i) {
@@ -22,7 +22,9 @@ void GuiOpenglScene::add_triangle(
     }
 }
 
-void GuiOpenglScene::add_line(const Point *points, const Vector *deltas) {
+void GuiOpenglScene::add_line(
+    const Point *points, const ComplexVector *deltas
+) {
     ++num_lines;
     for (int i = 0; i < 2; ++i) {
         line_points.push_back(points[i]);
@@ -84,7 +86,7 @@ void GuiOpenglWidget::compute_fov() {
     }
 }
 
-double GuiOpenglWidget::compute_animate_multiplier() {
+std::complex<double> GuiOpenglWidget::compute_animate_multiplier() {
     /* phase ramps from 0 to 1, then repeats. The fact that we're using
     currentMSecsSinceStartOfDay() means we'll will briefly glitch at midnight,
     but it's fine. */
@@ -101,20 +103,25 @@ double GuiOpenglWidget::compute_animate_multiplier() {
             /* Note, we pause briefly at the top of the ramp */
             return std::min(2 * phase, 1.0);
         case GuiOpenglScene::AnimateMode::Sine:
-            return sin(2 * M_PI * phase);
+            return std::complex<double>(
+                cos(2 * M_PI * phase),
+                sin(2 * M_PI * phase)
+            );
         default:
             assert(false);
     }
 }
 
-void GuiOpenglWidget::compute_points_and_normals(double multiplier) {
+void GuiOpenglWidget::compute_points_and_normals(
+    std::complex<double> multiplier
+) {
     triangle_computed_points.resize(9 * scene->num_triangles);
     triangle_computed_normals.resize(9 * scene->num_triangles);
     for (int i = 0; i < scene->num_triangles; ++i) {
         Point points[3];
         for (int j = 0; j < 3; ++j) {
             points[j] = scene->triangle_points[3 * i + j]
-                + multiplier * scene->triangle_deltas[3 * i + j];
+                + (multiplier * scene->triangle_deltas[3 * i + j]).real();
         }
         Vector normal = triangle_normal(points[0], points[1], points[2]);
         for (int j = 0; j < 3; ++j) {
@@ -131,7 +138,7 @@ void GuiOpenglWidget::compute_points_and_normals(double multiplier) {
     for (int i = 0; i < scene->num_lines; ++i) {
         for (int j = 0; j < 2; ++j) {
             Point point = scene->line_points[2 * i + j]
-                + multiplier * scene->line_deltas[2 * i + j];
+                + (multiplier * scene->line_deltas[2 * i + j]).real();
             line_computed_points[3 * (2 * i + j) + 0] = point.x;
             line_computed_points[3 * (2 * i + j) + 1] = point.y;
             line_computed_points[3 * (2 * i + j) + 2] = point.z;
