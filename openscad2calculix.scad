@@ -82,6 +82,10 @@ module os2cx_analysis_custom(lines, unit_system=undef) {
     }
 }
 
+/* os2cx_analysis_static_simple() simulates a static load applied to a structure
+attached to a fixed base. For example, the weight of a person standing on a
+footbridge. */
+
 module os2cx_analysis_static_simple(
     mesh=undef,
     material=undef,
@@ -125,6 +129,10 @@ module os2cx_analysis_static_simple(
         "*END STEP"
     ], unit_system=[length_unit, "kg", "s"]);
 }
+
+/* os2cx_analysis_steady_state_dynamics() simulates oscillating loads applied to
+a structure attached to a fixed base. The load is simulated at a range of
+frequencies. */
 
 module os2cx_analysis_steady_state_dynamics(
     mesh=undef,
@@ -193,6 +201,85 @@ module os2cx_analysis_steady_state_dynamics(
         str(min_frequency[0], ",", max_frequency[0], ",", 10),
         "*CLOAD",
         str("*INCLUDE, INPUT=", load, ".clo"),
+        str("*NODE FILE, Nset=N", mesh),
+        "PU,U",
+        "*EL FILE",
+        "S",
+        "*END STEP"
+    ], unit_system=[length_unit, "kg", "s"]);
+}
+
+/* os2cx_analysis_steady_state_dynamics_osc_boundary() simulates a structure
+attached to an oscillating base. For example, a tower during an earthquake. */
+
+module os2cx_analysis_steady_state_dynamics_osc_boundary(
+    mesh=undef,
+    material=undef,
+    boundary=undef,
+    oscillation=undef,
+    length_unit=undef,
+    num_eigenfrequencies=10,
+    min_frequency=undef,
+    max_frequency=undef
+) {
+    __os2cx_check_existing(
+        "mesh",
+        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'mesh' parameter",
+        mesh);
+    __os2cx_check_existing(
+        "material",
+        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'material' parameter",
+        material);
+    __os2cx_check_existing(
+        "surface",
+        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'boundary' parameter",
+        boundary);
+    if (!__os2cx_is_vector_3_with_unit(oscillation)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+          "'oscillation' must be a [vector, unit] pair"));
+    }
+    if (!__os2cx_is_string(length_unit)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'length_unit' parameter must be a string"));
+    }
+    if (oscillation[1] != length_unit) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "oscillation units must be same as length_unit"));
+    }
+    if (!__os2cx_is_number(num_eigenfrequencies)) {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'num_eigenfrequencies' parameter must be a number"));
+    }
+    if (!__os2cx_is_number_with_unit(min_frequency) ||
+            min_frequency[1] != "Hz") {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'min_frequency' parameter must be [a number, \"Hz\"]"));
+    }
+    if (!__os2cx_is_number_with_unit(max_frequency) ||
+            max_frequency[1] != "Hz") {
+        echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
+            "'max_frequency' parameter must be [a number, \"Hz\"]"));
+    }
+    os2cx_analysis_custom([
+        "*INCLUDE, INPUT=objects.inp",
+        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        "*BOUNDARY",
+        str("N", boundary, ",1,3"),
+        "*STEP",
+        "*FREQUENCY,STORAGE=yes",
+        str(num_eigenfrequencies),
+        str("*NODE FILE, Nset=N", mesh),
+        "U",
+        "*END STEP",
+        "*STEP",
+        "*MODAL DAMPING,RAYLEIGH",
+        ",,5000.,0.",
+        "*STEADY STATE DYNAMICS",
+        str(min_frequency[0], ",", max_frequency[0], ",", 10),
+        "*BOUNDARY",
+        str("N", boundary, ",1,1,", oscillation[0][0]),
+        str("N", boundary, ",2,2,", oscillation[0][1]),
+        str("N", boundary, ",3,3,", oscillation[0][2]),
         str("*NODE FILE, Nset=N", mesh),
         "PU,U",
         "*EL FILE",
