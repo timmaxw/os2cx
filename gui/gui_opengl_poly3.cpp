@@ -38,7 +38,8 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                 if (outside_volume_index == 1) {
                     std::swap(ps[2], ps[1]);
                 }
-                scene.add_triangle(ps, colors);
+                Vector ds[3] = {Vector::zero(), Vector::zero(), Vector::zero()};
+                scene.add_triangle(ps, ds, colors);
             }
         }
     }

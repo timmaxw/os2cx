@@ -12,16 +12,17 @@ class GuiOpenglScene {
 public:
     GuiOpenglScene();
 
-    void add_triangle(const Point *points, const QColor *colors);
-    void add_line(const Point *points);
+    void add_triangle(const Point *points, const Vector *deltas, const QColor *colors);
+    void add_line(const Point *points, const Vector *deltas);
 
     int num_triangles;
-    std::vector<GLfloat> triangle_vertices;
+    std::vector<Point> triangle_points;
+    std::vector<Vector> triangle_deltas;
     std::vector<GLubyte> triangle_colors;
-    std::vector<GLfloat> triangle_normals;
 
     int num_lines;
-    std::vector<GLfloat> line_vertices;
+    std::vector<Point> line_points;
+    std::vector<Vector> line_deltas;
 };
 
 class GuiOpenglWidget :
@@ -38,6 +39,7 @@ public slots:
 
 private:
     void compute_fov();
+    void compute_points_and_normals(double multiplier);
 
     void initializeGL();
     void resizeGL(int viewport_width, int viewport_height);
@@ -59,6 +61,9 @@ private:
     Point look_at;
     float yaw, pitch; /* in degrees */
     float zoom;
+
+    std::vector<GLfloat> triangle_computed_points, triangle_computed_normals;
+    std::vector<GLfloat> line_computed_points;
 };
 
 } /* namespace os2cx */

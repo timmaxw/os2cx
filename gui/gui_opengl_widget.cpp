@@ -9,29 +9,23 @@ GuiOpenglScene::GuiOpenglScene() :
 { }
 
 void GuiOpenglScene::add_triangle(
-    const Point *points, const QColor *colors
+    const Point *points, const Vector *deltas, const QColor *colors
 ) {
-    Vector normal = triangle_normal(points[0], points[1], points[2]);
     ++num_triangles;
     for (int i = 0; i < 3; ++i) {
-        triangle_vertices.push_back(points[i].x);
-        triangle_vertices.push_back(points[i].y);
-        triangle_vertices.push_back(points[i].z);
+        triangle_points.push_back(points[i]);
+        triangle_deltas.push_back(deltas[i]);
         triangle_colors.push_back(colors[i].red());
         triangle_colors.push_back(colors[i].green());
         triangle_colors.push_back(colors[i].blue());
-        triangle_normals.push_back(normal.x);
-        triangle_normals.push_back(normal.y);
-        triangle_normals.push_back(normal.z);
     }
 }
 
-void GuiOpenglScene::add_line(const Point *points) {
+void GuiOpenglScene::add_line(const Point *points, const Vector *deltas) {
     ++num_lines;
     for (int i = 0; i < 2; ++i) {
-        line_vertices.push_back(points[i].x);
-        line_vertices.push_back(points[i].y);
-        line_vertices.push_back(points[i].z);
+        line_points.push_back(points[i]);
+        line_deltas.push_back(deltas[i]);
     }
 }
 
@@ -73,6 +67,38 @@ void GuiOpenglWidget::compute_fov() {
     } else {
         fov_slope_x = fov_slope_min;
         fov_slope_y = fov_slope_x / size().width() * size().height();
+    }
+}
+
+void GuiOpenglWidget::compute_points_and_normals(double multiplier) {
+    triangle_computed_points.resize(9 * scene->num_triangles);
+    triangle_computed_normals.resize(9 * scene->num_triangles);
+    for (int i = 0; i < scene->num_triangles; ++i) {
+        Point points[3];
+        for (int j = 0; j < 3; ++j) {
+            points[j] = scene->triangle_points[3 * i + j]
+                + multiplier * scene->triangle_deltas[3 * i + j];
+        }
+        Vector normal = triangle_normal(points[0], points[1], points[2]);
+        for (int j = 0; j < 3; ++j) {
+            triangle_computed_points[3 * (3 * i + j) + 0] = points[j].x;
+            triangle_computed_points[3 * (3 * i + j) + 1] = points[j].y;
+            triangle_computed_points[3 * (3 * i + j) + 2] = points[j].z;
+            triangle_computed_normals[3 * (3 * i + j) + 0] = normal.x;
+            triangle_computed_normals[3 * (3 * i + j) + 1] = normal.y;
+            triangle_computed_normals[3 * (3 * i + j) + 2] = normal.z;
+        }
+    }
+
+    line_computed_points.resize(6 * scene->num_lines);
+    for (int i = 0; i < scene->num_lines; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            Point point = scene->line_points[2 * i + j]
+                + multiplier * scene->line_deltas[2 * i + j];
+            line_computed_points[3 * (2 * i + j) + 0] = point.x;
+            line_computed_points[3 * (2 * i + j) + 1] = point.y;
+            line_computed_points[3 * (2 * i + j) + 2] = point.z;
+        }
     }
 }
 
@@ -138,15 +164,18 @@ void GuiOpenglWidget::paintGL() {
     glTranslatef(look_at.x, look_at.y, look_at.z);
 
     if (scene != nullptr) {
+        compute_points_and_normals(1.0);
+
         if (scene->num_triangles != 0) {
             glEnable(GL_VERTEX_ARRAY);
             glEnable(GL_COLOR_ARRAY);
             glEnable(GL_NORMAL_ARRAY);
             glVertexPointer(
-                3, GL_FLOAT, 0, scene->triangle_vertices.data());
+                3, GL_FLOAT, 0, triangle_computed_points.data());
             glColorPointer(
                 3, GL_UNSIGNED_BYTE, 0, scene->triangle_colors.data());
-            glNormalPointer(GL_FLOAT, 0, scene->triangle_normals.data());
+            glNormalPointer(
+                GL_FLOAT, 0, triangle_computed_normals.data());
             glDrawArrays(GL_TRIANGLES, 0, 3 * scene->num_triangles);
             glDisable(GL_NORMAL_ARRAY);
             glDisable(GL_COLOR_ARRAY);
@@ -156,7 +185,8 @@ void GuiOpenglWidget::paintGL() {
         if (scene->num_lines != 0) {
             glColor3f(0, 0, 0);
             glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(3, GL_FLOAT, 0, scene->line_vertices.data());
+            glVertexPointer(
+                3, GL_FLOAT, 0, line_computed_points.data());
             glDrawArrays(GL_LINES, 0, 2 * scene->num_lines);
             glDisable(GL_VERTEX_ARRAY);
         }
