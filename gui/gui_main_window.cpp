@@ -96,8 +96,12 @@ void GuiMainWindow::refresh_combo_box_modes() {
             connect(
                 mode, &GuiModeProgress::see_results,
                 [this]() {
+                    /* When there are multiple sets of results, assume the last
+                    one is the most interesting one. E.g. in a steady state
+                    dynamics analysis, there will be two sets of results: the
+                    eigenmodes, then the actual steady state dynamics. */
                     combo_box_modes->set_current_mode(
-                        first_result_mode_name);
+                        final_result_mode_name);
                 }
             );
             return mode;
@@ -126,7 +130,7 @@ void GuiMainWindow::refresh_combo_box_modes() {
     } else if (project->results->results.empty()) {
         modes.push_back({tr("No results emitted"), nullptr});
     } else {
-        first_result_mode_name = QString();
+        final_result_mode_name = QString();
         int i = 1;
         for (const Results::Result &result : project->results->results) {
             QString name;
@@ -148,9 +152,7 @@ void GuiMainWindow::refresh_combo_box_modes() {
                     return new GuiModeResult(left_panel, project, result_ptr);
                 }
             });
-            if (first_result_mode_name.isNull()) {
-                first_result_mode_name = name;
-            }
+            final_result_mode_name = name;
         }
     }
 

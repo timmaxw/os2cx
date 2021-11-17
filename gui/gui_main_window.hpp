@@ -45,7 +45,7 @@ private:
 
     GuiComboBoxModes *combo_box_modes;
     GuiModeAbstract *current_mode;
-    QString first_result_mode_name;
+    QString final_result_mode_name;
 };
 
 } /* namespace os2cx */
