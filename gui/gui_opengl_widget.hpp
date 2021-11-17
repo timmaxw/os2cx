@@ -23,6 +23,14 @@ public:
     int num_lines;
     std::vector<Point> line_points;
     std::vector<Vector> line_deltas;
+
+    enum class AnimateMode {
+        None,
+        Sawtooth,
+        Sine
+    };
+    AnimateMode animate_mode;
+    double animate_hz;
 };
 
 class GuiOpenglWidget :
@@ -39,12 +47,14 @@ public slots:
 
 private:
     void compute_fov();
+    double compute_animate_multiplier();
     void compute_points_and_normals(double multiplier);
 
     void initializeGL();
     void resizeGL(int viewport_width, int viewport_height);
     void paintGL();
 
+    void timerEvent(QTimerEvent *);
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
@@ -52,6 +62,7 @@ private:
     GuiModeAbstract *mode;
     std::shared_ptr<const GuiOpenglScene> scene;
     int mouse_last_x, mouse_last_y;
+    int animate_timer;
 
     /* These variables are all computed by setup_camera() */
     double approx_scale;

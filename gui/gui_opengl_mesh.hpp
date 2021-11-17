@@ -18,7 +18,11 @@ public:
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     const Project &project,
-    const GuiOpenglMeshCallback *callback);
+    const GuiOpenglMeshCallback *callback,
+    const GuiOpenglScene::AnimateMode animate_mode
+        = GuiOpenglScene::AnimateMode::None,
+    double animate_hz = 0.0
+);
 
 } /* namespace os2cx */
 

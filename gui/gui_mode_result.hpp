@@ -1,6 +1,7 @@
 #ifndef OS2CX_GUI_MODE_RESULT_HPP_
 #define OS2CX_GUI_MODE_RESULT_HPP_
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QTableWidget>
 
@@ -41,7 +42,9 @@ private:
     }
 
     void maybe_setup_frequency();
+
     void maybe_setup_disp();
+    void refresh_animate_hz();
 
     void set_color_variable(const std::string &new_var);
     void set_color_subvariable(SubVariable new_subvar);
@@ -66,6 +69,10 @@ private:
     std::string disp_key;
     QComboBox *combo_box_disp_scale;
     double disp_scale;
+    QCheckBox *checkbox_animate;
+    bool animate_active;
+    GuiOpenglScene::AnimateMode animate_mode_if_active;
+    double animate_hz;
 
     QComboBox *combo_box_color_variable;
     std::string color_variable;

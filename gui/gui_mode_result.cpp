@@ -9,7 +9,9 @@ GuiModeResult::GuiModeResult(
     std::shared_ptr<const Project> project,
     const Results::Result *result
 ) :
-    GuiModeAbstract(parent, project), result(result)
+    GuiModeAbstract(parent, project),
+    result(result),
+    animate_active(false)
 {
     maybe_setup_frequency();
 
@@ -121,6 +123,7 @@ void GuiModeResult::maybe_setup_frequency() {
     connect(combo_box_frequency, QOverload<int>::of(&QComboBox::activated),
     [this](int new_index) {
         step_index = new_index;
+        refresh_animate_hz();
         refresh_measurements();
         emit refresh_scene();
     });
@@ -253,6 +256,42 @@ void GuiModeResult::maybe_setup_disp() {
             combo_box_disp_scale->itemData(new_index).value<double>();
         emit refresh_scene();
     });
+
+    checkbox_animate = new QCheckBox(this);
+    layout->addWidget(checkbox_animate);
+    connect(checkbox_animate, &QCheckBox::stateChanged,
+    [this](int new_state) {
+        animate_active = (new_state == Qt::Checked);
+        emit refresh_scene();
+    });
+    if (combo_box_frequency == nullptr) {
+        checkbox_animate->setText("Animate");
+        animate_mode_if_active = GuiOpenglScene::AnimateMode::Sawtooth;
+        animate_hz = 1.0;
+    } else {
+        refresh_animate_hz();
+        animate_mode_if_active = GuiOpenglScene::AnimateMode::Sine;
+    }
+}
+
+void GuiModeResult::refresh_animate_hz() {
+    double true_hz = result->steps[step_index].frequency;
+    if (true_hz > 5) {
+        double divider = 1;
+        while (true_hz / divider > 5) divider *= 10;
+        animate_hz = true_hz / divider;
+        checkbox_animate->setText(
+            tr(u8"Animate (%1\u00D7 slowed)").arg(divider));
+    } else if (true_hz < 0.2) {
+        double multiplier = 1;
+        while (true_hz * multiplier < 0.2) multiplier *= 10;
+        animate_hz = true_hz * multiplier;
+        checkbox_animate->setText(
+            tr(u8"Animate (%1\u00D7 sped up)").arg(multiplier));
+    } else {
+        animate_hz = true_hz;
+        checkbox_animate->setText(tr(u8"Animate (real-time)"));
+    }
 }
 
 void GuiModeResult::set_color_variable(const std::string &new_var) {
@@ -454,7 +493,14 @@ void GuiModeResult::calculate_attributes(
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeResult::make_scene() {
-    return gui_opengl_scene_mesh(*project, this);
+    return gui_opengl_scene_mesh(
+        *project,
+        this,
+        animate_active
+            ? animate_mode_if_active
+            : GuiOpenglScene::AnimateMode::None,
+        animate_hz
+    );
 }
 
 } /* namespace os2cx */

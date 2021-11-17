@@ -4,7 +4,9 @@ namespace os2cx {
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     const Project &project,
-    const GuiOpenglMeshCallback *callback
+    const GuiOpenglMeshCallback *callback,
+    const GuiOpenglScene::AnimateMode animate_mode,
+    double animate_hz
 ) {
     GuiOpenglScene scene;
     for (const FaceId &fi : project.mesh_index->unmatched_faces) {
@@ -69,6 +71,10 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
             }
         }
     }
+
+    scene.animate_mode = animate_mode;
+    scene.animate_hz = animate_hz;
+
     return std::make_shared<const GuiOpenglScene>(std::move(scene));
 }
 

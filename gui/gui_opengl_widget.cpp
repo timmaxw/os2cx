@@ -1,11 +1,12 @@
 #include "gui_opengl_widget.hpp"
 
 #include <QMouseEvent>
+#include <QTime>
 
 namespace os2cx {
 
 GuiOpenglScene::GuiOpenglScene() :
-    num_triangles(0), num_lines(0)
+    num_triangles(0), num_lines(0), animate_mode(AnimateMode::None)
 { }
 
 void GuiOpenglScene::add_triangle(
@@ -32,6 +33,7 @@ void GuiOpenglScene::add_line(const Point *points, const Vector *deltas) {
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
     QOpenGLWidget(parent),
     mode(nullptr),
+    animate_timer(-1),
     look_at(Point::origin()),
     yaw(30),
     pitch(30),
@@ -49,6 +51,18 @@ void GuiOpenglWidget::refresh_scene() {
     } else {
         scene = nullptr;
     }
+
+    if (scene && scene->animate_mode != GuiOpenglScene::AnimateMode::None) {
+        if (animate_timer == -1) {
+            animate_timer = startTimer(33, Qt::PreciseTimer);
+        }
+    } else {
+        if (animate_timer != -1) {
+            killTimer(animate_timer);
+            animate_timer = -1;
+        }
+    }
+
     update();
 }
 
@@ -67,6 +81,29 @@ void GuiOpenglWidget::compute_fov() {
     } else {
         fov_slope_x = fov_slope_min;
         fov_slope_y = fov_slope_x / size().width() * size().height();
+    }
+}
+
+double GuiOpenglWidget::compute_animate_multiplier() {
+    /* phase ramps from 0 to 1, then repeats. The fact that we're using
+    currentMSecsSinceStartOfDay() means we'll will briefly glitch at midnight,
+    but it's fine. */
+    double temp;
+    double phase = modf(
+        (QTime::currentTime().msecsSinceStartOfDay() / 1000.0)
+            * scene->animate_hz,
+        &temp
+    );
+    switch (scene->animate_mode) {
+        case GuiOpenglScene::AnimateMode::None:
+            return 1.0;
+        case GuiOpenglScene::AnimateMode::Sawtooth:
+            /* Note, we pause briefly at the top of the ramp */
+            return std::min(2 * phase, 1.0);
+        case GuiOpenglScene::AnimateMode::Sine:
+            return sin(2 * M_PI * phase);
+        default:
+            assert(false);
     }
 }
 
@@ -164,7 +201,7 @@ void GuiOpenglWidget::paintGL() {
     glTranslatef(look_at.x, look_at.y, look_at.z);
 
     if (scene != nullptr) {
-        compute_points_and_normals(1.0);
+        compute_points_and_normals(compute_animate_multiplier());
 
         if (scene->num_triangles != 0) {
             glEnable(GL_VERTEX_ARRAY);
@@ -195,6 +232,9 @@ void GuiOpenglWidget::paintGL() {
     glFlush();
 }
 
+void GuiOpenglWidget::timerEvent(QTimerEvent *) {
+    update();
+}
 
 void GuiOpenglWidget::mousePressEvent(QMouseEvent *event) {
     if (event->buttons() != 0) {
