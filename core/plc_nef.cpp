@@ -33,6 +33,14 @@ PlcNef3 PlcNef3::from_poly(const Poly3 &poly) {
     return poly_bits;
 }
 
+PlcNef3 PlcNef3::from_point(Point point) {
+    CGAL::Point_3<KE> point_exact(
+        KE::FT(point.x), KE::FT(point.y), KE::FT(point.z));
+    PlcNef3 res;
+    res.i.reset(new PlcNef3Internal(point_exact));
+    return res;
+}
+
 typedef CgalNef3Plc::Nef_rep::SNC_decorator CgalNef3Sncd;
 
 template<class Callable>

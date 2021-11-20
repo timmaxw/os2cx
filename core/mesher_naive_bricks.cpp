@@ -149,6 +149,15 @@ void setup_grid(
         }
     }
 
+    /* This matters for vertices created by os2cx_select_node(), which may be
+    isolated in the middle of a surface or volume */
+    for (const Plc3::Vertex &vertex : plc.vertices) {
+        Point p = vertex.point;
+        (*x_triangles_out)[p.x]; /* make sure entry in map exists */
+        (*y_triangles_out)[p.y];
+        (*z_triangles_out)[p.z];
+    }
+
     subdivide_grid(max_element_size, min_subdivision, x_triangles_out);
     subdivide_grid(max_element_size, min_subdivision, y_triangles_out);
     subdivide_grid(max_element_size, min_subdivision, z_triangles_out);
@@ -645,6 +654,29 @@ void update_face_attrs(
     }
 }
 
+void update_node_attrs(const Plc3 &plc, Mesh3 *mesh) {
+    struct LessPoint {
+        bool operator()(Point p1, Point p2) const {
+            return
+                (p1.x < p2.x) ||
+                (p1.x == p2.x && p1.y < p2.y) ||
+                (p1.x == p2.x && p1.y == p2.y && p1.z < p2.z);
+        }
+    };
+    std::map<Point, Plc3::VertexId, LessPoint> vertices_by_point;
+    for (Plc3::VertexId vid = 0; vid < plc.vertices.size(); ++vid) {
+        auto res = vertices_by_point.insert(
+            std::make_pair(plc.vertices[vid].point, vid));
+        assert(res.second);
+    }
+    for (Node3 &node : mesh->nodes) {
+        auto it = vertices_by_point.find(node.point);
+        if (it != vertices_by_point.end()) {
+            node.attrs = plc.vertices[it->second].attrs;
+        }
+    }
+}
+
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
     double max_element_size,
@@ -732,6 +764,8 @@ Mesh3 mesher_naive_bricks(
         2, 4,
         z_grid, x_grid, y_triangles,
         &mesh);
+
+    update_node_attrs(plc, &mesh);
 
     return mesh;
 }

@@ -6,7 +6,8 @@
 namespace os2cx {
 
 GuiOpenglScene::GuiOpenglScene() :
-    num_triangles(0), num_lines(0), animate_mode(AnimateMode::None)
+    num_triangles(0), num_lines(0), num_vertices(0),
+    animate_mode(AnimateMode::None)
 { }
 
 void GuiOpenglScene::add_triangle(
@@ -30,6 +31,17 @@ void GuiOpenglScene::add_line(
         line_points.push_back(points[i]);
         line_deltas.push_back(deltas[i]);
     }
+}
+
+void GuiOpenglScene::add_vertex(
+    Point point, ComplexVector delta, const QColor &color
+) {
+    ++num_vertices;
+    vertex_points.push_back(point);
+    vertex_deltas.push_back(delta);
+    vertex_colors.push_back(color.red());
+    vertex_colors.push_back(color.green());
+    vertex_colors.push_back(color.blue());
 }
 
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
@@ -144,6 +156,15 @@ void GuiOpenglWidget::compute_points_and_normals(
             line_computed_points[3 * (2 * i + j) + 2] = point.z;
         }
     }
+
+    vertex_computed_points.resize(3 * scene->num_vertices);
+    for (int i = 0; i < scene->num_vertices; ++i) {
+        Point point = scene->vertex_points[i]
+            + (multiplier * scene->vertex_deltas[i]).real();
+        vertex_computed_points[3 * i + 0] = point.x;
+        vertex_computed_points[3 * i + 1] = point.y;
+        vertex_computed_points[3 * i + 2] = point.z;
+    }
 }
 
 void GuiOpenglWidget::initializeGL() {
@@ -173,6 +194,8 @@ void GuiOpenglWidget::initializeGL() {
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     GLfloat material_specular[4] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+
+    glPointSize(5);
 
     /* TODO: Back-face culling */
 }
@@ -233,6 +256,26 @@ void GuiOpenglWidget::paintGL() {
                 3, GL_FLOAT, 0, line_computed_points.data());
             glDrawArrays(GL_LINES, 0, 2 * scene->num_lines);
             glDisable(GL_VERTEX_ARRAY);
+        }
+
+        if (scene->num_vertices != 0) {
+            glDisable(GL_LIGHTING);
+            glDisable(GL_DEPTH_TEST);
+            glEnable(GL_VERTEX_ARRAY);
+            glEnable(GL_COLOR_ARRAY);
+
+            glVertexPointer(
+                3, GL_FLOAT, 0, vertex_computed_points.data());
+            glColorPointer(
+                3, GL_UNSIGNED_BYTE, 0, scene->vertex_colors.data());
+
+            glPointSize(10);
+            glDrawArrays(GL_POINTS, 0, scene->num_vertices);
+
+            glDisable(GL_COLOR_ARRAY);
+            glDisable(GL_VERTEX_ARRAY);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_LIGHTING);
         }
     }
 

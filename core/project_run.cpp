@@ -103,6 +103,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                     select_surface_pair.second.bit_index);
             }
         }
+        for (auto &select_node_pair : p->select_node_objects) {
+            compute_plc_nef_select_node(
+                &solid_nef,
+                select_node_pair.second.point,
+                select_node_pair.second.bit_index);
+        }
 
         pair.second.plc.reset(new Plc3(plc_nef_to_plc(solid_nef)));
 
@@ -265,6 +271,33 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
 
         pair.second.face_set.reset(new FaceSet(std::move(face_set)));
         pair.second.node_set.reset(new NodeSet(std::move(node_set)));
+
+        callbacks->project_run_checkpoint();
+    }
+
+    for (auto &pair : p->select_node_objects) {
+        callbacks->project_run_log("Computing node '" + pair.first + "'...");
+
+        pair.second.node_id = NodeId::invalid();
+        for (auto &mesh_pair : p->mesh_objects) {
+            NodeId node_id = compute_node_id_from_attr_bit(
+                *p->mesh,
+                mesh_pair.second.node_begin,
+                mesh_pair.second.node_end,
+                pair.second.bit_index);
+            if (node_id != NodeId::invalid()) {
+                if (pair.second.node_id == NodeId::invalid()) {
+                    pair.second.node_id = node_id;
+                } else {
+                    throw UsageError("os2cx_select_node() \"" + pair.first +
+                        "\" hits multiple solid meshes.");
+                }
+            }
+        }
+        if (pair.second.node_id == NodeId::invalid()) {
+            throw UsageError("os2cx_select_node() \"" + pair.first +
+                "\" doesn't hit any solid meshes.");
+        }
 
         callbacks->project_run_checkpoint();
     }

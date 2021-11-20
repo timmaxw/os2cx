@@ -19,11 +19,14 @@ public slots:
     void project_updated();
 
 protected:
+    friend class GuiModeInspectPoly3Callback;
+
     enum class Focus {
         None,
         Mesh,
         SelectVolume,
         SelectSurface,
+        SelectNode,
         LoadVolume,
         LoadSurface
     };

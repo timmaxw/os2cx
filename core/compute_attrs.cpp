@@ -147,6 +147,29 @@ void compute_plc_nef_select_surface_internal(
     });
 }
 
+void compute_plc_nef_select_node(
+    PlcNef3 *solid_nef,
+    Point point,
+    AttrBitIndex attr_bit_mask
+) {
+    /* point_nef sets attr_bit_mask at just the one affected point */
+    PlcNef3 point_nef = PlcNef3::from_point(point);
+    AttrBitset attr_bitset;
+    attr_bitset.set(attr_bit_mask);
+    point_nef.binarize(attr_bitset, AttrBitset());
+
+    /* Now it's also set in solid_nef */
+    *solid_nef = solid_nef->binary_or(point_nef);
+
+    /* If the point landed in an unsolid volume of solid_nef, then unset it */
+    solid_nef->map_everywhere([&](AttrBitset bs, PlcNef3::FeatureType ft) {
+        if (ft == PlcNef3::FeatureType::Volume && !bs[attr_bit_solid()]) {
+            bs.reset(attr_bit_mask);
+        }
+        return bs;
+    });
+}
+
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {
     ElementSet set;
     for (ElementId id = begin; id != end; ++id) {
@@ -233,6 +256,24 @@ NodeSet compute_node_set_from_face_set(
         }
     }
     return set;
+}
+
+NodeId compute_node_id_from_attr_bit(
+    const Mesh3 &mesh,
+    NodeId node_begin,
+    NodeId node_end,
+    AttrBitIndex attr_bit
+) {
+    NodeId node_id = NodeId::invalid();
+    assert(attr_bit != attr_bit_solid());
+    for (NodeId nid = node_begin; nid != node_end; ++nid) {
+        const Node3 &node = mesh.nodes[nid];
+        if (node.attrs[attr_bit]) {
+            assert(node_id == NodeId::invalid());
+            node_id = nid;
+        }
+    }
+    return node_id;
 }
 
 ConcentratedLoad compute_load_from_element_set(const Mesh3 &mesh,

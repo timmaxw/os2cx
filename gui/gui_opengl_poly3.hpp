@@ -8,10 +8,15 @@ namespace os2cx {
 class GuiOpenglPoly3Callback
 {
 public:
-    virtual void calculate_attributes(
+    virtual void calculate_surface_attributes(
         const std::string &mesh_object_name,
         Plc3::SurfaceId surface_id,
         QColor *color_out) const = 0;
+
+    virtual void calculate_vertex_attributes(
+        const std::string &mesh_object_name,
+        Plc3::VertexId vertex_id,
+        QColor *vertex_color_out) const = 0;
 };
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(

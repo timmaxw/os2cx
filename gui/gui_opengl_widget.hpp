@@ -16,6 +16,8 @@ public:
         const Point *points, const ComplexVector *deltas, const QColor *colors);
     void add_line(
         const Point *points, const ComplexVector *deltas);
+    void add_vertex(
+        Point point, ComplexVector delta, const QColor &color);
 
     int num_triangles;
     std::vector<Point> triangle_points;
@@ -25,6 +27,11 @@ public:
     int num_lines;
     std::vector<Point> line_points;
     std::vector<ComplexVector> line_deltas;
+
+    int num_vertices;
+    std::vector<Point> vertex_points;
+    std::vector<ComplexVector> vertex_deltas;
+    std::vector<GLubyte> vertex_colors;
 
     enum class AnimateMode {
         None,
@@ -77,6 +84,7 @@ private:
 
     std::vector<GLfloat> triangle_computed_points, triangle_computed_normals;
     std::vector<GLfloat> line_computed_points;
+    std::vector<GLfloat> vertex_computed_points;
 };
 
 } /* namespace os2cx */

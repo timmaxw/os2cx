@@ -494,4 +494,69 @@ TEST(MesherNaiveBricksTest, AttrZInverse) {
     try_mnb_attr(PERMUTE_ZYX|INVERT_Z);
 }
 
+TEST(MesherNaiveBricksTest, AttrSinglePoints) {
+    Box box(0, 0, 0, 1, 1, 1);
+    PlcNef3 solid = compute_plc_nef_for_solid(Poly3::from_box(box));
+
+    AttrBitset attr_solid;
+    attr_solid.set(attr_bit_solid());
+
+    AttrBitIndex attr_bit_point_in_volume = 1;
+    AttrBitset attr_point_in_volume;
+    attr_point_in_volume.set(attr_bit_point_in_volume);
+    compute_plc_nef_select_node(
+        &solid, Point(0.5, 0.5, 0.5), attr_bit_point_in_volume);
+
+    AttrBitIndex attr_bit_point_on_surface = 2;
+    AttrBitset attr_point_on_surface;
+    attr_point_on_surface.set(attr_bit_point_on_surface);
+    compute_plc_nef_select_node(
+        &solid, Point(0.5, 0.5, 0), attr_bit_point_on_surface);
+
+    AttrBitIndex attr_bit_point_on_edge = 3;
+    AttrBitset attr_point_on_edge;
+    attr_point_on_edge.set(attr_bit_point_on_edge);
+    compute_plc_nef_select_node(
+        &solid, Point(0.5, 0, 0), attr_bit_point_on_edge);
+
+    AttrBitIndex attr_bit_point_on_vertex = 4;
+    AttrBitset attr_point_on_vertex;
+    attr_point_on_vertex.set(attr_bit_point_on_vertex);
+    compute_plc_nef_select_node(
+        &solid, Point(0, 0, 0), attr_bit_point_on_vertex);
+
+    Plc3 plc = plc_nef_to_plc(solid);
+
+    Mesh3 mesh = mesher_naive_bricks(
+        plc, 1e6, 1, ElementType::C3D8);
+
+    bool found_point_in_volume = false;
+    bool found_point_on_surface = false;
+    bool found_point_on_edge = false;
+    bool found_point_on_vertex = false;
+    for (const Node3 &node : mesh.nodes) {
+        if (node.point == Point(0.5, 0.5, 0.5)) {
+            found_point_in_volume = true;
+            ASSERT_EQ(attr_solid|attr_point_in_volume, node.attrs);
+        } else if (node.point == Point(0.5, 0.5, 0)) {
+            found_point_on_surface = true;
+            ASSERT_EQ(attr_solid|attr_point_on_surface, node.attrs);
+        } else if (node.point == Point(0.5, 0, 0)) {
+            found_point_on_edge = true;
+            ASSERT_EQ(attr_solid|attr_point_on_edge, node.attrs);
+        } else if (node.point == Point(0, 0, 0)) {
+            found_point_on_vertex = true;
+            ASSERT_EQ(attr_solid|attr_point_on_vertex, node.attrs);
+        } else {
+            /* Of the nodes that were not explicitly selected, some will have
+            attr_solid and some will not; this is normal. */
+            ASSERT_EQ(attr_solid, node.attrs | attr_solid);
+        }
+    }
+    ASSERT_TRUE(found_point_in_volume);
+    ASSERT_TRUE(found_point_on_surface);
+    ASSERT_TRUE(found_point_on_edge);
+    ASSERT_TRUE(found_point_on_vertex);
+}
+
 } /* namespace os2cx */

@@ -52,11 +52,16 @@ private:
     void maybe_setup_measurements();
     void refresh_measurements();
 
-    void calculate_attributes(
+    void calculate_face_attributes(
         ElementId element_id,
         int face_index,
         NodeId node_id,
         QColor *color_out,
+        ComplexVector *displacement_out) const;
+
+    virtual void calculate_vertex_attributes(
+        NodeId node_id,
+        QColor *vertex_color_out,
         ComplexVector *displacement_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();

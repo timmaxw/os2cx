@@ -26,7 +26,8 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
             }
 
             QColor color;
-            callback->calculate_attributes(pair.first, sid, &color);
+            callback->calculate_surface_attributes(
+                pair.first, sid, &color);
 
             QColor colors[3] = {color, color, color};
 
@@ -41,6 +42,18 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                     std::swap(ps[2], ps[1]);
                 }
                 scene.add_triangle(ps, ds, colors);
+            }
+        }
+        for (Plc3::VertexId vid = 0;
+                vid < static_cast<int>(plc->vertices.size()); ++vid) {
+            QColor vertex_color;
+            callback->calculate_vertex_attributes(
+                pair.first, vid, &vertex_color);
+
+            if (vertex_color.isValid()) {
+                const Plc3::Vertex &vertex = plc->vertices[vid];
+                scene.add_vertex(
+                    vertex.point, ComplexVector::zero(), vertex_color);
             }
         }
     }

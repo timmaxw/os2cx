@@ -21,6 +21,10 @@ public:
     surface; otherwise, returns -1. */
     Plc3::SurfaceId surface_containing_point(Point p) const;
 
+    /* If the point is at a vertex (to within some epsilon), returns that
+    vertex; otherwise, returns -1. */
+    Plc3::VertexId vertex_at_point(Point p) const;
+
     const Plc3 *plc;
     std::unique_ptr<Plc3IndexInternal> i;
 };

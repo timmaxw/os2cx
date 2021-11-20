@@ -476,7 +476,7 @@ void GuiModeResult::refresh_measurements() {
     }
 }
 
-void GuiModeResult::calculate_attributes(
+void GuiModeResult::calculate_face_attributes(
     ElementId element_id,
     int face_index,
     NodeId node_id,
@@ -516,6 +516,16 @@ void GuiModeResult::calculate_attributes(
     } else {
         *displacement_out = ComplexVector::zero();
     }
+}
+
+void GuiModeResult::calculate_vertex_attributes(
+    NodeId node_id,
+    QColor *vertex_color_out,
+    ComplexVector *displacement_out
+) const {
+    (void)node_id;
+    (void)vertex_color_out;
+    (void)displacement_out;
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeResult::make_scene() {

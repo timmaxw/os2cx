@@ -37,6 +37,10 @@ public:
     polyhedron are set to all-ones, and the exterior is set to all-zeroes. */
     static PlcNef3 from_poly(const Poly3 &poly);
 
+    /* Returns a PlcNef3 for which the given point is set to all-ones, and
+    everywhere else is set to all-zeros. */
+    static PlcNef3 from_point(Point point);
+
     /* Applies the given function to the bits of every volume, in place */
     void map_volumes(const std::function<AttrBitset(AttrBitset)> &func);
 

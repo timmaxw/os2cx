@@ -103,6 +103,24 @@ Mesh3 convert_output(tetgenio *tetgen) {
 void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
     Plc3Index plc_index(&plc);
 
+    for (NodeId nid = mesh->nodes.key_begin();
+            nid < mesh->nodes.key_end(); ++nid) {
+        Node3 *node = &mesh->nodes[nid];
+        if (nid.to_int() < plc.vertices.size()) {
+            /* This node corresponds directly to the Plc3 vertex with the same
+            numerical ID. */
+            Plc3::VertexId vid = nid.to_int();
+            const Plc3::Vertex &vertex = plc.vertices[vid];
+            assert(vertex.point == node->point);
+            node->attrs = vertex.attrs;
+        } else {
+            /* This node was created artificially by tetgen. Set the attrs to
+            empty. This isn't technically correct, but node attrs only matter
+            for purposes of os2cx_select_node(), so this is fine. */
+            node->attrs = AttrBitset();
+        }
+    }
+
     for (ElementId eid = mesh->elements.key_begin();
             eid != mesh->elements.key_end(); ++eid) {
         Element3 *element = &mesh->elements[eid];

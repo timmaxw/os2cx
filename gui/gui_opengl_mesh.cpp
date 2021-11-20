@@ -9,6 +9,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     double animate_hz
 ) {
     GuiOpenglScene scene;
+
     for (const FaceId &fi : project.mesh_index->unmatched_faces) {
         const Element3 &element = project.mesh->elements[fi.element_id];
         const ElementTypeShape &shape = element_type_shape(element.type);
@@ -23,7 +24,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
         QColor cs[ElementTypeShape::max_vertices_per_face];
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
             ps[i] = project.mesh->nodes[node_ids[i]].point;
-            callback->calculate_attributes(
+            callback->calculate_face_attributes(
                 fi.element_id, fi.face, node_ids[i], &cs[i], &ds[i]);
         }
 
@@ -72,6 +73,17 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
                 ComplexVector line_ds[2] = {ds[i], ds[j]};
                 scene.add_line(line_ps, line_ds);
             }
+        }
+    }
+
+    for (const auto &pair : project.select_node_objects) {
+        NodeId node_id = pair.second.node_id;
+        const Node3 &node = project.mesh->nodes[node_id];
+        QColor vertex_color;
+        ComplexVector delta;
+        callback->calculate_vertex_attributes(node_id, &vertex_color, &delta);
+        if (vertex_color.isValid()) {
+            scene.add_vertex(node.point, delta, vertex_color);
         }
     }
 

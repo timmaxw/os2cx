@@ -53,11 +53,13 @@ public:
 
     typedef std::string VolumeObjectName;
     typedef std::string SurfaceObjectName;
+    typedef std::string NodeObjectName;
     typedef std::string LoadObjectName;
     typedef std::string MeshObjectName;
     typedef std::string SliceObjectName;
     typedef std::string SelectVolumeObjectName;
     typedef std::string SelectSurfaceObjectName;
+    typedef std::string SelectNodeObjectName;
     typedef std::string LoadVolumeObjectName;
     typedef std::string LoadSurfaceObjectName;
     typedef std::string MaterialObjectName;
@@ -73,6 +75,11 @@ public:
     public:
         std::shared_ptr<const FaceSet> face_set;
         std::shared_ptr<const NodeSet> node_set;
+    };
+
+    class NodeObject {
+    public:
+        NodeId node_id;
     };
 
     class LoadObject {
@@ -151,6 +158,15 @@ public:
     std::map<SelectSurfaceObjectName, SelectSurfaceObject>
         select_surface_objects;
 
+    class SelectNodeObject : public NodeObject {
+    public:
+        AttrBitIndex bit_index;
+        Point point;
+    };
+
+    std::map<SelectNodeObjectName, SelectNodeObject>
+        select_node_objects;
+
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
     std::shared_ptr<const Mesh3> mesh;
@@ -213,6 +229,14 @@ public:
             const SurfaceObjectName &name) const {
         auto jt = select_surface_objects.find(name);
         if (jt != select_surface_objects.end()) {
+            return &jt->second;
+        }
+        return nullptr;
+    }
+
+    const NodeObject *find_node_object(const NodeObjectName &name) const {
+        auto jt = select_node_objects.find(name);
+        if (jt != select_node_objects.end()) {
             return &jt->second;
         }
         return nullptr;

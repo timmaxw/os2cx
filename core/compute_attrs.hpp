@@ -32,6 +32,11 @@ void compute_plc_nef_select_surface_internal(
     double direction_angle_tolerance,
     AttrBitIndex attr_bit_mask);
 
+void compute_plc_nef_select_node(
+    PlcNef3 *solid_nef,
+    Point point,
+    AttrBitIndex attr_bit_mask);
+
 class ElementSet {
 public:
     std::set<ElementId> elements;
@@ -70,6 +75,12 @@ NodeSet compute_node_set_from_element_set(
 NodeSet compute_node_set_from_face_set(
     const Mesh3 &mesh,
     const FaceSet &face_set);
+
+NodeId compute_node_id_from_attr_bit(
+    const Mesh3 &mesh,
+    NodeId node_begin,
+    NodeId node_end,
+    AttrBitIndex attr_bit);
 
 class ConcentratedLoad {
 public:

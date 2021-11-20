@@ -42,6 +42,10 @@ GuiModeInspect::GuiModeInspect(
         add_focus(tr("Surface '%1'").arg(pair.first.c_str()),
             Focus::SelectSurface, pair.first);
     }
+    for (const auto &pair : project->select_node_objects) {
+        add_focus(tr("Node '%1'").arg(pair.first.c_str()),
+            Focus::SelectNode, pair.first);
+    }
     for (const auto &pair : project->load_volume_objects) {
         add_focus(tr("Load '%1'").arg(pair.first.c_str()),
             Focus::LoadVolume, pair.first);
@@ -116,6 +120,7 @@ void GuiModeInspect::current_item_changed(
         break;
     case Focus::SelectVolume:
     case Focus::SelectSurface:
+    case Focus::SelectNode:
         focus_color = QColor(0x00, 0xFF, 0x00);
         break;
     case Focus::LoadVolume:
@@ -130,7 +135,7 @@ void GuiModeInspect::current_item_changed(
 
 class GuiModeInspectPoly3Callback : public GuiOpenglPoly3Callback {
 public:
-    void calculate_attributes(
+    void calculate_surface_attributes(
         const std::string &mesh_object_name,
         Plc3::SurfaceId surface_id,
         QColor *color_out
@@ -143,11 +148,11 @@ public:
         attrs |= mesh_object.plc->volumes[surface.volumes[1]].attrs;
         attrs.reset(attr_bit_solid());
 
-        bool focus = (mesh_object_name == focus_mesh)
+        bool focus_surface = (mesh_object_name == focus_mesh)
             || (attrs & focus_attrs).any();
         bool has_any_attribute = attrs.any();
 
-        if (focus) {
+        if (focus_surface) {
             *color_out = focus_color;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
@@ -158,7 +163,27 @@ public:
         }
     }
 
+    void calculate_vertex_attributes(
+        const std::string &mesh_object_name,
+        Plc3::VertexId vertex_id,
+        QColor *vertex_color_out
+    ) const {
+        const Project::MeshObject &mesh_object =
+            project->mesh_objects.at(mesh_object_name);
+        const Plc3::Vertex &vertex = mesh_object.plc->vertices[vertex_id];
+        AttrBitset attrs = vertex.attrs;
+
+        bool focus_vertex =
+            (focus_type == GuiModeInspect::Focus::SelectNode)
+            && (attrs & focus_attrs).any();
+
+        if (focus_vertex) {
+            *vertex_color_out = focus_color;
+        }
+    }
+
     const Project *project;
+    GuiModeInspect::Focus focus_type;
     std::string focus_mesh;
     AttrBitset focus_attrs;
     QColor focus_color;
@@ -167,6 +192,7 @@ public:
 std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
     GuiModeInspectPoly3Callback callback;
     callback.project = project.get();
+    callback.focus_type = focus_type;
     callback.focus_color = focus_color;
 
     switch (focus_type) {
@@ -182,6 +208,10 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
     case Focus::SelectSurface:
         callback.focus_attrs[
             project->select_surface_objects.at(focus_name).bit_index] = true;
+        break;
+    case Focus::SelectNode:
+        callback.focus_attrs[
+            project->select_node_objects.at(focus_name).bit_index] = true;
         break;
     case Focus::LoadVolume: {
         Project::VolumeObjectName volume =
@@ -209,7 +239,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
 
 class GuiModeInspectMeshCallback : public GuiOpenglMeshCallback {
 public:
-    void calculate_attributes(
+    void calculate_face_attributes(
         ElementId element_id,
         int face_index,
         NodeId node_id,
@@ -219,7 +249,7 @@ public:
         (void)node_id;
 
         FaceId face_id(element_id, face_index);
-        bool focus =
+        bool focus_surface =
             (focus_element_set && focus_element_set->elements.count(element_id))
             || (focus_face_set && focus_face_set->faces.count(face_id));
 
@@ -237,7 +267,7 @@ public:
             }
         }
 
-        if (focus) {
+        if (focus_surface) {
             *color_out = focus_color;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
@@ -250,9 +280,22 @@ public:
         *displacement_out = ComplexVector::zero();
     }
 
+    void calculate_vertex_attributes(
+        NodeId node_id,
+        QColor *vertex_color_out,
+        ComplexVector *displacement_out
+    ) const {
+        bool focus_vertex = (focus_node_id == node_id);
+        if (focus_vertex) {
+            *vertex_color_out = focus_color;
+            *displacement_out = ComplexVector::zero();
+        }
+    }
+
     const Project *project;
     std::shared_ptr<const ElementSet> focus_element_set;
     std::shared_ptr<const FaceSet> focus_face_set;
+    NodeId focus_node_id;
     QColor focus_color;
 };
 
@@ -260,6 +303,7 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_mesh() {
     GuiModeInspectMeshCallback callback;
     callback.project = project.get();
     callback.focus_color = focus_color;
+    callback.focus_node_id = NodeId::invalid();
 
     switch (focus_type) {
     case Focus::None:
@@ -272,6 +316,10 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_mesh() {
     case Focus::SelectSurface:
         callback.focus_face_set =
             project->find_surface_object(focus_name)->face_set;
+        break;
+    case Focus::SelectNode:
+        callback.focus_node_id =
+            project->find_node_object(focus_name)->node_id;
         break;
     case Focus::LoadVolume:
         callback.focus_element_set =

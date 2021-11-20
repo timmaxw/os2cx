@@ -17,6 +17,7 @@ namespace os2cx {
 class Node3 {
 public:
     Point point;
+    AttrBitset attrs;
 };
 
 class NodeId {

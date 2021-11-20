@@ -383,6 +383,25 @@ module os2cx_select_surface_internal(
     }
 }
 
+module os2cx_select_node(name, point) {
+    if (__openscad2calculix_mode == ["preview"]) {
+        if (!__os2cx_is_string(name)) {
+            echo(str("ERROR: os2cx_select_node() first parameter must be a ",
+                "string"));
+        }
+        if (!__os2cx_is_vector_3(point)) {
+            echo(str("ERROR: os2cx_select_node() second parameter must be a ",
+                "vector of 3 numbers"));
+        }
+        if ($children != 0) {
+            echo(str("ERROR: os2cx_select_node() shouldn't have any children"));
+        }
+    } else if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "select_node_directive",
+            name, point);
+    }
+}
+
 module os2cx_load_volume(
     name, volume, force_total=undef, force_per_volume=undef
 ) {
@@ -505,6 +524,9 @@ module os2cx_measure(
         if (!__os2cx_is_string(variable)) {
             echo(str("ERROR: os2cx_measure() third parameter must be a ",
                 "string"));
+        }
+        if ($children != 0) {
+            echo(str("ERROR: os2cx_measure() shouldn't have any children"));
         }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "measure_directive",

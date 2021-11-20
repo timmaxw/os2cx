@@ -107,6 +107,9 @@ Plc3Index::Plc3Index(const Plc3 *plc_) : plc(plc_)
 Plc3Index::~Plc3Index() { }
 
 Plc3::VolumeId Plc3Index::volume_containing_point(Point point) const {
+    /* Shoot a ray in a random direction, until it hits a triangle. Then ask
+    which volume is on the side of the triangle that was hit. */
+
     CGAL::Random_points_on_sphere_3<CGAL::Point_3<KS> > random;
     CGAL::Vector_3<KS> direction(CGAL::ORIGIN, *random);
     CGAL::Ray_3<KS> ray(
@@ -144,5 +147,24 @@ Plc3::SurfaceId Plc3Index::surface_containing_point(Point point) const {
     }
     return hit.second.first;
 }
+
+Plc3::VertexId Plc3Index::vertex_at_point(Point point) const {
+    /* Find the nearest triangle to the given point. Then check whether any
+    vertex of that triangle coincides with the given point. */
+    CGAL::Point_3<KS> point2(point.x, point.y, point.z);
+    PlcAabbTree::Point_and_primitive_id hit =
+        i->tree.closest_point_and_primitive(point2);
+    Plc3::Surface::Triangle triangle =
+        plc->surfaces[hit.second.first].triangles[hit.second.second];
+    for (int j = 0; j < 3; ++j) {
+        Plc3::VertexId vertex = triangle.vertices[j];
+        double dist = (point - plc->vertices[vertex].point).magnitude();
+        if (dist < epsilon) {
+            return vertex;
+        }
+    }
+    return -1;
+}
+
 
 } /* namespace os2cx */

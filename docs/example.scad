@@ -26,10 +26,12 @@ os2cx_select_surface("anchored_end", [-1, 0, 0], 45) {
     translate([-length/2, 0, 0])
         cube([0.1, width+0.1, height+0.1], center=true);
 }
-os2cx_select_volume("loaded_end", [1, 0, 0], 45) {
+os2cx_select_volume("loaded_end") {
     translate([length/2, 0, 0])
         cube([0.1, width+0.1, height+0.1], center=true);
 }
+
+os2cx_select_node("some_point", [length/2-0.05, 0, 0]);
 
 /* Declares a load object in OS2CX, called "car_weight". It's defined as a
 force of 9,800 newtons in the -Z direction, applied uniformly over the

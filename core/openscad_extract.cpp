@@ -69,6 +69,17 @@ WithUnit<double> check_number_with_unit(
         check_unit(value.vector_value[1], unit_type));
 }
 
+int check_integer(const OpenscadValue &value) {
+    if (value.type != OpenscadValue::Type::Number) {
+        throw BadEchoError("expected integer");
+    }
+    int integer_value = value.number_value;
+    if ((double)integer_value != value.number_value) {
+        throw BadEchoError("expected integer");
+    }
+    return integer_value;
+}
+
 std::string check_name_new(
     const OpenscadValue &value,
     const std::string &new_object_type,
@@ -85,6 +96,8 @@ std::string check_name_new(
         existing_object_type = "volume";
     } else if (project->select_surface_objects.count(new_name)) {
         existing_object_type = "surface";
+    } else if (project->select_node_objects.count(new_name)) {
+        existing_object_type = "node";
     } else if (project->load_volume_objects.count(new_name)) {
         existing_object_type = "load";
     } else if (project->load_surface_objects.count(new_name)) {
@@ -116,6 +129,8 @@ std::string check_name_existing(
         exists = (project->find_volume_object(name) != nullptr);
     } else if (object_type == "surface") {
         exists = (project->find_surface_object(name) != nullptr);
+    } else if (object_type == "node") {
+        exists = (project->find_node_object(name) != nullptr);
     } else if (object_type == "load") {
         exists = (project->load_volume_objects.count(name) != 0)
             || (project->load_surface_objects.count(name) != 0);
@@ -303,6 +318,26 @@ void do_select_surface_directive(
     project->select_surface_objects.insert(std::make_pair(name, object));
 }
 
+void do_select_node_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 2, "select_node");
+
+    Project::SelectNodeObjectName name =
+        check_name_new(args[0], "node", project);
+
+    Project::SelectNodeObject object;
+
+    /* If there are too many select_* directives, bit_index will be greater than
+    or equal to num_attr_bits; we'll check this later. */
+    object.bit_index = project->next_bit_index++;
+
+    object.point = Point::origin() + check_vector_3(args[1]);
+
+    project->select_node_objects.insert(std::make_pair(name, object));
+}
+
 void do_load_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
@@ -446,6 +481,8 @@ void openscad_extract_inventory(Project *project) {
                 do_select_volume_directive(project, args);
             } else if (echo[1].string_value == "select_surface_directive") {
                 do_select_surface_directive(project, args);
+            } else if (echo[1].string_value == "select_node_directive") {
+                do_select_node_directive(project, args);
             } else if (echo[1].string_value == "load_volume_directive") {
                 do_load_volume_directive(project, args);
             } else if (echo[1].string_value == "load_surface_directive") {

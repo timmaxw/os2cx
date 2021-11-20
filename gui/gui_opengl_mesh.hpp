@@ -8,11 +8,16 @@ namespace os2cx {
 class GuiOpenglMeshCallback
 {
 public:
-    virtual void calculate_attributes(
+    virtual void calculate_face_attributes(
         ElementId element_id,
         int face_index,
         NodeId node_id,
         QColor *color_out,
+        ComplexVector *displacement_out) const = 0;
+
+    virtual void calculate_vertex_attributes(
+        NodeId node_id,
+        QColor *vertex_color_out,
         ComplexVector *displacement_out) const = 0;
 };
 
