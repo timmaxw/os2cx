@@ -133,6 +133,10 @@ std::string check_name_existing(
         exists = (project->find_surface_object(name) != nullptr);
     } else if (object_type == "node") {
         exists = (project->find_node_object(name) != nullptr);
+    } else if (object_type == "volume, surface, or node") {
+        exists = (project->find_volume_object(name) != nullptr)
+            || (project->find_surface_object(name) != nullptr)
+            || (project->find_node_object(name) != nullptr);
     } else if (object_type == "load") {
         exists = (project->load_volume_objects.count(name) != 0)
             || (project->load_surface_objects.count(name) != 0);
@@ -444,9 +448,9 @@ void do_measure_directive(
     Project::MeasureObjectName name =
         check_name_new(args[0], "measure", project);
 
-    project->measure_objects[name].volume = check_name_existing(
+    project->measure_objects[name].subject = check_name_existing(
         args[1],
-        "volume",
+        "volume, surface, or node",
         project,
         "Measure '" + name + "'");
 
@@ -554,16 +558,14 @@ std::string do_nset_macro(
 ) {
     check_arg_count(args, 1, "nset");
 
-    std::string name = check_string(args[0]);
+    std::string name = check_name_existing(
+        args[0],
+        "volume, surface, or node",
+        project,
+        "nset macro"
+    );
 
-    if (project->find_volume_object(name) ||
-            project->find_surface_object(name) ||
-            project->find_node_object(name)) {
-        return "N" + name;
-    } else {
-        throw UsageError("No mesh, volume, surface, or node named \"" + name
-            + "\" has been declared.");
-    }
+    return "N" + name;
 }
 
 std::string do_elset_macro(
@@ -572,16 +574,14 @@ std::string do_elset_macro(
 ) {
     check_arg_count(args, 1, "elset");
 
-    std::string name = check_string(args[0]);
+    std::string name = check_name_existing(
+        args[0],
+        "volume",
+        project,
+        "elset macro"
+    );
 
-    if (project->find_volume_object(name) ||
-            project->find_surface_object(name) ||
-            project->find_node_object(name)) {
-        return "E" + name;
-    } else {
-        throw UsageError("No mesh or volume named \"" + name
-            + "\" has been declared.");
-    }
+    return "E" + name;
 }
 
 std::string do_node_id_macro(
@@ -590,14 +590,15 @@ std::string do_node_id_macro(
 ) {
     check_arg_count(args, 1, "node_id");
 
-    std::string name = check_string(args[0]);
+    std::string name = check_name_existing(
+        args[0],
+        "node",
+        project,
+        "node_id macro"
+    );
 
-    const Project::NodeObject *node_object;
-    if (node_object = project->find_node_object(name)) {
-        return std::to_string(node_object->node_id.to_int());
-    } else {
-        throw UsageError("No node named \"" + name + "\" has been declared.");
-    }
+    const Project::NodeObject *node_object = project->find_node_object(name);
+    return std::to_string(node_object->node_id.to_int());
 }
 
 std::string do_cload_file_macro(
@@ -606,14 +607,14 @@ std::string do_cload_file_macro(
 ) {
     check_arg_count(args, 1, "cload_file");
 
-    std::string name = check_string(args[0]);
+    std::string name = check_name_existing(
+        args[0],
+        "load",
+        project,
+        "cload_file macro"
+    );
 
-    if (project->load_surface_objects.count(name) ||
-            project->load_volume_objects.count(name)) {
-        return name + ".clo";
-    } else {
-        throw UsageError("No load named \"" + name + "\" has been declared.");
-    }
+    return name + ".clo";
 }
 
 void openscad_process_deck(Project *project) {

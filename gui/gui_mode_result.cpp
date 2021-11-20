@@ -11,6 +11,7 @@ GuiModeResult::GuiModeResult(
 ) :
     GuiModeAbstract(parent, project),
     result(result),
+    checkbox_animate(nullptr),
     animate_active(false)
 {
     maybe_setup_frequency();
@@ -291,6 +292,10 @@ void GuiModeResult::maybe_setup_disp() {
 }
 
 void GuiModeResult::refresh_animate_hz() {
+    if (checkbox_animate == nullptr) {
+        return;
+    }
+
     double true_hz = result->steps[step_index].frequency;
     if (true_hz > 5) {
         double divider = 1;
@@ -371,9 +376,18 @@ void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
         const Results::Dataset &dataset = step.datasets.at(color_variable);
         for (NodeId ni = dataset.node_begin(); ni != dataset.node_end(); ++ni) {
             double datum = subvariable_value(dataset, color_subvariable, ni);
-            min_datum = std::min(min_datum, datum);
-            max_datum = std::max(max_datum, datum);
+            if (!isnan(datum)) {
+                min_datum = std::min(min_datum, datum);
+                max_datum = std::max(max_datum, datum);
+            }
         }
+    }
+
+    if (min_datum == std::numeric_limits<double>::max() &&
+            max_datum == std::numeric_limits<double>::lowest()) {
+        /* All values in dataset are NaN; just make up some dummy values */
+        min_datum = -1;
+        max_datum = 1;
     }
 
     if (color_subvariable == SubVariable::VectorMagnitude ||
@@ -442,9 +456,22 @@ void GuiModeResult::refresh_measurements() {
             } else {
                 assert(false);
             }
-            std::shared_ptr<const NodeSet> node_set =
-                project->find_volume_object(measure_pair.second.volume)
-                    ->node_set;
+
+            std::string subject = measure_pair.second.subject;
+            std::shared_ptr<const NodeSet> node_set;
+            const Project::VolumeObject *volume;
+            const Project::SurfaceObject *surface;
+            const Project::NodeObject *node;
+            if ((volume = project->find_volume_object(subject))) {
+                node_set = volume->node_set;
+            } else if ((surface = project->find_surface_object(subject))) {
+                node_set = surface->node_set;
+            } else if ((node = project->find_node_object(subject))) {
+                NodeSet *ns = new NodeSet;
+                ns->nodes.insert(node->node_id);
+                node_set.reset(ns);
+            }
+
             for (NodeId node_id : node_set->nodes) {
                 double datum = subvariable_value(
                     dataset,

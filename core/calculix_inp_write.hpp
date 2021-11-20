@@ -8,6 +8,12 @@
 
 namespace os2cx {
 
+void write_calculix_create_node(
+    std::ostream &stream,
+    const std::string &name,
+    NodeId node_id,
+    Point point);
+
 void write_calculix_nodes_and_elements(
     std::ostream &stream,
     const std::string &name,

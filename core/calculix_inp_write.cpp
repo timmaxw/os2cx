@@ -4,6 +4,20 @@
 
 namespace os2cx {
 
+void write_calculix_create_node(
+    std::ostream &stream,
+    const std::string &name,
+    NodeId node_id,
+    Point point
+) {
+    stream << "*NODE, NSET=N" << name << '\n';
+    stream << node_id.to_int()
+        << ", " << point.x
+        << ", " << point.y
+        << ", " << point.z
+        << '\n';
+}
+
 void write_calculix_nodes_and_elements(
     std::ostream &stream,
     const std::string &name,
@@ -161,12 +175,20 @@ void write_calculix_job(
     {
         FilePath geometry_file_path = dir_path + "/objects.inp";
         std::ofstream geometry_stream(geometry_file_path);
+
+        for (const auto &pair : project.create_node_objects) {
+            write_calculix_create_node(
+                geometry_stream, pair.first,
+                pair.second.node_id, pair.second.point);
+        }
+
         for (const auto &pair : project.mesh_objects) {
             write_calculix_nodes_and_elements(
                 geometry_stream, pair.first, *project.mesh,
                 pair.second.node_begin, pair.second.node_end,
                 pair.second.element_begin, pair.second.element_end);
         }
+
         std::set<LinearEquation::Variable> variables_used;
         for (const auto &pair : project.slice_objects) {
             for (const LinearEquation &equation : *pair.second.equations) {
@@ -174,17 +196,20 @@ void write_calculix_job(
                     geometry_stream, equation, &variables_used);
             }
         }
+
         for (const auto &pair : project.select_volume_objects) {
             write_calculix_nset(
                 geometry_stream, pair.first, *pair.second.node_set);
             write_calculix_elset(
                 geometry_stream, pair.first, *pair.second.element_set);
         }
+
         for (const auto &pair : project.select_surface_objects) {
             write_calculix_nset(
                 geometry_stream, pair.first, *pair.second.node_set);
             /* TODO: write the face set too */
         }
+
         for (const auto &pair : project.material_objects) {
             write_calculix_material(
                 geometry_stream, pair.first, pair.second, project);

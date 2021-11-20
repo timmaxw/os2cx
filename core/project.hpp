@@ -212,7 +212,7 @@ public:
 
     class MeasureObject {
     public:
-        VolumeObjectName volume;
+        std::string subject; /* volume, surface, or node object */
         std::string dataset;
     };
 
