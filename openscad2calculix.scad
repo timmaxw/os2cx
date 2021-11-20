@@ -52,19 +52,6 @@ module __os2cx_beacon() {
     );
 }
 
-module __os2cx_check_existing(object_type, referrer, name) {
-    if (__openscad2calculix_mode == ["preview"]) {
-        if (!__os2cx_is_string(name)) {
-            echo(str("ERROR: ", referrer, " refers to a ", object_type,
-                " called ", name, " but that's not a valid name. ",
-                "(It needs to be a string.)"));
-        }
-    } else if (__openscad2calculix_mode == ["inventory"]) {
-        echo("__openscad2calculix", "check_existing_directive",
-            object_type, referrer, name);
-    }
-}
-
 module os2cx_analysis_custom(lines, unit_system=undef) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_array_strings(lines)) {
@@ -93,10 +80,6 @@ module os2cx_analysis_static_simple(
     load=undef,
     length_unit=undef
 ) {
-    __os2cx_check_existing(
-        "material",
-        "os2cx_analysis_static_simple() 'material' parameter",
-        material);
     if (!__os2cx_is_string(length_unit)) {
         echo(str("ERROR: os2cx_analysis_static_simple() 'length_unit' ",
             "parameter must be a string"));
@@ -133,10 +116,6 @@ module os2cx_analysis_steady_state_dynamics(
     max_frequency=undef,
     damping_ratio=undef
 ) {
-    __os2cx_check_existing(
-        "material",
-        "os2cx_analysis_steady_state_dynamics() 'material' parameter",
-        material);
     if (!__os2cx_is_string(length_unit)) {
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics() 'length_unit' ",
             "parameter must be a string"));
@@ -200,10 +179,6 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     rayleigh_damping_alpha=undef,
     rayleigh_damping_beta=undef,
 ) {
-    __os2cx_check_existing(
-        "material",
-        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'material' parameter",
-        material);
     if (!__os2cx_is_vector_3_with_unit(oscillation)) {
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
           "'oscillation' must be a [vector, unit] pair"));

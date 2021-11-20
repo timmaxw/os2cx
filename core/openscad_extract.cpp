@@ -453,17 +453,6 @@ void do_measure_directive(
     project->measure_objects[name].dataset = check_string(args[2]);
 }
 
-void do_check_existing_directive(
-    Project *project,
-    const std::vector<OpenscadValue> &args
-) {
-    check_arg_count(args, 3, "check_existing");
-
-    std::string object_type = check_string(args[0]);
-    std::string referrer = check_string(args[1]);
-    check_name_existing(args[2], object_type, project, referrer);
-}
-
 void openscad_extract_inventory(Project *project) {
     std::unique_ptr<OpenscadRun> run = call_openscad(
         project,
@@ -515,8 +504,6 @@ void openscad_extract_inventory(Project *project) {
                 do_material_elastic_simple_directive(project, args);
             } else if (echo[1].string_value == "measure_directive") {
                 do_measure_directive(project, args);
-            } else if (echo[1].string_value == "check_existing_directive") {
-                do_check_existing_directive(project, args);
             } else {
                 throw BadEchoError(
                     "unknown directive: " + echo[1].string_value);
