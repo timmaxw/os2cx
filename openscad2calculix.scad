@@ -94,35 +94,23 @@ module os2cx_analysis_static_simple(
     length_unit=undef
 ) {
     __os2cx_check_existing(
-        "mesh",
-        "os2cx_analysis_static_simple() 'mesh' parameter",
-        mesh);
-    __os2cx_check_existing(
         "material",
         "os2cx_analysis_static_simple() 'material' parameter",
         material);
-    __os2cx_check_existing(
-        "surface",
-        "os2cx_analysis_static_simple() 'fixed' parameter",
-        fixed);
-    __os2cx_check_existing(
-        "load",
-        "os2cx_analysis_static_simple() 'load' parameter",
-        load);
     if (!__os2cx_is_string(length_unit)) {
         echo(str("ERROR: os2cx_analysis_static_simple() 'length_unit' ",
             "parameter must be a string"));
     }
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*STEP",
         "*STATIC",
         "*BOUNDARY",
-        str("N", fixed, ",1,3"),
+        [["nset", fixed], ",1,3"],
         "*CLOAD",
-        str("*INCLUDE, INPUT=", load, ".clo"),
-        str("*NODE FILE, Nset=N", mesh),
+        ["*INCLUDE, INPUT=", ["cload_file", load]],
+        "*NODE FILE",
         "U",
         "*EL FILE",
         "S",
@@ -146,21 +134,9 @@ module os2cx_analysis_steady_state_dynamics(
     damping_ratio=undef
 ) {
     __os2cx_check_existing(
-        "mesh",
-        "os2cx_analysis_steady_state_dynamics() 'mesh' parameter",
-        mesh);
-    __os2cx_check_existing(
         "material",
         "os2cx_analysis_steady_state_dynamics() 'material' parameter",
         material);
-    __os2cx_check_existing(
-        "surface",
-        "os2cx_analysis_steady_state_dynamics() 'fixed' parameter",
-        fixed);
-    __os2cx_check_existing(
-        "load",
-        "os2cx_analysis_steady_state_dynamics() 'load' parameter",
-        load);
     if (!__os2cx_is_string(length_unit)) {
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics() 'length_unit' ",
             "parameter must be a string"));
@@ -185,13 +161,13 @@ module os2cx_analysis_steady_state_dynamics(
     }
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*BOUNDARY",
-        str("N", fixed, ",1,3"),
+        [["nset", fixed], ",1,3"],
         "*STEP",
         "*FREQUENCY,STORAGE=yes",
         str(num_eigenfrequencies),
-        str("*NODE FILE, Nset=N", mesh),
+        "*NODE FILE",
         "U",
         "*END STEP",
         "*STEP",
@@ -200,8 +176,8 @@ module os2cx_analysis_steady_state_dynamics(
         "*STEADY STATE DYNAMICS",
         str(min_frequency[0], ",", max_frequency[0], ",", 10),
         "*CLOAD",
-        str("*INCLUDE, INPUT=", load, ".clo"),
-        str("*NODE FILE, Nset=N", mesh),
+        ["*INCLUDE, INPUT=", ["cload_file", load]],
+        "*NODE FILE",
         "PU,U",
         "*EL FILE",
         "S",
@@ -225,17 +201,9 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     rayleigh_damping_beta=undef,
 ) {
     __os2cx_check_existing(
-        "mesh",
-        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'mesh' parameter",
-        mesh);
-    __os2cx_check_existing(
         "material",
         "os2cx_analysis_steady_state_dynamics_osc_boundary() 'material' parameter",
         material);
-    __os2cx_check_existing(
-        "surface",
-        "os2cx_analysis_steady_state_dynamics_osc_boundary() 'boundary' parameter",
-        boundary);
     if (!__os2cx_is_vector_3_with_unit(oscillation)) {
         echo(str("ERROR: os2cx_analysis_steady_state_dynamics_osc_boundary() ",
           "'oscillation' must be a [vector, unit] pair"));
@@ -272,13 +240,13 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     }
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        str("*SOLID SECTION, Elset=E", mesh, ", Material=", material),
+        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*BOUNDARY",
-        str("N", boundary, ",1,3"),
+        [["nset", boundary], ",1,3"],
         "*STEP",
         "*FREQUENCY,STORAGE=yes",
         str(num_eigenfrequencies),
-        str("*NODE FILE, Nset=N", mesh),
+        "*NODE FILE",
         "U",
         "*END STEP",
         "*STEP",
@@ -287,10 +255,10 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
         "*STEADY STATE DYNAMICS",
         str(min_frequency[0], ",", max_frequency[0], ",", 10),
         "*BOUNDARY",
-        str("N", boundary, ",1,1,", oscillation[0][0]),
-        str("N", boundary, ",2,2,", oscillation[0][1]),
-        str("N", boundary, ",3,3,", oscillation[0][2]),
-        str("*NODE FILE, Nset=N", mesh),
+        [["nset", boundary], ",1,1,", str(oscillation[0][0])],
+        [["nset", boundary], ",2,2,", str(oscillation[0][1])],
+        [["nset", boundary], ",3,3,", str(oscillation[0][2])],
+        "*NODE FILE",
         "PU,U",
         "*EL FILE",
         "S",

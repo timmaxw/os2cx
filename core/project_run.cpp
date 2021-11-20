@@ -341,6 +341,9 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     p->progress = Project::Progress::MeshAttrsDone;
     callbacks->project_run_checkpoint();
 
+    callbacks->project_run_log("Expanding macros in CalculiX deck...");
+    openscad_process_deck(p);
+
     callbacks->project_run_log("Writing CalculiX input files...");
     write_calculix_job(p->temp_dir, "main", *p);
     callbacks->project_run_checkpoint();

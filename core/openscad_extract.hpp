@@ -32,6 +32,8 @@ std::unique_ptr<Poly3> openscad_extract_poly3(
     const std::string &object_type,
     const std::string &name);
 
+void openscad_process_deck(Project *project);
+
 } /* namespace os2cx */
 
 #endif

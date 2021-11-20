@@ -7,6 +7,7 @@
 #include "compute_attrs.hpp"
 #include "mesh.hpp"
 #include "mesh_index.hpp"
+#include "openscad_value.hpp"
 #include "plc.hpp"
 #include "plc_nef.hpp"
 #include "plc_index.hpp"
@@ -47,6 +48,7 @@ public:
 
     UnitSystem unit_system;
 
+    std::vector<OpenscadValue> calculix_deck_raw;
     std::vector<std::string> calculix_deck;
 
     AttrBitIndex next_bit_index;

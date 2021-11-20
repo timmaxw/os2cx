@@ -193,17 +193,18 @@ void do_analysis_directive(
 ) {
     check_arg_count(args, 2, "analysis");
 
-    if (!project->calculix_deck.empty()) {
+    if (!project->calculix_deck_raw.empty()) {
         throw UsageError("Can't have multiple os2cx_analysis_...() directives "
             "in the same file.");
     }
 
-    std::vector<std::string> deck =
-        check_vector<std::string>(args[0], &check_string);
-    if (deck.empty()) {
+    if (args[0].type != OpenscadValue::Type::Vector) {
+        throw BadEchoError("expected a vector");
+    }
+    if (args[0].vector_value.empty()) {
         throw BadEchoError("empty analysis_directive");
     }
-    project->calculix_deck = std::move(deck);
+    project->calculix_deck_raw = args[0].vector_value;
 
     std::vector<std::string> units =
         check_vector<std::string>(args[1], &check_string);
@@ -540,7 +541,7 @@ void openscad_extract_inventory(Project *project) {
         throw UsageError(msg.str());
     }
 
-    if (project->calculix_deck.empty()) {
+    if (project->calculix_deck_raw.empty()) {
         throw UsageError("Please specify an os2cx_analysis_...() directive.");
     }
 }
@@ -558,6 +559,125 @@ std::unique_ptr<Poly3> openscad_extract_poly3(
         throw UsageError("Empty " + object_type + " '" + name + "'.");
     }
     return std::move(run->geometry);
+}
+
+std::string do_nset_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 1, "nset");
+
+    std::string name = check_string(args[0]);
+
+    if (project->find_volume_object(name) ||
+            project->find_surface_object(name) ||
+            project->find_node_object(name)) {
+        return "N" + name;
+    } else {
+        throw UsageError("No mesh, volume, surface, or node named \"" + name
+            + "\" has been declared.");
+    }
+}
+
+std::string do_elset_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 1, "elset");
+
+    std::string name = check_string(args[0]);
+
+    if (project->find_volume_object(name) ||
+            project->find_surface_object(name) ||
+            project->find_node_object(name)) {
+        return "E" + name;
+    } else {
+        throw UsageError("No mesh or volume named \"" + name
+            + "\" has been declared.");
+    }
+}
+
+std::string do_node_id_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 1, "node_id");
+
+    std::string name = check_string(args[0]);
+
+    const Project::NodeObject *node_object;
+    if (node_object = project->find_node_object(name)) {
+        return std::to_string(node_object->node_id.to_int());
+    } else {
+        throw UsageError("No node named \"" + name + "\" has been declared.");
+    }
+}
+
+std::string do_cload_file_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 1, "cload_file");
+
+    std::string name = check_string(args[0]);
+
+    if (project->load_surface_objects.count(name) ||
+            project->load_volume_objects.count(name)) {
+        return name + ".clo";
+    } else {
+        throw UsageError("No load named \"" + name + "\" has been declared.");
+    }
+}
+
+void openscad_process_deck(Project *project) {
+    for (const OpenscadValue &card_raw : project->calculix_deck_raw) {
+        if (card_raw.type == OpenscadValue::Type::String) {
+            project->calculix_deck.push_back(card_raw.string_value);
+            continue;
+        } else if (card_raw.type != OpenscadValue::Type::Vector) {
+            std::stringstream msg;
+            msg << "Invalid card in CalculiX deck: " << card_raw;
+            throw UsageError(msg.str());
+        }
+
+        try {
+            std::string card;
+            for (const OpenscadValue &part_raw : card_raw.vector_value) {
+                if (part_raw.type == OpenscadValue::Type::String) {
+                    card += part_raw.string_value;
+                    continue;
+                } else if (part_raw.type != OpenscadValue::Type::Vector
+                        || part_raw.vector_value.empty()
+                        || part_raw.vector_value[0].type !=
+                            OpenscadValue::Type::String) {
+                    std::stringstream msg;
+                    msg << "invalid part: " << part_raw;
+                    throw UsageError(msg.str());
+                }
+                std::string macro = part_raw.vector_value[0].string_value;
+                std::vector<OpenscadValue> args(
+                    part_raw.vector_value.begin() + 1,
+                    part_raw.vector_value.end());
+                if (macro == "nset") {
+                    card += do_nset_macro(project, args);
+                } else if (macro == "elset") {
+                    card += do_elset_macro(project, args);
+                } else if (macro == "node_id") {
+                    card += do_node_id_macro(project, args);
+                } else if (macro == "cload_file") {
+                    card += do_cload_file_macro(project, args);
+                } else {
+                    throw UsageError("Unknown macro: \"" + macro + "\"");
+                }
+            }
+            project->calculix_deck.push_back(card);
+        } catch (const UsageError &e) {
+            std::stringstream msg;
+            msg << "in card " << card_raw << ": ";
+            msg << e.what();
+            throw UsageError(msg.str());
+        }
+    }
 }
 
 } /* namespace os2cx */
