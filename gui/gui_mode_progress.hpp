@@ -38,9 +38,9 @@ private:
         QColor *color_out) const;
 
     void calculate_vertex_attributes(
-        const std::string &mesh_object_name,
-        Plc3::VertexId vertex_id,
-        QColor *vertex_color_out) const;
+        const std::string &node_object_name,
+        QColor *vertex_color_out,
+        bool *xray_out) const;
 
     void calculate_face_attributes(
         ElementId element_id,
@@ -50,8 +50,9 @@ private:
         ComplexVector *displacement_out) const;
 
     void calculate_vertex_attributes(
-        NodeId node_id,
+        const std::string &node_object_name,
         QColor *vertex_color_out,
+        bool *xray_out,
         ComplexVector *displacement_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();

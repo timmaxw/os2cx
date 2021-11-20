@@ -14,9 +14,9 @@ public:
         QColor *color_out) const = 0;
 
     virtual void calculate_vertex_attributes(
-        const std::string &mesh_object_name,
-        Plc3::VertexId vertex_id,
-        QColor *vertex_color_out) const = 0;
+        const std::string &node_object_name,
+        QColor *vertex_color_out,
+        bool *xray_out) const = 0;
 };
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(

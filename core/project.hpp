@@ -60,6 +60,7 @@ public:
     typedef std::string SelectVolumeObjectName;
     typedef std::string SelectSurfaceObjectName;
     typedef std::string SelectNodeObjectName;
+    typedef std::string CreateNodeObjectName;
     typedef std::string LoadVolumeObjectName;
     typedef std::string LoadSurfaceObjectName;
     typedef std::string MaterialObjectName;
@@ -79,6 +80,7 @@ public:
 
     class NodeObject {
     public:
+        Point point;
         NodeId node_id;
     };
 
@@ -161,11 +163,18 @@ public:
     class SelectNodeObject : public NodeObject {
     public:
         AttrBitIndex bit_index;
-        Point point;
     };
 
     std::map<SelectNodeObjectName, SelectNodeObject>
         select_node_objects;
+
+    class CreateNodeObject : public NodeObject {
+    public:
+        /* No members */
+    };
+
+    std::map<CreateNodeObjectName, CreateNodeObject>
+        create_node_objects;
 
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
@@ -235,8 +244,12 @@ public:
     }
 
     const NodeObject *find_node_object(const NodeObjectName &name) const {
-        auto jt = select_node_objects.find(name);
-        if (jt != select_node_objects.end()) {
+        auto it = select_node_objects.find(name);
+        if (it != select_node_objects.end()) {
+            return &it->second;
+        }
+        auto jt = create_node_objects.find(name);
+        if (jt != create_node_objects.end()) {
             return &jt->second;
         }
         return nullptr;

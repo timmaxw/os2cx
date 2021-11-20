@@ -16,8 +16,9 @@ public:
         ComplexVector *displacement_out) const = 0;
 
     virtual void calculate_vertex_attributes(
-        NodeId node_id,
+        const std::string &node_object_name,
         QColor *vertex_color_out,
+        bool *xray_out,
         ComplexVector *displacement_out) const = 0;
 };
 

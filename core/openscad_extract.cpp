@@ -98,6 +98,8 @@ std::string check_name_new(
         existing_object_type = "surface";
     } else if (project->select_node_objects.count(new_name)) {
         existing_object_type = "node";
+    } else if (project->create_node_objects.count(new_name)) {
+        existing_object_type = "node";
     } else if (project->load_volume_objects.count(new_name)) {
         existing_object_type = "load";
     } else if (project->load_surface_objects.count(new_name)) {
@@ -338,6 +340,22 @@ void do_select_node_directive(
     project->select_node_objects.insert(std::make_pair(name, object));
 }
 
+void do_create_node_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 2, "create_node");
+
+    Project::CreateNodeObjectName name =
+        check_name_new(args[0], "node", project);
+
+    Project::CreateNodeObject object;
+
+    object.point = Point::origin() + check_vector_3(args[1]);
+
+    project->create_node_objects.insert(std::make_pair(name, object));
+}
+
 void do_load_volume_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
@@ -483,6 +501,8 @@ void openscad_extract_inventory(Project *project) {
                 do_select_surface_directive(project, args);
             } else if (echo[1].string_value == "select_node_directive") {
                 do_select_node_directive(project, args);
+            } else if (echo[1].string_value == "create_node_directive") {
+                do_create_node_directive(project, args);
             } else if (echo[1].string_value == "load_volume_directive") {
                 do_load_volume_directive(project, args);
             } else if (echo[1].string_value == "load_surface_directive") {

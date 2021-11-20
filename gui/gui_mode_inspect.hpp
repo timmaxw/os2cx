@@ -26,7 +26,7 @@ protected:
         Mesh,
         SelectVolume,
         SelectSurface,
-        SelectNode,
+        SelectOrCreateNode,
         LoadVolume,
         LoadSurface
     };

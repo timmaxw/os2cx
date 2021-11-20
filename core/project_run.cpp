@@ -183,6 +183,12 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         Mesh3 combined_mesh;
         std::map<Project::SliceObjectName, Slice> combined_slices;
 
+        for (auto &pair : p->create_node_objects) {
+            Node3 node;
+            node.point = pair.second.point;
+            pair.second.node_id = combined_mesh.nodes.push_back(node);
+        }
+
         for (auto &pair : p->mesh_objects) {
             MeshIdMapping id_mapping;
             combined_mesh.append_mesh(*pair.second.partial_mesh, &id_mapping);

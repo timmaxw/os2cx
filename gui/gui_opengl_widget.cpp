@@ -6,7 +6,7 @@
 namespace os2cx {
 
 GuiOpenglScene::GuiOpenglScene() :
-    num_triangles(0), num_lines(0), num_vertices(0),
+    num_triangles(0), num_lines(0), num_vertices(0), num_xray_vertices(0),
     animate_mode(AnimateMode::None)
 { }
 
@@ -34,14 +34,23 @@ void GuiOpenglScene::add_line(
 }
 
 void GuiOpenglScene::add_vertex(
-    Point point, ComplexVector delta, const QColor &color
+    Point point, ComplexVector delta, const QColor &color, bool xray
 ) {
-    ++num_vertices;
-    vertex_points.push_back(point);
-    vertex_deltas.push_back(delta);
-    vertex_colors.push_back(color.red());
-    vertex_colors.push_back(color.green());
-    vertex_colors.push_back(color.blue());
+    if (xray) {
+        ++num_xray_vertices;
+        xray_vertex_points.push_back(point);
+        xray_vertex_deltas.push_back(delta);
+        xray_vertex_colors.push_back(color.red());
+        xray_vertex_colors.push_back(color.green());
+        xray_vertex_colors.push_back(color.blue());
+    } else {
+        ++num_vertices;
+        vertex_points.push_back(point);
+        vertex_deltas.push_back(delta);
+        vertex_colors.push_back(color.red());
+        vertex_colors.push_back(color.green());
+        vertex_colors.push_back(color.blue());
+    }
 }
 
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
@@ -165,6 +174,15 @@ void GuiOpenglWidget::compute_points_and_normals(
         vertex_computed_points[3 * i + 1] = point.y;
         vertex_computed_points[3 * i + 2] = point.z;
     }
+
+    xray_vertex_computed_points.resize(3 * scene->num_xray_vertices);
+    for (int i = 0; i < scene->num_xray_vertices; ++i) {
+        Point point = scene->xray_vertex_points[i]
+            + (multiplier * scene->xray_vertex_deltas[i]).real();
+        xray_vertex_computed_points[3 * i + 0] = point.x;
+        xray_vertex_computed_points[3 * i + 1] = point.y;
+        xray_vertex_computed_points[3 * i + 2] = point.z;
+    }
 }
 
 void GuiOpenglWidget::initializeGL() {
@@ -260,21 +278,62 @@ void GuiOpenglWidget::paintGL() {
 
         if (scene->num_vertices != 0) {
             glDisable(GL_LIGHTING);
-            glDisable(GL_DEPTH_TEST);
             glEnable(GL_VERTEX_ARRAY);
-            glEnable(GL_COLOR_ARRAY);
-
             glVertexPointer(
                 3, GL_FLOAT, 0, vertex_computed_points.data());
-            glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, scene->vertex_colors.data());
-
+            glColor3f(0, 0, 0);
             glPointSize(10);
             glDrawArrays(GL_POINTS, 0, scene->num_vertices);
-
+            glEnable(GL_COLOR_ARRAY);
+            glColorPointer(
+                3, GL_UNSIGNED_BYTE, 0, scene->vertex_colors.data());
+            glPointSize(8);
+            glDrawArrays(GL_POINTS, 0, scene->num_vertices);
             glDisable(GL_COLOR_ARRAY);
             glDisable(GL_VERTEX_ARRAY);
-            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_LIGHTING);
+        }
+
+        if (scene->num_xray_vertices != 0) {
+            glDisable(GL_LIGHTING);
+            glEnable(GL_VERTEX_ARRAY);
+            glVertexPointer(
+                3, GL_FLOAT, 0, xray_vertex_computed_points.data());
+
+            /* First, draw the X-ray vertices normally */
+            glColor3f(0, 0, 0);
+            glPointSize(10);
+            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
+            glEnable(GL_COLOR_ARRAY);
+            glColorPointer(
+                3, GL_UNSIGNED_BYTE, 0, scene->xray_vertex_colors.data());
+            glPointSize(8);
+            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
+            glDisable(GL_COLOR_ARRAY);
+
+            /* Now, invert the depth test and draw them hollow. We first draw
+            a size-6 point into the stencil buffer, then a size-8 point into
+            the regular buffer but masked by the stencil buffer. */
+            glEnable(GL_STENCIL_TEST);
+            glClear(GL_STENCIL_BUFFER_BIT);
+            glStencilFunc(GL_NEVER, 1, 0xFF);
+            glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+            glPointSize(6);
+            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
+            glDepthFunc(GL_ALWAYS);
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            glColor3f(0, 0, 0);
+            glPointSize(10);
+            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
+            glEnable(GL_COLOR_ARRAY);
+            glPointSize(8);
+            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
+            glDisable(GL_COLOR_ARRAY);
+            glDepthFunc(GL_LEQUAL);
+            glDisable(GL_STENCIL_TEST);
+
+            glDisable(GL_VERTEX_ARRAY);
             glEnable(GL_LIGHTING);
         }
     }

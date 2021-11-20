@@ -73,7 +73,10 @@ public:
         return values.end();
     }
     void reserve(int capacity) { values.reserve(capacity); }
-    void push_back(const Value &value) { values.push_back(value); }
+    Key push_back(const Value &value) {
+        values.push_back(value);
+        return Key::from_int(offset + values.size() - 1);
+    }
 private:
     int offset;
     std::vector<Value> values;

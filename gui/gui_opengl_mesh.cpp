@@ -2,6 +2,25 @@
 
 namespace os2cx {
 
+void gui_opengl_scene_mesh_vertex(
+    const Project &project,
+    const GuiOpenglMeshCallback *callback,
+    const std::string &node_object_name,
+    const Project::NodeObject &node_object,
+    GuiOpenglScene *scene
+) {
+    NodeId node_id = node_object.node_id;
+    const Node3 &node = project.mesh->nodes[node_id];
+    QColor vertex_color;
+    bool xray = false;
+    ComplexVector delta;
+    callback->calculate_vertex_attributes(
+        node_object_name, &vertex_color, &xray, &delta);
+    if (vertex_color.isValid()) {
+        scene->add_vertex(node.point, delta, vertex_color, xray);
+    }
+}
+
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     const Project &project,
     const GuiOpenglMeshCallback *callback,
@@ -77,14 +96,12 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
     }
 
     for (const auto &pair : project.select_node_objects) {
-        NodeId node_id = pair.second.node_id;
-        const Node3 &node = project.mesh->nodes[node_id];
-        QColor vertex_color;
-        ComplexVector delta;
-        callback->calculate_vertex_attributes(node_id, &vertex_color, &delta);
-        if (vertex_color.isValid()) {
-            scene.add_vertex(node.point, delta, vertex_color);
-        }
+        gui_opengl_scene_mesh_vertex(
+            project, callback, pair.first, pair.second, &scene);
+    }
+    for (const auto &pair : project.create_node_objects) {
+        gui_opengl_scene_mesh_vertex(
+            project, callback, pair.first, pair.second, &scene);
     }
 
     scene.animate_mode = animate_mode;

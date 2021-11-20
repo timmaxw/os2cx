@@ -2,11 +2,28 @@
 
 namespace os2cx {
 
+void gui_opengl_scene_poly3_vertex(
+    const GuiOpenglPoly3Callback *callback,
+    const std::string &node_object_name,
+    const Project::NodeObject &node_object,
+    GuiOpenglScene *scene
+) {
+    QColor vertex_color;
+    bool xray = false;
+    callback->calculate_vertex_attributes(
+        node_object_name, &vertex_color, &xray);
+    if (vertex_color.isValid()) {
+        scene->add_vertex(
+            node_object.point, ComplexVector::zero(), vertex_color, xray);
+    }
+}
+
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
     const Project &project,
     const GuiOpenglPoly3Callback *callback
 ) {
     GuiOpenglScene scene;
+
     for (const auto &pair : project.mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();
         if (plc == nullptr) {
@@ -44,19 +61,17 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                 scene.add_triangle(ps, ds, colors);
             }
         }
-        for (Plc3::VertexId vid = 0;
-                vid < static_cast<int>(plc->vertices.size()); ++vid) {
-            QColor vertex_color;
-            callback->calculate_vertex_attributes(
-                pair.first, vid, &vertex_color);
-
-            if (vertex_color.isValid()) {
-                const Plc3::Vertex &vertex = plc->vertices[vid];
-                scene.add_vertex(
-                    vertex.point, ComplexVector::zero(), vertex_color);
-            }
-        }
     }
+
+    for (const auto &pair : project.select_node_objects) {
+        gui_opengl_scene_poly3_vertex(
+            callback, pair.first, pair.second, &scene);
+    }
+    for (const auto &pair : project.create_node_objects) {
+        gui_opengl_scene_poly3_vertex(
+            callback, pair.first, pair.second, &scene);
+    }
+
     return std::make_shared<const GuiOpenglScene>(std::move(scene));
 }
 

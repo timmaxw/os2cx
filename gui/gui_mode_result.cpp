@@ -519,13 +519,19 @@ void GuiModeResult::calculate_face_attributes(
 }
 
 void GuiModeResult::calculate_vertex_attributes(
-    NodeId node_id,
+    const std::string &node_object_name,
     QColor *vertex_color_out,
+    bool *xray_out,
     ComplexVector *displacement_out
 ) const {
-    (void)node_id;
-    (void)vertex_color_out;
-    (void)displacement_out;
+    NodeId node_id = project->find_node_object(node_object_name)->node_id;
+    calculate_face_attributes(
+        ElementId::invalid(),
+        -1,
+        node_id,
+        vertex_color_out,
+        displacement_out);
+    *xray_out = false;
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeResult::make_scene() {

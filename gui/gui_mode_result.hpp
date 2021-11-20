@@ -60,8 +60,9 @@ private:
         ComplexVector *displacement_out) const;
 
     virtual void calculate_vertex_attributes(
-        NodeId node_id,
+        const std::string &node_object_name,
         QColor *vertex_color_out,
+        bool *xray_out,
         ComplexVector *displacement_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();

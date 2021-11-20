@@ -71,13 +71,13 @@ void GuiModeProgress::calculate_surface_attributes(
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
-    const std::string &mesh_object_name,
-    Plc3::VertexId vertex_id,
-    QColor *vertex_color_out
+    const std::string &node_object_name,
+    QColor *vertex_color_out,
+    bool *xray_out
 ) const {
-    (void)mesh_object_name;
-    (void)vertex_id;
-    (void)vertex_color_out;
+    (void)node_object_name;
+    *vertex_color_out = QColor(0x70, 0x70, 0x70);
+    *xray_out = false;
 }
 
 void GuiModeProgress::calculate_face_attributes(
@@ -95,13 +95,15 @@ void GuiModeProgress::calculate_face_attributes(
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
-    NodeId node_id,
+    const std::string &node_object_name,
     QColor *vertex_color_out,
+    bool *xray_out,
     ComplexVector *displacement_out
 ) const {
-    (void)node_id;
-    (void)vertex_color_out;
-    (void)displacement_out;
+    (void)node_object_name;
+    *vertex_color_out = QColor(0x70, 0x70, 0x70);
+    *xray_out = false;
+    *displacement_out = ComplexVector::zero();
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {
