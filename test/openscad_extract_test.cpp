@@ -18,7 +18,7 @@ TEST(OpenscadExtractTest, OpenscadExtractInventory) {
     stream << "os2cx_analysis_custom([\"a\",\"b\"], unit_system=[\"m\",\"kg\",\"s\"]);" << std::endl;
     stream.close();
 
-    Project project(scad_path, temp_dir.path());
+    Project project(scad_path);
     openscad_extract_inventory(&project);
 
     EXPECT_EQ(2, project.calculix_deck.size());

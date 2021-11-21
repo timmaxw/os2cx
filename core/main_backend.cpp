@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     }
     std::string scad_path = argv[1];
 
-    os2cx::Project project(scad_path, "os2cx_temp");
+    os2cx::Project project(scad_path);
     os2cx::ProjectRunCallbacks callbacks;
     os2cx::project_run(&project, &callbacks);
 

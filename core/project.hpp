@@ -29,9 +29,9 @@ public:
         AllDone = ResultsDone
     };
 
-    Project(const std::string &scad_path_, const std::string &temp_dir_) :
+    Project(const std::string &scad_path_) :
         scad_path(scad_path_),
-        temp_dir(temp_dir_),
+        temp_dir(scad_path_ + ".os2cx"),
         progress(Progress::NothingDone),
         errored(false),
         next_bit_index(attr_bit_solid() + 1),

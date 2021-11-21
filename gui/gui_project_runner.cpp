@@ -50,7 +50,7 @@ GuiProjectRunner::GuiProjectRunner(
         QObject *parent,
         const std::string &scad_path) :
     QObject(parent),
-    project_on_application_thread(new Project(scad_path, "os2cx_temp")),
+    project_on_application_thread(new Project(scad_path)),
     interrupted(false),
     last_emitted_status(Status::Running)
 {
