@@ -66,6 +66,8 @@ public:
     std::set<NodeId> nodes;
 };
 
+NodeSet compute_node_set_singleton(NodeId node);
+
 NodeSet compute_node_set_from_range(NodeId begin, NodeId end);
 
 NodeSet compute_node_set_from_element_set(

@@ -467,9 +467,8 @@ void GuiModeResult::refresh_measurements() {
             } else if ((surface = project->find_surface_object(subject))) {
                 node_set = surface->node_set;
             } else if ((node = project->find_node_object(subject))) {
-                NodeSet *ns = new NodeSet;
-                ns->nodes.insert(node->node_id);
-                node_set.reset(ns);
+                node_set.reset(new NodeSet(
+                    compute_node_set_singleton(node->node_id)));
             }
 
             for (NodeId node_id : node_set->nodes) {

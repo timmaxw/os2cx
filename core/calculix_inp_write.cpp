@@ -210,6 +210,14 @@ void write_calculix_job(
             /* TODO: write the face set too */
         }
 
+        for (const auto &pair : project.select_node_objects) {
+            write_calculix_nset(
+                geometry_stream,
+                pair.first,
+                compute_node_set_singleton(pair.second.node_id)
+                );
+        }
+
         for (const auto &pair : project.material_objects) {
             write_calculix_material(
                 geometry_stream, pair.first, pair.second, project);

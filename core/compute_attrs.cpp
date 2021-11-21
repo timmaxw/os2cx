@@ -219,6 +219,12 @@ FaceSet compute_face_set_from_attr_bit(
     return set;
 }
 
+NodeSet compute_node_set_singleton(NodeId node) {
+    NodeSet set;
+    set.nodes.insert(node);
+    return set;
+}
+
 NodeSet compute_node_set_from_range(NodeId begin, NodeId end) {
     NodeSet set;
     for (NodeId id = begin; id != end; ++id) {

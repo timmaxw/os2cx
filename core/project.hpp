@@ -31,7 +31,6 @@ public:
 
     Project(const std::string &scad_path_) :
         scad_path(scad_path_),
-        temp_dir(scad_path_ + ".os2cx"),
         progress(Progress::NothingDone),
         errored(false),
         next_bit_index(attr_bit_solid() + 1),
@@ -40,6 +39,7 @@ public:
 
     std::string scad_path;
     std::string temp_dir;
+    std::string project_name;
 
     Progress progress;
     bool errored;

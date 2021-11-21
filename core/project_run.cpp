@@ -14,6 +14,20 @@
 namespace os2cx {
 
 void project_run(Project *p, ProjectRunCallbacks *callbacks) {
+    /* If scad_path="/foo/bar.scad", then project_name="bar" */
+    p->project_name = p->scad_path;
+    int last_slash_pos = p->project_name.rfind("/");
+    if (last_slash_pos != std::string::npos) {
+        p->project_name = p->project_name.substr(last_slash_pos + 1);
+    }
+    int last_dot_pos = p->project_name.rfind(".");
+    if (last_dot_pos != std::string::npos) {
+        p->project_name = p->project_name.substr(0, last_dot_pos);
+    }
+    assert(!p->project_name.empty());
+
+    /* If scad_path="/foo/bar.scad", then temp_dir="/foo/bar.scad.os2cx" */
+    p->temp_dir = p->scad_path + ".os2cx";
     maybe_create_directory(p->temp_dir);
 
     callbacks->project_run_log("Scanning OpenSCAD file...");
@@ -345,11 +359,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     openscad_process_deck(p);
 
     callbacks->project_run_log("Writing CalculiX input files...");
-    write_calculix_job(p->temp_dir, "main", *p);
+    write_calculix_job(p->temp_dir, p->project_name, *p);
     callbacks->project_run_checkpoint();
 
     try {
-        run_calculix(p->temp_dir, "main");
+        run_calculix(p->temp_dir, p->project_name);
     } catch (const CalculixRunError &error) {
         callbacks->project_run_log("CalculiX failed.");
         p->errored = true;
@@ -357,7 +371,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     }
 
     callbacks->project_run_log("Reading CalculiX output files...");
-    std::ifstream frd_stream(p->temp_dir + "/main.frd");
+    std::ifstream frd_stream(p->temp_dir + "/" + p->project_name + ".frd");
     std::vector<FrdAnalysis> frd_analyses;
     try {
         read_calculix_frd(
