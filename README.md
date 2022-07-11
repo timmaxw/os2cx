@@ -44,24 +44,24 @@ os2cx_mesh("i_beam") {
   i_beam();
 }
 
-/* Declares two surface selection objects in OS2CX. A surface selection object
-refers to part of the surface of a mesh object. It's defined by taking the
-intersection of the declared mesh, with another OpenSCAD shape. */
+/* Declares two selection objects in OS2CX. A selection object refers to part of
+the surface or volume of a mesh object. It's defined by taking the intersection
+of the declared mesh, with another OpenSCAD shape. */
 os2cx_select_surface("anchored_end", [-1, 0, 0], 45) {
     translate([-length/2, 0, 0])
         cube([0.1, width+0.1, height+0.1], center=true);
 }
-os2cx_select_surface("loaded_end", [1, 0, 0], 45) {
+os2cx_select_volume("loaded_end") {
     translate([length/2, 0, 0])
         cube([0.1, width+0.1, height+0.1], center=true);
 }
 
 /* Declares a load object in OS2CX, called "car_weight". It's defined as a
 force of 9,800 newtons in the -Z direction, applied uniformly over the
-"loaded_end" surface we defined above. */
+"loaded_end" volume we defined above. */
 weight = 1000;
 gravity = 9.8;
-os2cx_load_surface(
+os2cx_load_volume(
     "car_weight",
     "loaded_end",
     force_total=[[0, 0, -gravity*weight], "N"]);
@@ -71,7 +71,8 @@ of 209 gigapascals, and a Poisson's ratio of 0.3. */
 os2cx_material_elastic_simple(
     "steel",
     youngs_modulus=[209, "GPa"],
-    poissons_ratio=0.3);
+    poissons_ratio=0.3,
+    density=[7600, "kg/m^3"]);
 
 /* Tell OS2CX to do a simple static deflection analysis using the objects we
 just defined */
@@ -82,6 +83,12 @@ os2cx_analysis_static_simple(
     load="car_weight",
     length_unit="m"
 );
+
+/* Tell OS2CX to report the maximum deflection of the loaded end. */
+os2cx_measure(
+    "loaded_end_deflection",
+    "loaded_end",
+    "DISP");
 ```
 
 Let's save this file as [example.scad](docs/example.scad) and open it using the
@@ -92,7 +99,7 @@ will show us the results:
 
 The bending is exaggerated by a factor of 50 in the visualization. Consulting
 the color scale on the left-hand side, we can see that the beam would bend
-approximately 3.65 millimeters. Theory predicts 3.48 millimeters; not bad!
+approximately 3.50 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 
