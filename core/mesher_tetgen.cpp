@@ -190,7 +190,7 @@ Mesh3 mesher_tetgen(
     flags += "a" + std::to_string(max_tet_volume);
     flags += "S" + std::to_string(max_steiner_points);
     flags += "o2";
-    flags += "V";
+    flags += "Q";
 
     tetgenio tetgen_output;
     try {
