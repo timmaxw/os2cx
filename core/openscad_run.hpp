@@ -8,9 +8,7 @@
 #include "poly.hpp"
 #include "util.hpp"
 
-namespace TinyProcessLib {
-class Process;
-}
+class QProcess;
 
 namespace os2cx {
 
@@ -31,7 +29,7 @@ public:
         const std::map<std::string, OpenscadValue> &defines);
     ~OpenscadRun();
 
-    void wait();
+    void run();
 
     std::vector<std::vector<OpenscadValue> > echos;
     std::vector<std::string> warnings, errors;
@@ -43,8 +41,7 @@ private:
     void handle_output_chunk(const char *bytes, size_t n);
     void handle_output_line(const char *begin, const char *end);
 
-    std::unique_ptr<TinyProcessLib::Process> process;
-    std::vector<char> output_leftover;
+    std::unique_ptr<QProcess> process;
     bool has_geometry;
 };
 

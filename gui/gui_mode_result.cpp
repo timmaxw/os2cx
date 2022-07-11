@@ -56,6 +56,8 @@ double GuiModeResult::subvariable_value(
     NodeId node_id
 ) {
     switch (subvar) {
+    case SubVariable::ScalarValue:
+        return (*dataset.node_scalar)[node_id];
     case SubVariable::VectorMagnitude:
         return (*dataset.node_vector)[node_id].magnitude();
     case SubVariable::VectorX:
@@ -321,7 +323,10 @@ void GuiModeResult::set_color_variable(const std::string &new_var) {
     const Results::Dataset &dataset = first_step()->datasets.at(color_variable);
 
     combo_box_color_subvariable->clear();
-    if (dataset.node_vector) {
+    if (dataset.node_scalar) {
+        combo_box_color_subvariable->addItem(tr("Value"),
+            QVariant(static_cast<int>(SubVariable::ScalarValue)));
+    } else if (dataset.node_vector) {
         combo_box_color_subvariable->addItem(tr("Magnitude"),
             QVariant(static_cast<int>(SubVariable::VectorMagnitude)));
         combo_box_color_subvariable->addItem(tr("X Component"),
@@ -447,7 +452,9 @@ void GuiModeResult::refresh_measurements() {
             max_datum = 0;
             const Results::Dataset &dataset = dataset_it->second;
             SubVariable measure_subvariable;
-            if (dataset.node_vector) {
+            if (dataset.node_scalar) {
+                measure_subvariable = SubVariable::ScalarValue;
+            } else if (dataset.node_vector) {
                 measure_subvariable = SubVariable::VectorMagnitude;
             } else if (dataset.node_complex_vector) {
                 measure_subvariable = SubVariable::ComplexVectorMagnitude;

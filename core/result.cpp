@@ -6,7 +6,11 @@ void result_var_from_frd_analysis(
     const FrdAnalysis &fa,
     Results::Dataset *var
 ) {
-    if (fa.entities.size() == 4 &&
+    if (fa.entities.size() == 1) {
+        var->node_scalar.reset(new ContiguousMap<NodeId, double>(
+            fa.entities[0].data));
+
+    } else if (fa.entities.size() == 4 &&
             fa.entities[0].ind1 == 1 &&
             fa.entities[1].ind1 == 2 &&
             fa.entities[2].ind1 == 3 &&

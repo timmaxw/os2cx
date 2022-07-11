@@ -22,7 +22,7 @@ std::unique_ptr<OpenscadRun> call_openscad(
         project->temp_dir + "/" + geometry_file_name + ".off",
         defines
     ));
-    run->wait();
+    run->run();
     return std::move(run);
 }
 

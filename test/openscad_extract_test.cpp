@@ -8,6 +8,11 @@
 namespace os2cx {
 
 TEST(OpenscadExtractTest, OpenscadExtractInventory) {
+    std::ifstream file_checker("openscad2calculix.scad");
+    ASSERT_FALSE(file_checker.fail()) <<
+      "File openscad2calculix.scad not found. Tests should be run in the root os2cx/ directory.";
+    file_checker.close();
+
     TempDir temp_dir(
         "./test_run_inventoryXXXXXX",
         TempDir::AutoCleanup::Yes);
@@ -21,9 +26,9 @@ TEST(OpenscadExtractTest, OpenscadExtractInventory) {
     Project project(scad_path);
     openscad_extract_inventory(&project);
 
-    EXPECT_EQ(2, project.calculix_deck.size());
-    EXPECT_EQ("a", project.calculix_deck[0]);
-    EXPECT_EQ("b", project.calculix_deck[1]);
+    ASSERT_EQ(2, project.calculix_deck_raw.size());
+    ASSERT_EQ("a", project.calculix_deck_raw[0].string_value);
+    ASSERT_EQ("b", project.calculix_deck_raw[1].string_value);
 }
 
 } /* namespace os2cx */

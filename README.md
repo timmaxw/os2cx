@@ -96,22 +96,19 @@ approximately 3.65 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 
-OS2CX has only been tested on Linux (Ubuntu 20.04). The dependencies are all
+OS2CX has been tested on Linux (Ubuntu 22.04). The dependencies are all
 cross-platform, so in principle it should be easy to get it working on other
 operating systems, but no guarantees.
 
 Dependencies:
-* OpenSCAD 2019.05 (`sudo apt install openscad`)
-* CalculiX 2.11 (`sudo apt install calculix-ccx`)
-* Qt 5.11
-* CGAL 5.0.3 (`sudo apt install libcgal-dev`)
-* tiny-process-library (install from source at
-  https://gitlab.com/eidheim/tiny-process-library)
+* OpenSCAD 2021.01 (`sudo apt install openscad`)
+* CalculiX 2.17 (`sudo apt install calculix-ccx`)
+* Qt 5.15
+* CGAL 5.4 (`sudo apt install libcgal-dev`)
 * tetgen 1.5.0 (as a library, not an executable)
   (`sudo apt install libtet1.5-dev`)
 * GLU (`sudo apt install libglu-dev`)
-* Google Test (as a library, not source) (install from source at
-  https://github.com/google/googletest)
+* Google Test (`sudo apt-get install libgtest-dev`)
 
 Development notes:
 * I develop OS2CX using Qt Creator.

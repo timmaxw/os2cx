@@ -22,7 +22,7 @@ TEST(OpenscadRunTest, OpenscadRun) {
     std::map<std::string, OpenscadValue> defines;
     defines.insert(std::make_pair("foo_variable", OpenscadValue("foo")));
     OpenscadRun run(scad_path, geometry_path, defines);
-    run.wait();
+    run.run();
 
     ASSERT_EQ(2, run.echos.size());
     ASSERT_EQ(2, run.echos[0].size());

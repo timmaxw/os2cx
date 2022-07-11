@@ -22,7 +22,7 @@ AffineTransform try_beacon(const std::string &code) {
     FilePath geometry_path = temp_dir.path() + "/test.off";
     std::map<std::string, OpenscadValue> defines;
     OpenscadRun run(scad_path, geometry_path, defines);
-    run.wait();
+    run.run();
 
     if (run.geometry == nullptr) {
         throw BeaconError();

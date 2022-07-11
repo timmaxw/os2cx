@@ -1,6 +1,6 @@
 #include "calculix_run.hpp"
 
-#include <process.hpp>
+#include <QProcess>
 
 #include "util.hpp"
 
@@ -10,18 +10,13 @@ void run_calculix(
     const std::string &temp_dir,
     const std::string &filename
 ) {
-    std::vector<std::string> args;
+    QStringList args;
     args.push_back("-i");
-    args.push_back(filename);
-    TinyProcessLib::Process process(
-        build_command_line("ccx", args),
-        temp_dir,
-        /* TODO: trap stdout/stderr and do something useful */
-        nullptr,
-        nullptr
-    );
-    int status = process.get_exit_status();
-    if (status != 0) {
+    args.push_back(filename.c_str());
+    QProcess process;
+    process.setWorkingDirectory(temp_dir.c_str());
+    process.start("ccx", args);
+    if (!process.waitForFinished(-1)) {
         throw CalculixRunError("ccx failed");
     }
 }

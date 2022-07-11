@@ -15,12 +15,14 @@ public:
     class Dataset {
     public:
         NodeId node_begin() const {
+            if (node_scalar) return node_scalar->key_begin();
             if (node_vector) return node_vector->key_begin();
             if (node_complex_vector) return node_complex_vector->key_begin();
             if (node_matrix) return node_matrix->key_begin();
             assert(false);
         }
         NodeId node_end() const {
+            if (node_scalar) return node_scalar->key_end();
             if (node_vector) return node_vector->key_end();
             if (node_complex_vector) return node_complex_vector->key_end();
             if (node_matrix) return node_matrix->key_end();
@@ -28,6 +30,7 @@ public:
         }
 
         /* Exactly one of these will be non-null */
+        std::unique_ptr<ContiguousMap<NodeId, double> > node_scalar;
         std::unique_ptr<ContiguousMap<NodeId, Vector> > node_vector;
         std::unique_ptr<ContiguousMap<NodeId, ComplexVector> >
             node_complex_vector;

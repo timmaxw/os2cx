@@ -23,6 +23,7 @@ public:
 
 private:
     enum class SubVariable {
+        ScalarValue,
         VectorMagnitude, VectorX, VectorY, VectorZ,
         ComplexVectorMagnitude,
         MatrixVonMisesStress,
