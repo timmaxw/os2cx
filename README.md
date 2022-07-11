@@ -16,7 +16,7 @@ Suppose we want to calculate how much a 1-meter steel I-beam would flex if we
 anchored one end firmly in concrete and hung a 1-metric-ton car from the other
 end. We can model this I-beam in OpenSCAD like so:
 
-```
+```openscad
 length = 1;
 width = 0.1;
 height = 0.1;
@@ -35,7 +35,7 @@ Next, we need to tell OS2CX the parameters of the simulation. We do this using
 modules that OS2CX adds to OpenSCAD via a `openscad2calculix.scad` helper
 library:
 
-```
+```openscad
 include <../openscad2calculix.scad>
 
 /* Declares a new mesh object in OS2CX. Its name will be "i_beam", and its shape
@@ -115,6 +115,6 @@ Development notes:
 * It's structured as a top-level QMake project with three sub-projects: a `core`
   project that contains the main logic, a `gui` project that defines the GUI
   application, and a `test` project that defines tests for `core`.
-* Only `gui` actually depends on Qt; `core` and `test` are pure C++, even though
-  they are built with QMake.
+* Only `gui` makes significant use of Qt. `core` and `test` use nothing from Qt
+  except QProcess.
 * The test executable must be executed in the toplevel `os2cx/` directory.
