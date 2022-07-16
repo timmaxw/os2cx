@@ -15,8 +15,13 @@ void run_calculix(
     args.push_back(filename.c_str());
     QProcess process;
     process.setWorkingDirectory(temp_dir.c_str());
+    process.setProcessChannelMode(QProcess::ForwardedChannels);
     process.start("ccx", args);
     if (!process.waitForFinished(-1)) {
+        throw CalculixRunError("ccx failed");
+    }
+    if (process.exitStatus() != QProcess::NormalExit ||
+           process.exitCode() != 0) {
         throw CalculixRunError("ccx failed");
     }
 }

@@ -87,6 +87,20 @@ void write_calculix_elset(
     }
 }
 
+
+void write_calculix_surface(
+    std::ostream &stream,
+    const std::string &name,
+    const FaceSet &face_set
+) {
+    stream << "*SURFACE,NAME=S" << name << ",TYPE=ELEMENT\n";
+    for (FaceId face_id : face_set.faces) {
+      /* Note we number faces starting from 0, but CalculiX numbers faces starting
+      from 1, which is why we write "face_id.face + 1". */
+      stream << face_id.element_id.to_int() << ",S" << face_id.face + 1 << '\n';
+    }
+}
+
 void write_calculix_cload(
     std::ostream &stream,
     const ConcentratedLoad &cload
@@ -207,7 +221,8 @@ void write_calculix_job(
         for (const auto &pair : project.select_surface_objects) {
             write_calculix_nset(
                 geometry_stream, pair.first, *pair.second.node_set);
-            /* TODO: write the face set too */
+            write_calculix_surface(
+                geometry_stream, pair.first, *pair.second.face_set);
         }
 
         for (const auto &pair : project.select_node_objects) {

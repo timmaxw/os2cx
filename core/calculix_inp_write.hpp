@@ -33,6 +33,11 @@ void write_calculix_elset(
     const std::string &name,
     const ElementSet &element_set);
 
+void write_calculix_surface(
+    std::ostream &stream,
+    const std::string &name,
+    const FaceSet &face_set);
+
 void write_calculix_cload(
     std::ostream &stream,
     const ConcentratedLoad &cload);

@@ -50,6 +50,13 @@ public:
         double weight;
     };
 
+    /* Note, vertices and faces are numbered according to the same convention
+    that CalculiX uses, but starting from 0 instead of from 1. For example:
+    - In CalculiX's convention, a C3D4 element has vertices 1,2,3,4 and faces
+      1,2,3,4, where e.g. face 1 consists of vertices 1,2,3.
+    - In our convention, a C3D4 element has vertices 0,1,2,3 and faces
+      0,1,2,3, where e.g. face 0 consists of vertices 0,1,2. */
+
     class Vertex {
     public:
         enum class Type { Corner, Edge };

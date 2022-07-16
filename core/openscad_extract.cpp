@@ -41,6 +41,33 @@ std::string check_string(const OpenscadValue &value) {
     return value.string_value;
 }
 
+UnitType check_unit_type(const OpenscadValue &value) {
+    std::string s = check_string(value);
+    if (s == "dimensionless") {
+        return UnitType::Dimensionless;
+    } else if (s == "length") {
+        return UnitType::Length;
+    } else if (s == "mass") {
+        return UnitType::Mass;
+    } else if (s == "time") {
+        return UnitType::Time;
+    } else if (s == "area") {
+        return UnitType::Area;
+    } else if (s == "density") {
+        return UnitType::Density;
+    } else if (s == "force") {
+        return UnitType::Force;
+    } else if (s == "force_per_volume") {
+        return UnitType::ForcePerVolume;
+    } else if (s == "pressure") {
+        return UnitType::Pressure;
+    } else if (s == "volume") {
+        return UnitType::Volume;
+    } else {
+        throw BadEchoError("bad unit type");
+    }
+}
+
 Unit check_unit(const OpenscadValue &value, UnitType unit_type) {
     try {
         return Unit::from_name(unit_type, check_string(value));
@@ -552,6 +579,17 @@ std::unique_ptr<Poly3> openscad_extract_poly3(
     return std::move(run->geometry);
 }
 
+std::string do_convert_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 2, "convert");
+    UnitType unit_type = check_unit_type(args[0]);
+    WithUnit<double> value_in_unit = check_number_with_unit(args[1], unit_type);
+    double value_in_system = project->unit_system.unit_to_system(value_in_unit);
+    return std::to_string(value_in_system);
+}
+
 std::string do_nset_macro(
     Project *project,
     const std::vector<OpenscadValue> &args
@@ -582,6 +620,22 @@ std::string do_elset_macro(
     );
 
     return "E" + name;
+}
+
+std::string do_surface_macro(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 1, "surface");
+
+    std::string name = check_name_existing(
+        args[0],
+        "surface",
+        project,
+        "surface macro"
+    );
+
+    return "S" + name;
 }
 
 std::string do_node_id_macro(
@@ -646,10 +700,14 @@ void openscad_process_deck(Project *project) {
                 std::vector<OpenscadValue> args(
                     part_raw.vector_value.begin() + 1,
                     part_raw.vector_value.end());
-                if (macro == "nset") {
+                if (macro == "convert") {
+                    card += do_convert_macro(project, args);
+                } else if (macro == "nset") {
                     card += do_nset_macro(project, args);
                 } else if (macro == "elset") {
                     card += do_elset_macro(project, args);
+                } else if (macro == "surface") {
+                    card += do_surface_macro(project, args);
                 } else if (macro == "node_id") {
                     card += do_node_id_macro(project, args);
                 } else if (macro == "cload_file") {
