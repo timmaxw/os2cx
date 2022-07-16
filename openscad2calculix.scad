@@ -266,7 +266,9 @@ module os2cx_slice(name, direction_vector, direction_angle_tolerance) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_slice() first parameter must be a string");
         }
-        # children();
+        if ($preview) {
+            # children();
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "slice_directive",
             name,
@@ -282,7 +284,9 @@ module os2cx_select_volume(name) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_select_volume() parameter must be a string");
         }
-        # children();
+        if ($preview) {
+            # children();
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "select_volume_directive", name);
     } else if (__openscad2calculix_mode == ["select_volume", name]) {
@@ -295,7 +299,9 @@ module os2cx_select_surface(name, direction_vector, direction_angle_tolerance) {
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_select_surface() parameter must be a string");
         }
-        # children();
+        if ($preview) {
+            # children();
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "select_surface_directive",
             name,
@@ -314,7 +320,9 @@ module os2cx_select_surface_internal(
         if (!__os2cx_is_string(name)) {
             echo("ERROR: os2cx_select_surface() parameter must be a string");
         }
-        # children();
+        if ($preview) {
+            # children();
+        }
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "select_surface_directive",
             name,
