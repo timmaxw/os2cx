@@ -4,11 +4,20 @@ namespace os2cx {
 
 void result_var_from_frd_analysis(
     const FrdAnalysis &fa,
-    Results::Dataset *var
+    std::map<std::string, Results::Dataset> *datasets
 ) {
-    if (fa.entities.size() == 1) {
-        var->node_scalar.reset(new ContiguousMap<NodeId, double>(
-            fa.entities[0].data));
+    if (fa.name == "CONTACT") {
+        /* CONTACT dataset is formatted like a matrix, but actually it's many
+        separate scalars. Handle it as a special case. */
+        for (const auto &entity : fa.entities) {
+            Results::Dataset *dataset = &(*datasets)[entity.name];
+            dataset->node_scalar.reset(
+                new ContiguousMap<NodeId, double>(entity.data));
+        }
+
+    } else if (fa.entities.size() == 1) {
+        (*datasets)[fa.name].node_scalar.reset(
+            new ContiguousMap<NodeId, double>(fa.entities[0].data));
 
     } else if (fa.entities.size() == 4 &&
             fa.entities[0].ind1 == 1 &&
@@ -23,8 +32,9 @@ void result_var_from_frd_analysis(
         for (NodeId node = dx.key_begin(); node != dx.key_end(); ++node) {
             dxyz[node] = Vector(dx[node], dy[node], dz[node]);
         }
-        var->node_vector.reset(new ContiguousMap<NodeId, Vector>(
-            std::move(dxyz)));
+        Results::Dataset *dataset = &(*datasets)[fa.name];
+        dataset->node_vector.reset(
+            new ContiguousMap<NodeId, Vector>(std::move(dxyz)));
 
     } else if (fa.entities.size() == 6 &&
             fa.entities[0].ind1 == 1 && fa.entities[0].name == "MAG1" &&
@@ -51,8 +61,9 @@ void result_var_from_frd_analysis(
                 std::polar(dym[node], dyp[node] / 360.0 * (2*M_PI)),
                 std::polar(dzm[node], dzp[node] / 360.0 * (2*M_PI)));
         }
-        var->node_complex_vector.reset(new ContiguousMap<NodeId, ComplexVector>(
-            std::move(dxyz)));
+        Results::Dataset *dataset = &(*datasets)[fa.name];
+        dataset->node_complex_vector.reset(
+            new ContiguousMap<NodeId, ComplexVector>(std::move(dxyz)));
 
     } else if (fa.entities.size() == 6 &&
             fa.entities[0].ind1 == 1 && fa.entities[0].ind2 == 1 &&
@@ -82,8 +93,9 @@ void result_var_from_frd_analysis(
             m.cols[2].x = m.cols[0].z = szx[node];
             sxyz[node] = m;
         }
-        var->node_matrix.reset(new ContiguousMap<NodeId, Matrix>(
-            std::move(sxyz)));
+        Results::Dataset *dataset = &(*datasets)[fa.name];
+        dataset->node_matrix.reset(
+            new ContiguousMap<NodeId, Matrix>(std::move(sxyz)));
 
     } else {
         assert(false);
@@ -131,7 +143,7 @@ void results_from_frd_analyses(
             steps.push_back(std::make_pair(&fa, std::move(step)));
         }
         Results::Result::Step *step = &steps.back().second;
-        result_var_from_frd_analysis(fa, &step->datasets[fa.name]);
+        result_var_from_frd_analysis(fa, &step->datasets);
     }
 
     /* Collect related Result::Step records into a single Result */
@@ -172,6 +184,29 @@ void results_from_frd_analyses(
             }
             results_out->results.back().steps.push_back(std::move(pair.second));
         }
+    }
+}
+
+const std::map<std::string, UnitType> dataset_name_to_unit_type = {
+    {"DISP", UnitType::Length},
+    {"DISPI", UnitType::Length},
+    {"PDISP", UnitType::Length},
+    {"STRESS", UnitType::Pressure},
+    {"ISTRESS", UnitType::Pressure},
+    {"COPEN", UnitType::Length},
+    {"CSLIP1", UnitType::Length},
+    {"CSLIP2", UnitType::Length},
+    {"CPRESS", UnitType::Pressure},
+    {"CSHEAR1", UnitType::Pressure},
+    {"CSHEAR2", UnitType::Pressure},
+};
+
+UnitType guess_unit_type_for_dataset(const std::string &name) {
+    auto it = dataset_name_to_unit_type.find(name);
+    if (it != dataset_name_to_unit_type.end()) {
+        return it->second;
+    } else {
+        return UnitType::Dimensionless;
     }
 }
 

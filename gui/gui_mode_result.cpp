@@ -86,23 +86,6 @@ double GuiModeResult::subvariable_value(
     }
 }
 
-UnitType GuiModeResult::guess_unit_type(
-    const std::string &dataset_name
-) {
-    if (dataset_name == "DISP"
-            || dataset_name == "DISPI"
-            || dataset_name == "PDISP") {
-        return UnitType::Length;
-    } else if (dataset_name == "STRESS" || dataset_name == "ISTRESS") {
-        return UnitType::Pressure;
-    } else {
-        /* This is a sane fallback for values of any unit type, because they
-        will simply be printed unscaled (i.e. in the project's unit system) with
-        no unit label attached, which is guaranteed correct, even if vague. */
-        return UnitType::Dimensionless;
-    }
-}
-
 void GuiModeResult::maybe_setup_frequency() {
     if (result->type != Results::Result::Type::Eigenmode &&
             result->type != Results::Result::Type::ModalDynamic) {
@@ -405,7 +388,7 @@ void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
         min_datum,
         max_datum,
         &project->unit_system,
-        guess_unit_type(color_variable));
+        guess_unit_type_for_dataset(color_variable));
 
     emit refresh_scene();
 }
@@ -496,7 +479,7 @@ void GuiModeResult::refresh_measurements() {
             measurement_table->setItem(row, 1, new QTableWidgetItem(tr("N/A")));
         } else {
             Unit unit = project->unit_system.suggest_unit(
-                guess_unit_type(measure_pair.second.dataset),
+                guess_unit_type_for_dataset(measure_pair.second.dataset),
                 max_datum);
             WithUnit<double> max_datum_2 =
                 project->unit_system.system_to_unit(unit, max_datum);

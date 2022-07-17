@@ -7,6 +7,7 @@
 
 #include "calculix_frd_read.hpp"
 #include "mesh.hpp"
+#include "units.hpp"
 
 namespace os2cx {
 
@@ -68,6 +69,8 @@ public:
 void results_from_frd_analyses(
     const std::vector<FrdAnalysis> &frd_analyses,
     Results *results_out);
+
+UnitType guess_unit_type_for_dataset(const std::string &name);
 
 } /* namespace os2cx */
 

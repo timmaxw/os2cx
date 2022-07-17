@@ -34,7 +34,6 @@ private:
         const Results::Dataset &dataset,
         SubVariable subvar,
         NodeId node_id);
-    static UnitType guess_unit_type(const std::string &dataset_name);
 
     /* All the steps have the same datasets, so we often use the first step as
     a "prototypical step" to see which datasets exist. */
