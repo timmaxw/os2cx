@@ -59,6 +59,8 @@ FaceSet compute_face_set_from_attr_bit(
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
+    Vector direction_vector,
+    double direction_angle_tolerance,
     AttrBitIndex attr_bit);
 
 class NodeSet {

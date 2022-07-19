@@ -178,6 +178,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 partial_mesh,
                 partial_mesh.elements.key_begin(),
                 partial_mesh.elements.key_end(),
+                slice_pair.second.direction_vector,
+                slice_pair.second.direction_angle_tolerance,
                 slice_pair.second.bit_index);
             pair.second.partial_slices[slice_pair.first] =
                 std::make_shared<Slice>(compute_slice(
@@ -281,6 +283,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 *p->mesh,
                 mesh_pair.second.element_begin,
                 mesh_pair.second.element_end,
+                pair.second.direction_vector,
+                pair.second.direction_angle_tolerance,
                 pair.second.bit_index);
             face_set.faces.insert(
                 partial_face_set.faces.begin(),

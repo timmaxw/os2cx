@@ -318,7 +318,11 @@ module os2cx_select_surface_internal(
 ) {
     if (__openscad2calculix_mode == ["preview"]) {
         if (!__os2cx_is_string(name)) {
-            echo("ERROR: os2cx_select_surface() parameter must be a string");
+            echo(str("ERROR: os2cx_select_surface_internal() parameter must ",
+                "be a string"));
+        }
+        if (direction_angle_tolerance >= 90) {
+            echo("ERROR: os2cx_select_surface_internal() angle must be <90");
         }
         if ($preview) {
             # children();

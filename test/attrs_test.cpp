@@ -50,6 +50,8 @@ TEST(AttrsTest, LoadSurface) {
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
+        Vector(1, 0, 0),
+        180,
         bit_index_mask);
 
     Vector force_per_area(1.234, 0, 0);
@@ -85,6 +87,8 @@ TEST(AttrsTest, ComputeSlice) {
         mesh,
         mesh.elements.key_begin(),
         mesh.elements.key_end(),
+        Vector(1, 0, 0),
+        180,
         bit_index_mask);
     Slice slice = compute_slice(&mesh, face_set);
 

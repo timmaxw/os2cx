@@ -26,5 +26,6 @@ SOURCES = $$CORE_SOURCES \
 
 DISTFILES += \
     slice_test.scad \
-    steady_state_dynamics_test.scad
+    steady_state_dynamics_test.scad \
+    surface_internal_test.scad
 

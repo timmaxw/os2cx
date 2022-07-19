@@ -348,6 +348,12 @@ void do_select_surface_directive(
     object.direction_vector = check_vector_3(args[2]);
 
     object.direction_angle_tolerance = check_number(args[3]);
+    if (object.mode == Project::SelectSurfaceObject::Mode::Internal) {
+        if (object.direction_angle_tolerance >= 90) {
+            throw BadEchoError(
+                "if internal, direction_angle_tolerance should be <90");
+        }
+    }
 
     project->select_surface_objects.insert(std::make_pair(name, object));
 }

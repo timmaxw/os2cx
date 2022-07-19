@@ -2,6 +2,8 @@
 
 namespace os2cx {
 
+static const double direction_angle_epsilon = 1e-6;
+
 PlcNef3 compute_plc_nef_for_solid(const Poly3 &solid) {
     AttrBitset attrs_solid;
     attrs_solid.set(attr_bit_solid());
@@ -49,7 +51,8 @@ void select_external_faces_based_on_direction(
     AttrBitIndex attr_bit,
     bool attr_value
 ) {
-    double cos_threshold = cos(direction_angle_tolerance / 180 * M_PI);
+    double cos_threshold = cos(direction_angle_tolerance / 180 * M_PI)
+        - direction_angle_epsilon;
     assert(attr_bit != attr_bit_solid());
     nef->map_faces([&](
         AttrBitset face_attrs,
@@ -114,6 +117,10 @@ void compute_plc_nef_select_surface_internal(
     double direction_angle_tolerance,
     AttrBitIndex attr_bit_mask
 ) {
+    /* If direction_angle_tolerance > 90, then compute_face_set_from_attr_bit()
+    won't be able to distinguish between the two sides of the surface */
+    assert(direction_angle_tolerance < 90);
+
     PlcNef3 mask_nef = PlcNef3::from_poly(mask);
 
     /* First, clear the mask bit on every selected face of the mask. */
@@ -199,8 +206,12 @@ FaceSet compute_face_set_from_attr_bit(
     const Mesh3 &mesh,
     ElementId element_begin,
     ElementId element_end,
+    Vector direction_vector,
+    double direction_angle_tolerance,
     AttrBitIndex attr_bit
 ) {
+    double cos_threshold = cos(direction_angle_tolerance / 180 * M_PI)
+        - direction_angle_epsilon;
     assert(attr_bit != attr_bit_solid());
     FaceSet set;
     FaceId fid;
@@ -212,7 +223,19 @@ FaceSet compute_face_set_from_attr_bit(
                 ++fid.face) {
             AttrBitset attrs = element.face_attrs[fid.face];
             if (attrs[attr_bit]) {
-                set.faces.insert(fid);
+                /* This direction_vector check is _almost_ redundant, because
+                compute_plc_nef3_select_surface_*() wouldn't have set the attr
+                bit if it didn't pass the direction_vector check. The problem is
+                that PlcNef3 doesn't keep track of the "orientation" of the
+                surface, so for an internal surface selection, we'd end up
+                selecting the faces on both sides of the surface. The easiest
+                workaround is to re-check direction_vector to disambiguate. */
+                Vector face_normal = mesh.oriented_area(element, fid.face);
+                face_normal /= face_normal.magnitude();
+                double dot = direction_vector.dot(face_normal);
+                if (dot > cos_threshold) {
+                    set.faces.insert(fid);
+                }
             }
         }
     }
