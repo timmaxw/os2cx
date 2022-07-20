@@ -56,14 +56,15 @@ private:
         ElementId element_id,
         int face_index,
         NodeId node_id,
+        ComplexVector *displacement_out,
         QColor *color_out,
-        ComplexVector *displacement_out) const;
+        bool *xray_out) const;
 
     virtual void calculate_vertex_attributes(
         const std::string &node_object_name,
-        QColor *vertex_color_out,
-        bool *xray_out,
-        ComplexVector *displacement_out) const;
+        ComplexVector *displacement_out,
+        QColor *color_out,
+        bool *xray_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();
 

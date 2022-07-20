@@ -13,30 +13,14 @@ public:
     GuiOpenglScene();
 
     void add_triangle(
-        const Point *points, const ComplexVector *deltas, const QColor *colors);
+        const Point *points,
+        const ComplexVector *deltas,
+        const QColor *colors,
+        bool xray);
     void add_line(
-        const Point *points, const ComplexVector *deltas);
+        const Point *points, const ComplexVector *deltas, bool xray);
     void add_vertex(
         Point point, ComplexVector delta, const QColor &color, bool xray);
-
-    int num_triangles;
-    std::vector<Point> triangle_points;
-    std::vector<ComplexVector> triangle_deltas;
-    std::vector<GLubyte> triangle_colors;
-
-    int num_lines;
-    std::vector<Point> line_points;
-    std::vector<ComplexVector> line_deltas;
-
-    int num_vertices;
-    std::vector<Point> vertex_points;
-    std::vector<ComplexVector> vertex_deltas;
-    std::vector<GLubyte> vertex_colors;
-
-    int num_xray_vertices;
-    std::vector<Point> xray_vertex_points;
-    std::vector<ComplexVector> xray_vertex_deltas;
-    std::vector<GLubyte> xray_vertex_colors;
 
     enum class AnimateMode {
         None,
@@ -45,6 +29,28 @@ public:
     };
     AnimateMode animate_mode;
     double animate_hz;
+
+private:
+    friend class GuiOpenglWidget;
+
+    struct Primitives {
+        Primitives();
+
+        int num_triangles;
+        std::vector<Point> triangle_points;
+        std::vector<ComplexVector> triangle_deltas;
+        std::vector<GLubyte> triangle_colors;
+
+        int num_lines;
+        std::vector<Point> line_points;
+        std::vector<ComplexVector> line_deltas;
+
+        int num_vertices;
+        std::vector<Point> vertex_points;
+        std::vector<ComplexVector> vertex_deltas;
+        std::vector<GLubyte> vertex_colors;
+    };
+    Primitives primitives, xray_primitives;
 };
 
 class GuiOpenglWidget :
@@ -60,12 +66,25 @@ public slots:
     void refresh_scene();
 
 private:
+    struct ComputedPrimitives {
+        std::vector<GLfloat> triangle_points, triangle_normals;
+        std::vector<GLfloat> line_points;
+        std::vector<GLfloat> vertex_points;
+    };
+
     void compute_fov();
     std::complex<double> compute_animate_multiplier();
-    void compute_points_and_normals(std::complex<double> multiplier);
+    void compute_points_and_normals(
+        std::complex<double> multiplier,
+        const GuiOpenglScene::Primitives &primitives,
+        ComputedPrimitives *computed_primitives_out);
 
     void initializeGL();
     void resizeGL(int viewport_width, int viewport_height);
+    void paint_primitives(
+        const GuiOpenglScene::Primitives &primitives,
+        const ComputedPrimitives &computed_primitives,
+        bool xray);
     void paintGL();
 
     void timerEvent(QTimerEvent *);
@@ -87,9 +106,7 @@ private:
     float yaw, pitch; /* in degrees */
     float zoom;
 
-    std::vector<GLfloat> triangle_computed_points, triangle_computed_normals;
-    std::vector<GLfloat> line_computed_points;
-    std::vector<GLfloat> vertex_computed_points, xray_vertex_computed_points;
+    ComputedPrimitives computed_primitives, computed_xray_primitives;
 };
 
 } /* namespace os2cx */

@@ -6,52 +6,50 @@
 namespace os2cx {
 
 GuiOpenglScene::GuiOpenglScene() :
-    num_triangles(0), num_lines(0), num_vertices(0), num_xray_vertices(0),
-    animate_mode(AnimateMode::None)
-{ }
+    animate_mode(AnimateMode::None) { }
 
 void GuiOpenglScene::add_triangle(
-    const Point *points, const ComplexVector *deltas, const QColor *colors
+    const Point *points,
+    const ComplexVector *deltas,
+    const QColor *colors,
+    bool xray
 ) {
-    ++num_triangles;
+    Primitives *p = xray ? &xray_primitives : &primitives;
+    ++p->num_triangles;
     for (int i = 0; i < 3; ++i) {
-        triangle_points.push_back(points[i]);
-        triangle_deltas.push_back(deltas[i]);
-        triangle_colors.push_back(colors[i].red());
-        triangle_colors.push_back(colors[i].green());
-        triangle_colors.push_back(colors[i].blue());
+        p->triangle_points.push_back(points[i]);
+        p->triangle_deltas.push_back(deltas[i]);
+        p->triangle_colors.push_back(colors[i].red());
+        p->triangle_colors.push_back(colors[i].green());
+        p->triangle_colors.push_back(colors[i].blue());
     }
 }
 
 void GuiOpenglScene::add_line(
-    const Point *points, const ComplexVector *deltas
+    const Point *points, const ComplexVector *deltas, bool xray
 ) {
-    ++num_lines;
+    Primitives *p = xray ? &xray_primitives : &primitives;
+    ++p->num_lines;
     for (int i = 0; i < 2; ++i) {
-        line_points.push_back(points[i]);
-        line_deltas.push_back(deltas[i]);
+        p->line_points.push_back(points[i]);
+        p->line_deltas.push_back(deltas[i]);
     }
 }
 
 void GuiOpenglScene::add_vertex(
     Point point, ComplexVector delta, const QColor &color, bool xray
 ) {
-    if (xray) {
-        ++num_xray_vertices;
-        xray_vertex_points.push_back(point);
-        xray_vertex_deltas.push_back(delta);
-        xray_vertex_colors.push_back(color.red());
-        xray_vertex_colors.push_back(color.green());
-        xray_vertex_colors.push_back(color.blue());
-    } else {
-        ++num_vertices;
-        vertex_points.push_back(point);
-        vertex_deltas.push_back(delta);
-        vertex_colors.push_back(color.red());
-        vertex_colors.push_back(color.green());
-        vertex_colors.push_back(color.blue());
-    }
+    Primitives *p = xray ? &xray_primitives : &primitives;
+    ++p->num_vertices;
+    p->vertex_points.push_back(point);
+    p->vertex_deltas.push_back(delta);
+    p->vertex_colors.push_back(color.red());
+    p->vertex_colors.push_back(color.green());
+    p->vertex_colors.push_back(color.blue());
 }
+
+GuiOpenglScene::Primitives::Primitives() :
+    num_triangles(0), num_lines(0), num_vertices(0) { }
 
 GuiOpenglWidget::GuiOpenglWidget(QWidget *parent) :
     QOpenGLWidget(parent),
@@ -134,54 +132,50 @@ std::complex<double> GuiOpenglWidget::compute_animate_multiplier() {
 }
 
 void GuiOpenglWidget::compute_points_and_normals(
-    std::complex<double> multiplier
+    std::complex<double> multiplier,
+    const GuiOpenglScene::Primitives &primitives,
+    ComputedPrimitives *computed_primitives_out
 ) {
-    triangle_computed_points.resize(9 * scene->num_triangles);
-    triangle_computed_normals.resize(9 * scene->num_triangles);
-    for (int i = 0; i < scene->num_triangles; ++i) {
+    const GuiOpenglScene::Primitives &p = primitives;
+    ComputedPrimitives *cp = computed_primitives_out;
+
+    cp->triangle_points.resize(9 * p.num_triangles);
+    cp->triangle_normals.resize(9 * p.num_triangles);
+    for (int i = 0; i < p.num_triangles; ++i) {
         Point points[3];
         for (int j = 0; j < 3; ++j) {
-            points[j] = scene->triangle_points[3 * i + j]
-                + (multiplier * scene->triangle_deltas[3 * i + j]).real();
+            points[j] = p.triangle_points[3 * i + j]
+                + (multiplier * p.triangle_deltas[3 * i + j]).real();
         }
         Vector normal = triangle_normal(points[0], points[1], points[2]);
         for (int j = 0; j < 3; ++j) {
-            triangle_computed_points[3 * (3 * i + j) + 0] = points[j].x;
-            triangle_computed_points[3 * (3 * i + j) + 1] = points[j].y;
-            triangle_computed_points[3 * (3 * i + j) + 2] = points[j].z;
-            triangle_computed_normals[3 * (3 * i + j) + 0] = normal.x;
-            triangle_computed_normals[3 * (3 * i + j) + 1] = normal.y;
-            triangle_computed_normals[3 * (3 * i + j) + 2] = normal.z;
+            cp->triangle_points[3 * (3 * i + j) + 0] = points[j].x;
+            cp->triangle_points[3 * (3 * i + j) + 1] = points[j].y;
+            cp->triangle_points[3 * (3 * i + j) + 2] = points[j].z;
+            cp->triangle_normals[3 * (3 * i + j) + 0] = normal.x;
+            cp->triangle_normals[3 * (3 * i + j) + 1] = normal.y;
+            cp->triangle_normals[3 * (3 * i + j) + 2] = normal.z;
         }
     }
 
-    line_computed_points.resize(6 * scene->num_lines);
-    for (int i = 0; i < scene->num_lines; ++i) {
+    cp->line_points.resize(6 * p.num_lines);
+    for (int i = 0; i < p.num_lines; ++i) {
         for (int j = 0; j < 2; ++j) {
-            Point point = scene->line_points[2 * i + j]
-                + (multiplier * scene->line_deltas[2 * i + j]).real();
-            line_computed_points[3 * (2 * i + j) + 0] = point.x;
-            line_computed_points[3 * (2 * i + j) + 1] = point.y;
-            line_computed_points[3 * (2 * i + j) + 2] = point.z;
+            Point point = p.line_points[2 * i + j]
+                + (multiplier * p.line_deltas[2 * i + j]).real();
+            cp->line_points[3 * (2 * i + j) + 0] = point.x;
+            cp->line_points[3 * (2 * i + j) + 1] = point.y;
+            cp->line_points[3 * (2 * i + j) + 2] = point.z;
         }
     }
 
-    vertex_computed_points.resize(3 * scene->num_vertices);
-    for (int i = 0; i < scene->num_vertices; ++i) {
-        Point point = scene->vertex_points[i]
-            + (multiplier * scene->vertex_deltas[i]).real();
-        vertex_computed_points[3 * i + 0] = point.x;
-        vertex_computed_points[3 * i + 1] = point.y;
-        vertex_computed_points[3 * i + 2] = point.z;
-    }
-
-    xray_vertex_computed_points.resize(3 * scene->num_xray_vertices);
-    for (int i = 0; i < scene->num_xray_vertices; ++i) {
-        Point point = scene->xray_vertex_points[i]
-            + (multiplier * scene->xray_vertex_deltas[i]).real();
-        xray_vertex_computed_points[3 * i + 0] = point.x;
-        xray_vertex_computed_points[3 * i + 1] = point.y;
-        xray_vertex_computed_points[3 * i + 2] = point.z;
+    cp->vertex_points.resize(3 * p.num_vertices);
+    for (int i = 0; i < p.num_vertices; ++i) {
+        Point point = p.vertex_points[i]
+            + (multiplier * p.vertex_deltas[i]).real();
+        cp->vertex_points[3 * i + 0] = point.x;
+        cp->vertex_points[3 * i + 1] = point.y;
+        cp->vertex_points[3 * i + 2] = point.z;
     }
 }
 
@@ -189,12 +183,13 @@ void GuiOpenglWidget::initializeGL() {
     bool res = initializeOpenGLFunctions();
     assert(res);
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Background color
-    glClearDepth(1.0f); // Depth Buffer Setup
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_DEPTH_TEST); // Enables Depth Testing
-    glDepthFunc(GL_LEQUAL); // The Type Of Depth Testing To Do
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
     glEnable(GL_COLOR_MATERIAL);
@@ -213,14 +208,139 @@ void GuiOpenglWidget::initializeGL() {
     GLfloat material_specular[4] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
 
-    glPointSize(5);
-
-    /* TODO: Back-face culling */
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 }
 
 void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
     (void)viewport_width;
     (void)viewport_height;
+}
+
+static const uint8_t polygon_stipple_pattern[4 * 32] = {
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+    0b10101010, 0b10101010, 0b10101010, 0b10101010,
+    0b01010101, 0b01010101, 0b01010101, 0b01010101,
+};
+
+static const uint16_t line_stipple_pattern =
+    0b1010101010101010;
+
+void GuiOpenglWidget::paint_primitives(
+    const GuiOpenglScene::Primitives &primitives,
+    const ComputedPrimitives &computed_primitives,
+    bool xray
+) {
+    const GuiOpenglScene::Primitives &p = primitives;
+    const ComputedPrimitives &cp = computed_primitives;
+
+    if (p.num_triangles != 0) {
+        glEnable(GL_VERTEX_ARRAY);
+        glEnable(GL_COLOR_ARRAY);
+        glEnable(GL_NORMAL_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.triangle_points.data());
+        glColorPointer(
+            3, GL_UNSIGNED_BYTE, 0, p.triangle_colors.data());
+        glNormalPointer(
+            GL_FLOAT, 0, cp.triangle_normals.data());
+        if (xray) {
+            glDisable(GL_CULL_FACE);
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+            glEnable(GL_POLYGON_STIPPLE);
+            glPolygonStipple(polygon_stipple_pattern);
+        }
+        glDrawArrays(GL_TRIANGLES, 0, 3 * p.num_triangles);
+        if (xray) {
+            glDisable(GL_POLYGON_STIPPLE);
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+            glEnable(GL_CULL_FACE);
+        }
+        glDisable(GL_NORMAL_ARRAY);
+        glDisable(GL_COLOR_ARRAY);
+        glDisable(GL_VERTEX_ARRAY);
+    }
+
+    if (p.num_lines != 0) {
+        glColor3f(0, 0, 0);
+        glEnable(GL_VERTEX_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.line_points.data());
+        if (xray) {
+            glEnable(GL_LINE_STIPPLE);
+            glLineStipple(1, line_stipple_pattern);
+        }
+        glDrawArrays(GL_LINES, 0, 2 * p.num_lines);
+        if (xray) {
+            glDisable(GL_LINE_STIPPLE);
+        }
+        glDisable(GL_VERTEX_ARRAY);
+    }
+
+    if (p.num_vertices != 0) {
+        glDisable(GL_LIGHTING);
+        glEnable(GL_VERTEX_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.vertex_points.data());
+
+        if (xray) {
+            glEnable(GL_STENCIL_TEST);
+            glClear(GL_STENCIL_BUFFER_BIT);
+            glStencilFunc(GL_NEVER, 1, 0xFF);
+            glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+            glPointSize(6);
+            glDrawArrays(GL_POINTS, 0, p.num_vertices);
+        }
+
+        /* Draw a 10-pixel point in black, which will form a black border */
+        glColor3f(0, 0, 0);
+        glPointSize(10);
+        glDrawArrays(GL_POINTS, 0, p.num_vertices);
+
+        /* Draw an 8-pixel point in the intended color */
+        glEnable(GL_COLOR_ARRAY);
+        glColorPointer(
+            3, GL_UNSIGNED_BYTE, 0, p.vertex_colors.data());
+        glPointSize(8);
+        glDrawArrays(GL_POINTS, 0, p.num_vertices);
+
+        if (xray) {
+            glDisable(GL_STENCIL_TEST);
+        }
+
+        glDisable(GL_COLOR_ARRAY);
+        glDisable(GL_VERTEX_ARRAY);
+        glEnable(GL_LIGHTING);
+    }
 }
 
 void GuiOpenglWidget::paintGL() {
@@ -249,93 +369,33 @@ void GuiOpenglWidget::paintGL() {
     glTranslatef(look_at.x, look_at.y, look_at.z);
 
     if (scene != nullptr) {
-        compute_points_and_normals(compute_animate_multiplier());
+        compute_points_and_normals(
+            compute_animate_multiplier(),
+            scene->primitives,
+            &computed_primitives);
+        compute_points_and_normals(
+            compute_animate_multiplier(),
+            scene->xray_primitives,
+            &computed_xray_primitives);
 
-        if (scene->num_triangles != 0) {
-            glEnable(GL_VERTEX_ARRAY);
-            glEnable(GL_COLOR_ARRAY);
-            glEnable(GL_NORMAL_ARRAY);
-            glVertexPointer(
-                3, GL_FLOAT, 0, triangle_computed_points.data());
-            glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, scene->triangle_colors.data());
-            glNormalPointer(
-                GL_FLOAT, 0, triangle_computed_normals.data());
-            glDrawArrays(GL_TRIANGLES, 0, 3 * scene->num_triangles);
-            glDisable(GL_NORMAL_ARRAY);
-            glDisable(GL_COLOR_ARRAY);
-            glDisable(GL_VERTEX_ARRAY);
-        }
+        /* First, draw primitives and xray_primitives both normally. */
+        paint_primitives(
+            scene->primitives,
+            computed_primitives,
+            false);
+        paint_primitives(
+            scene->xray_primitives,
+            computed_xray_primitives,
+            false);
 
-        if (scene->num_lines != 0) {
-            glColor3f(0, 0, 0);
-            glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(
-                3, GL_FLOAT, 0, line_computed_points.data());
-            glDrawArrays(GL_LINES, 0, 2 * scene->num_lines);
-            glDisable(GL_VERTEX_ARRAY);
-        }
-
-        if (scene->num_vertices != 0) {
-            glDisable(GL_LIGHTING);
-            glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(
-                3, GL_FLOAT, 0, vertex_computed_points.data());
-            glColor3f(0, 0, 0);
-            glPointSize(10);
-            glDrawArrays(GL_POINTS, 0, scene->num_vertices);
-            glEnable(GL_COLOR_ARRAY);
-            glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, scene->vertex_colors.data());
-            glPointSize(8);
-            glDrawArrays(GL_POINTS, 0, scene->num_vertices);
-            glDisable(GL_COLOR_ARRAY);
-            glDisable(GL_VERTEX_ARRAY);
-            glEnable(GL_LIGHTING);
-        }
-
-        if (scene->num_xray_vertices != 0) {
-            glDisable(GL_LIGHTING);
-            glEnable(GL_VERTEX_ARRAY);
-            glVertexPointer(
-                3, GL_FLOAT, 0, xray_vertex_computed_points.data());
-
-            /* First, draw the X-ray vertices normally */
-            glColor3f(0, 0, 0);
-            glPointSize(10);
-            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
-            glEnable(GL_COLOR_ARRAY);
-            glColorPointer(
-                3, GL_UNSIGNED_BYTE, 0, scene->xray_vertex_colors.data());
-            glPointSize(8);
-            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
-            glDisable(GL_COLOR_ARRAY);
-
-            /* Now, invert the depth test and draw them hollow. We first draw
-            a size-6 point into the stencil buffer, then a size-8 point into
-            the regular buffer but masked by the stencil buffer. */
-            glEnable(GL_STENCIL_TEST);
-            glClear(GL_STENCIL_BUFFER_BIT);
-            glStencilFunc(GL_NEVER, 1, 0xFF);
-            glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-            glPointSize(6);
-            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
-            glDepthFunc(GL_ALWAYS);
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-            glColor3f(0, 0, 0);
-            glPointSize(10);
-            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
-            glEnable(GL_COLOR_ARRAY);
-            glPointSize(8);
-            glDrawArrays(GL_POINTS, 0, scene->num_xray_vertices);
-            glDisable(GL_COLOR_ARRAY);
-            glDepthFunc(GL_LEQUAL);
-            glDisable(GL_STENCIL_TEST);
-
-            glDisable(GL_VERTEX_ARRAY);
-            glEnable(GL_LIGHTING);
-        }
+        /* Now, clear the depth buffer and re-draw xray primitives in xray
+        mode. So if an xray primitive was occluded by a regular primitive, then
+        the version drawn in xray mode will "show through". */
+        glClear(GL_DEPTH_BUFFER_BIT);
+        paint_primitives(
+            scene->xray_primitives,
+            computed_xray_primitives,
+            true);
     }
 
     glFlush();

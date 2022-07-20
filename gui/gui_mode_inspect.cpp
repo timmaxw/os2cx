@@ -142,7 +142,8 @@ public:
     void calculate_surface_attributes(
         const std::string &mesh_object_name,
         Plc3::SurfaceId surface_id,
-        QColor *color_out
+        QColor *color_out,
+        bool *xray_out
     ) const {
         const Project::MeshObject &mesh_object =
             project->mesh_objects.at(mesh_object_name);
@@ -158,8 +159,10 @@ public:
 
         if (focus_surface) {
             *color_out = focus_color;
+            *xray_out = true;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
+            *xray_out = false;
         }
 
         if (has_any_attribute) {
@@ -169,15 +172,15 @@ public:
 
     void calculate_vertex_attributes(
         const std::string &node_object_name,
-        QColor *vertex_color_out,
+        QColor *color_out,
         bool *xray_out
     ) const {
         bool focus_vertex = (node_object_name == focus_node_object);
         if (focus_vertex) {
-            *vertex_color_out = focus_color;
+            *color_out = focus_color;
             *xray_out = true;
         } else {
-            *vertex_color_out = QColor(0x99, 0x99, 0x99);
+            *color_out = QColor(0x99, 0x99, 0x99);
             *xray_out = false;
         }
     }
@@ -241,8 +244,9 @@ public:
         ElementId element_id,
         int face_index,
         NodeId node_id,
+        ComplexVector *displacement_out,
         QColor *color_out,
-        ComplexVector *displacement_out
+        bool *xray_out
     ) const {
         (void)node_id;
 
@@ -265,34 +269,36 @@ public:
             }
         }
 
+        *displacement_out = ComplexVector::zero();
+
         if (focus_surface) {
             *color_out = focus_color;
+            *xray_out = true;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
+            *xray_out = false;
         }
 
         if (has_any_attribute) {
             *color_out = color_out->darker(120);
         }
-
-        *displacement_out = ComplexVector::zero();
     }
 
     void calculate_vertex_attributes(
         const std::string &node_object_name,
-        QColor *vertex_color_out,
-        bool *xray_out,
-        ComplexVector *displacement_out
+        ComplexVector *displacement_out,
+        QColor *color_out,
+        bool *xray_out
     ) const {
         bool focus_vertex = (node_object_name == focus_node_object);
+        *displacement_out = ComplexVector::zero();
         if (focus_vertex) {
-            *vertex_color_out = focus_color;
+            *color_out = focus_color;
             *xray_out = true;
         } else {
-            *vertex_color_out = QColor(0x99, 0x99, 0x99);
+            *color_out = QColor(0x99, 0x99, 0x99);
             *xray_out = false;
         }
-        *displacement_out = ComplexVector::zero();
     }
 
     const Project *project;

@@ -11,11 +11,12 @@ public:
     virtual void calculate_surface_attributes(
         const std::string &mesh_object_name,
         Plc3::SurfaceId surface_id,
-        QColor *color_out) const = 0;
+        QColor *color_out,
+        bool *xray_out) const = 0;
 
     virtual void calculate_vertex_attributes(
         const std::string &node_object_name,
-        QColor *vertex_color_out,
+        QColor *color_out,
         bool *xray_out) const = 0;
 };
 

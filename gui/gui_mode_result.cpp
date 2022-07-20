@@ -496,21 +496,14 @@ void GuiModeResult::calculate_face_attributes(
     ElementId element_id,
     int face_index,
     NodeId node_id,
+    ComplexVector *displacement_out,
     QColor *color_out,
-    ComplexVector *displacement_out
+    bool *xray_out
 ) const {
     (void)element_id;
     (void)face_index;
 
     const Results::Result::Step &step = result->steps[step_index];
-
-    double color_datum = subvariable_value(
-        step.datasets.at(color_variable), color_subvariable, node_id);
-    if (isnan(color_datum)) {
-        *color_out = QColor(30, 30, 30);
-    } else {
-        *color_out = color_scale->color(color_datum);
-    }
 
     if (!dispi_key.empty()) {
         Vector disp = (*step.datasets.at(disp_key).node_vector)[node_id];
@@ -532,22 +525,32 @@ void GuiModeResult::calculate_face_attributes(
     } else {
         *displacement_out = ComplexVector::zero();
     }
+
+    double color_datum = subvariable_value(
+        step.datasets.at(color_variable), color_subvariable, node_id);
+    if (isnan(color_datum)) {
+        *color_out = QColor(30, 30, 30);
+    } else {
+        *color_out = color_scale->color(color_datum);
+    }
+
+    *xray_out = false;
 }
 
 void GuiModeResult::calculate_vertex_attributes(
     const std::string &node_object_name,
-    QColor *vertex_color_out,
-    bool *xray_out,
-    ComplexVector *displacement_out
+    ComplexVector *displacement_out,
+    QColor *color_out,
+    bool *xray_out
 ) const {
     NodeId node_id = project->find_node_object(node_object_name)->node_id;
     calculate_face_attributes(
         ElementId::invalid(),
         -1,
         node_id,
-        vertex_color_out,
-        displacement_out);
-    *xray_out = false;
+        displacement_out,
+        color_out,
+        xray_out);
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeResult::make_scene() {

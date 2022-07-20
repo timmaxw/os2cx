@@ -8,13 +8,13 @@ void gui_opengl_scene_poly3_vertex(
     const Project::NodeObject &node_object,
     GuiOpenglScene *scene
 ) {
-    QColor vertex_color;
+    QColor color;
     bool xray = false;
     callback->calculate_vertex_attributes(
-        node_object_name, &vertex_color, &xray);
-    if (vertex_color.isValid()) {
+        node_object_name, &color, &xray);
+    if (color.isValid()) {
         scene->add_vertex(
-            node_object.point, ComplexVector::zero(), vertex_color, xray);
+            node_object.point, ComplexVector::zero(), color, xray);
     }
 }
 
@@ -29,22 +29,27 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
         if (plc == nullptr) {
             continue;
         }
+
         for (Plc3::SurfaceId sid = 0;
                 sid < static_cast<int>(plc->surfaces.size()); ++sid) {
             const Plc3::Surface &surface = plc->surfaces[sid];
 
-            int outside_volume_index;
-            if (surface.volumes[0] == plc->volume_outside) {
-                outside_volume_index = 0;
-            } else if (surface.volumes[1] == plc->volume_outside) {
-                outside_volume_index = 1;
-            } else {
-                continue;
-            }
-
             QColor color;
+            bool xray = false;
             callback->calculate_surface_attributes(
-                pair.first, sid, &color);
+                pair.first, sid, &color, &xray);
+
+            int outside_volume_index;
+            if (!xray) {
+                if (surface.volumes[0] == plc->volume_outside) {
+                    outside_volume_index = 0;
+                } else if (surface.volumes[1] == plc->volume_outside) {
+                    outside_volume_index = 1;
+                } else {
+                    /* Surface is hidden; don't draw it. */
+                    continue;
+                }
+            }
 
             QColor colors[3] = {color, color, color};
 
@@ -55,10 +60,18 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                     ps[i] = plc->vertices[tri.vertices[i]].point;
                     ds[i] = ComplexVector::zero();
                 }
-                if (outside_volume_index == 1) {
-                    std::swap(ps[2], ps[1]);
+                if (xray) {
+                    scene.add_triangle(ps, ds, colors, true);
+                } else {
+                    if (outside_volume_index == 1) {
+                        /* In non-xray mode, the orientation is used for
+                        lighting and/or backface culling, so we need to ensure
+                        the triangle is facing the right way */
+                        std::swap(ps[2], ps[1]);
+                    }
+                    scene.add_triangle(ps, ds, colors, false);
                 }
-                scene.add_triangle(ps, ds, colors);
+
             }
         }
     }

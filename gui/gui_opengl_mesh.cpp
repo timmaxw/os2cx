@@ -11,13 +11,13 @@ void gui_opengl_scene_mesh_vertex(
 ) {
     NodeId node_id = node_object.node_id;
     const Node3 &node = project.mesh->nodes[node_id];
-    QColor vertex_color;
+    QColor color;
     bool xray = false;
     ComplexVector delta;
     callback->calculate_vertex_attributes(
-        node_object_name, &vertex_color, &xray, &delta);
-    if (vertex_color.isValid()) {
-        scene->add_vertex(node.point, delta, vertex_color, xray);
+        node_object_name, &delta, &color, &xray);
+    if (color.isValid()) {
+        scene->add_vertex(node.point, delta, color, xray);
     }
 }
 
@@ -41,10 +41,13 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
         Point ps[ElementTypeShape::max_vertices_per_face];
         ComplexVector ds[ElementTypeShape::max_vertices_per_face];
         QColor cs[ElementTypeShape::max_vertices_per_face];
+        bool xray = false;
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
             ps[i] = project.mesh->nodes[node_ids[i]].point;
+            bool xr = false;
             callback->calculate_face_attributes(
-                fi.element_id, fi.face, node_ids[i], &cs[i], &ds[i]);
+                fi.element_id, fi.face, node_ids[i], &ds[i], &cs[i], &xr);
+            xray = xray || xr;
         }
 
         int n;
@@ -79,7 +82,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
                 {ds[ixs[i][0]], ds[ixs[i][1]], ds[ixs[i][2]]};
             QColor subcs[3] =
                 {cs[ixs[i][0]], cs[ixs[i][1]], cs[ixs[i][2]]};
-            scene.add_triangle(subps, subds, subcs);
+            scene.add_triangle(subps, subds, subcs, xray);
         }
 
         for (int i = 0; i < static_cast<int>(face.vertices.size()); ++i) {
@@ -90,7 +93,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(
             if (node_ids[i].to_int() > node_ids[j].to_int()) {
                 Point line_ps[2] = {ps[i], ps[j]};
                 ComplexVector line_ds[2] = {ds[i], ds[j]};
-                scene.add_line(line_ps, line_ds);
+                scene.add_line(line_ps, line_ds, xray);
             }
         }
     }
