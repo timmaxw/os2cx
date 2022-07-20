@@ -52,19 +52,20 @@ private:
     void maybe_setup_measurements();
     void refresh_measurements();
 
+    void calculate_xrays(
+        FaceSet *xray_faces_out,
+        std::set<std::string> *xray_node_object_names_out) const;
+
     void calculate_face_attributes(
-        ElementId element_id,
-        int face_index,
+        FaceId face_id,
         NodeId node_id,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out) const;
+        QColor *color_out) const;
 
-    virtual void calculate_vertex_attributes(
+    void calculate_vertex_attributes(
         const std::string &node_object_name,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out) const;
+        QColor *color_out) const;
 
     std::shared_ptr<const GuiOpenglScene> make_scene();
 

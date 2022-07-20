@@ -60,54 +60,60 @@ void GuiModeProgress::project_updated() {
     emit refresh_scene();
 }
 
+void GuiModeProgress::calculate_xrays(
+    std::set<std::pair<std::string, Plc3::SurfaceId> > *xray_surfaces_out,
+    std::set<std::string> *xray_node_object_names_out
+) const {
+    (void)xray_surfaces_out;
+    (void)xray_node_object_names_out;
+}
+
 void GuiModeProgress::calculate_surface_attributes(
     const std::string &mesh_object_name,
     Plc3::SurfaceId surface_id,
-    QColor *color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
     (void)mesh_object_name;
     (void)surface_id;
     *color_out = QColor(0x80, 0x80, 0x80);
-    *xray_out = false;
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
     const std::string &node_object_name,
-    QColor *color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
     (void)node_object_name;
     *color_out = QColor(0x70, 0x70, 0x70);
-    *xray_out = false;
+}
+
+void GuiModeProgress::calculate_xrays(
+    FaceSet *xray_faces_out,
+    std::set<std::string> *xray_node_object_names_out
+) const {
+    (void)xray_faces_out;
+    (void)xray_node_object_names_out;
 }
 
 void GuiModeProgress::calculate_face_attributes(
-    ElementId element_id,
-    int face_index,
+    FaceId face_id,
     NodeId node_id,
     ComplexVector *displacement_out,
-    QColor *color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
-    (void)element_id;
-    (void)face_index;
+    (void)face_id,
     (void)node_id;
     *displacement_out = ComplexVector::zero();
     *color_out = QColor(0x80, 0x80, 0x80);
-    *xray_out = false;
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
     const std::string &node_object_name,
     ComplexVector *displacement_out,
-    QColor *vertex_color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
     (void)node_object_name;
     *displacement_out = ComplexVector::zero();
-    *vertex_color_out = QColor(0x70, 0x70, 0x70);
-    *xray_out = false;
+    *color_out = QColor(0x70, 0x70, 0x70);
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {

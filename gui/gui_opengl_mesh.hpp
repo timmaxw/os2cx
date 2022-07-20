@@ -8,19 +8,20 @@ namespace os2cx {
 class GuiOpenglMeshCallback
 {
 public:
+    virtual void calculate_xrays(
+        FaceSet *xray_faces_out,
+        std::set<std::string> *xray_node_object_names_out) const = 0;
+
     virtual void calculate_face_attributes(
-        ElementId element_id,
-        int face_index,
+        FaceId face_id,
         NodeId node_id,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out) const = 0;
+        QColor *color_out) const = 0;
 
     virtual void calculate_vertex_attributes(
         const std::string &node_object_name,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out) const = 0;
+        QColor *color_out) const = 0;
 };
 
 std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_mesh(

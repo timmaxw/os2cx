@@ -139,30 +139,60 @@ void GuiModeInspect::current_item_changed(
 
 class GuiModeInspectPoly3Callback : public GuiOpenglPoly3Callback {
 public:
-    void calculate_surface_attributes(
-        const std::string &mesh_object_name,
-        Plc3::SurfaceId surface_id,
-        QColor *color_out,
-        bool *xray_out
+    AttrBitset combined_attrs(
+        const Project::MeshObject &mesh_object,
+        const Plc3::Surface &surface
     ) const {
-        const Project::MeshObject &mesh_object =
-            project->mesh_objects.at(mesh_object_name);
-        const Plc3::Surface &surface = mesh_object.plc->surfaces[surface_id];
         AttrBitset attrs = surface.attrs;
         attrs |= mesh_object.plc->volumes[surface.volumes[0]].attrs;
         attrs |= mesh_object.plc->volumes[surface.volumes[1]].attrs;
         attrs.reset(attr_bit_solid());
+        return attrs;
+    }
 
+    void calculate_xrays(
+        std::set<std::pair<std::string, Plc3::SurfaceId> > *xray_surfaces_out,
+        std::set<std::string> *xray_node_object_names_out
+    ) const {
+        for (const auto &pair : project->mesh_objects) {
+            if (!pair.second.plc) {
+                continue;
+            }
+            for (Plc3::SurfaceId sid = 0; sid < static_cast<int>(
+                     pair.second.plc->surfaces.size()); ++sid) {
+                const Plc3::Surface &surface =
+                    pair.second.plc->surfaces[sid];
+                AttrBitset attrs = combined_attrs(pair.second, surface);
+                bool xray = (pair.first == focus_mesh)
+                    || (attrs & focus_attrs).any();
+                if (xray) {
+                    xray_surfaces_out->insert(std::make_pair(pair.first, sid));
+                }
+            }
+        }
+
+        if (!focus_node_object.empty()) {
+            xray_node_object_names_out->insert(focus_node_object);
+        }
+    }
+
+    void calculate_surface_attributes(
+        const std::string &mesh_object_name,
+        Plc3::SurfaceId surface_id,
+        QColor *color_out
+    ) const {
+        const Project::MeshObject &mesh_object =
+            project->mesh_objects.at(mesh_object_name);
+        const Plc3::Surface &surface = mesh_object.plc->surfaces[surface_id];
+        AttrBitset attrs = combined_attrs(mesh_object, surface);
         bool focus_surface = (mesh_object_name == focus_mesh)
             || (attrs & focus_attrs).any();
         bool has_any_attribute = attrs.any();
 
         if (focus_surface) {
             *color_out = focus_color;
-            *xray_out = true;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
-            *xray_out = false;
         }
 
         if (has_any_attribute) {
@@ -172,16 +202,13 @@ public:
 
     void calculate_vertex_attributes(
         const std::string &node_object_name,
-        QColor *color_out,
-        bool *xray_out
+        QColor *color_out
     ) const {
         bool focus_vertex = (node_object_name == focus_node_object);
         if (focus_vertex) {
             *color_out = focus_color;
-            *xray_out = true;
         } else {
             *color_out = QColor(0x99, 0x99, 0x99);
-            *xray_out = false;
         }
     }
 
@@ -240,24 +267,69 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_poly3() {
 
 class GuiModeInspectMeshCallback : public GuiOpenglMeshCallback {
 public:
+    GuiModeInspectMeshCallback() :
+        focus_element_begin(ElementId::invalid()),
+        focus_element_end(ElementId::invalid())
+    { }
+
+    void calculate_xrays(
+        FaceSet *xray_faces_out,
+        std::set<std::string> *xray_node_object_names_out
+    ) const {
+        if (focus_element_begin != ElementId::invalid()) {
+            for (FaceId face_id : project->mesh_index->unmatched_faces) {
+                if (!(face_id.element_id < focus_element_begin) &&
+                        face_id.element_id < focus_element_end) {
+                    xray_faces_out->faces.insert(face_id);
+                }
+            }
+        } else if (focus_element_set) {
+            for (ElementId eid : focus_element_set->elements) {
+                const Element3 &element = project->mesh->elements[eid];
+                const ElementTypeShape *shape =
+                        &element_type_shape(element.type);
+                for (int face = 0; face < static_cast<int>(shape->faces.size());
+                        ++face) {
+                    FaceId face_id(eid, face);
+                    FaceId peer = project->mesh_index->matching_face(face_id);
+                    if (peer != FaceId::invalid() &&
+                            focus_element_set->elements.count(
+                                peer.element_id)) {
+                        continue;
+                    }
+                    xray_faces_out->faces.insert(face_id);
+                }
+            }
+        } else if (focus_face_set) {
+            *xray_faces_out = *focus_face_set;
+        } else if (!focus_node_object.empty()) {
+            xray_node_object_names_out->insert(focus_node_object);
+        }
+    }
+
     void calculate_face_attributes(
-        ElementId element_id,
-        int face_index,
+        FaceId face_id,
         NodeId node_id,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out
+        QColor *color_out
     ) const {
         (void)node_id;
 
-        FaceId face_id(element_id, face_index);
-        bool focus_surface =
-            (focus_element_set && focus_element_set->elements.count(element_id))
-            || (focus_face_set && focus_face_set->faces.count(face_id));
+        bool focus_surface;
+        if (focus_element_begin != ElementId::invalid()) {
+            focus_surface = !(face_id.element_id < focus_element_begin) &&
+                face_id.element_id < focus_element_end;
+        } else if (focus_element_set) {
+            focus_surface = focus_element_set->elements.count(face_id.element_id);
+        } else if (focus_face_set) {
+            focus_surface = focus_face_set->faces.count(face_id);
+        } else {
+            focus_surface = false;
+        }
 
         bool has_any_attribute = false;
         for (const auto &pair : project->select_volume_objects) {
-            if (pair.second.element_set->elements.count(element_id)) {
+            if (pair.second.element_set->elements.count(face_id.element_id)) {
                 has_any_attribute = true;
                 break;
             }
@@ -273,10 +345,8 @@ public:
 
         if (focus_surface) {
             *color_out = focus_color;
-            *xray_out = true;
         } else {
             *color_out = QColor(0xAA, 0xAA, 0xAA);
-            *xray_out = false;
         }
 
         if (has_any_attribute) {
@@ -287,21 +357,19 @@ public:
     void calculate_vertex_attributes(
         const std::string &node_object_name,
         ComplexVector *displacement_out,
-        QColor *color_out,
-        bool *xray_out
+        QColor *color_out
     ) const {
         bool focus_vertex = (node_object_name == focus_node_object);
         *displacement_out = ComplexVector::zero();
         if (focus_vertex) {
             *color_out = focus_color;
-            *xray_out = true;
         } else {
             *color_out = QColor(0x99, 0x99, 0x99);
-            *xray_out = false;
         }
     }
 
     const Project *project;
+    ElementId focus_element_begin, focus_element_end;
     std::shared_ptr<const ElementSet> focus_element_set;
     std::shared_ptr<const FaceSet> focus_face_set;
     std::string focus_node_object;
@@ -317,6 +385,11 @@ std::shared_ptr<const GuiOpenglScene> GuiModeInspect::make_scene_mesh() {
     case Focus::None:
         break;
     case Focus::Mesh:
+        callback.focus_element_begin =
+            project->mesh_objects.at(focus_name).element_begin;
+        callback.focus_element_end =
+            project->mesh_objects.at(focus_name).element_end;
+        break;
     case Focus::SelectVolume:
         callback.focus_element_set =
             project->find_volume_object(focus_name)->element_set;

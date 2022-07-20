@@ -492,16 +492,21 @@ void GuiModeResult::refresh_measurements() {
     }
 }
 
+void GuiModeResult::calculate_xrays(
+    FaceSet *xray_faces_out,
+    std::set<std::string> *xray_node_object_names_out
+) const {
+    (void)xray_faces_out;
+    (void)xray_node_object_names_out;
+}
+
 void GuiModeResult::calculate_face_attributes(
-    ElementId element_id,
-    int face_index,
+    FaceId face_id,
     NodeId node_id,
     ComplexVector *displacement_out,
-    QColor *color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
-    (void)element_id;
-    (void)face_index;
+    (void)face_id;
 
     const Results::Result::Step &step = result->steps[step_index];
 
@@ -533,24 +538,19 @@ void GuiModeResult::calculate_face_attributes(
     } else {
         *color_out = color_scale->color(color_datum);
     }
-
-    *xray_out = false;
 }
 
 void GuiModeResult::calculate_vertex_attributes(
     const std::string &node_object_name,
     ComplexVector *displacement_out,
-    QColor *color_out,
-    bool *xray_out
+    QColor *color_out
 ) const {
     NodeId node_id = project->find_node_object(node_object_name)->node_id;
     calculate_face_attributes(
-        ElementId::invalid(),
-        -1,
+        FaceId::invalid(),
         node_id,
         displacement_out,
-        color_out,
-        xray_out);
+        color_out);
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeResult::make_scene() {

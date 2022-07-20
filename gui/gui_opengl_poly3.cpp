@@ -6,12 +6,11 @@ void gui_opengl_scene_poly3_vertex(
     const GuiOpenglPoly3Callback *callback,
     const std::string &node_object_name,
     const Project::NodeObject &node_object,
+    bool xray,
     GuiOpenglScene *scene
 ) {
     QColor color;
-    bool xray = false;
-    callback->calculate_vertex_attributes(
-        node_object_name, &color, &xray);
+    callback->calculate_vertex_attributes(node_object_name, &color);
     if (color.isValid()) {
         scene->add_vertex(
             node_object.point, ComplexVector::zero(), color, xray);
@@ -24,6 +23,10 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
 ) {
     GuiOpenglScene scene;
 
+    std::set<std::pair<std::string, Plc3::SurfaceId> > xray_surfaces;
+    std::set<std::string> xray_node_object_names;
+    callback->calculate_xrays(&xray_surfaces, &xray_node_object_names);
+
     for (const auto &pair : project.mesh_objects) {
         const Plc3 *plc = pair.second.plc.get();
         if (plc == nullptr) {
@@ -34,11 +37,7 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                 sid < static_cast<int>(plc->surfaces.size()); ++sid) {
             const Plc3::Surface &surface = plc->surfaces[sid];
 
-            QColor color;
-            bool xray = false;
-            callback->calculate_surface_attributes(
-                pair.first, sid, &color, &xray);
-
+            bool xray = xray_surfaces.count(std::make_pair(pair.first, sid));
             int outside_volume_index;
             if (!xray) {
                 if (surface.volumes[0] == plc->volume_outside) {
@@ -51,6 +50,9 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
                 }
             }
 
+            QColor color;
+            callback->calculate_surface_attributes(
+                pair.first, sid, &color);
             QColor colors[3] = {color, color, color};
 
             for (const Plc3::Surface::Triangle &tri : surface.triangles) {
@@ -77,12 +79,14 @@ std::shared_ptr<const GuiOpenglScene> gui_opengl_scene_poly3(
     }
 
     for (const auto &pair : project.select_node_objects) {
+        bool xray = xray_node_object_names.count(pair.first);
         gui_opengl_scene_poly3_vertex(
-            callback, pair.first, pair.second, &scene);
+            callback, pair.first, pair.second, xray, &scene);
     }
     for (const auto &pair : project.create_node_objects) {
+        bool xray = xray_node_object_names.count(pair.first);
         gui_opengl_scene_poly3_vertex(
-            callback, pair.first, pair.second, &scene);
+            callback, pair.first, pair.second, xray, &scene);
     }
 
     return std::make_shared<const GuiOpenglScene>(std::move(scene));
