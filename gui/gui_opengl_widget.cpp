@@ -217,7 +217,63 @@ void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
     (void)viewport_height;
 }
 
-static const uint8_t polygon_stipple_pattern[4 * 32] = {
+void GuiOpenglWidget::paint_primitives(
+    const GuiOpenglScene::Primitives &primitives,
+    const ComputedPrimitives &computed_primitives
+) {
+    const GuiOpenglScene::Primitives &p = primitives;
+    const ComputedPrimitives &cp = computed_primitives;
+
+    if (p.num_triangles != 0) {
+        glEnable(GL_VERTEX_ARRAY);
+        glEnable(GL_COLOR_ARRAY);
+        glEnable(GL_NORMAL_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.triangle_points.data());
+        glColorPointer(
+            3, GL_UNSIGNED_BYTE, 0, p.triangle_colors.data());
+        glNormalPointer(
+            GL_FLOAT, 0, cp.triangle_normals.data());
+        glDrawArrays(GL_TRIANGLES, 0, 3 * p.num_triangles);
+        glDisable(GL_NORMAL_ARRAY);
+        glDisable(GL_COLOR_ARRAY);
+        glDisable(GL_VERTEX_ARRAY);
+    }
+
+    if (p.num_lines != 0) {
+        glColor3f(0, 0, 0);
+        glEnable(GL_VERTEX_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.line_points.data());
+        glDrawArrays(GL_LINES, 0, 2 * p.num_lines);
+        glDisable(GL_VERTEX_ARRAY);
+    }
+
+    if (p.num_vertices != 0) {
+        glDisable(GL_LIGHTING);
+        glEnable(GL_VERTEX_ARRAY);
+        glVertexPointer(
+            3, GL_FLOAT, 0, cp.vertex_points.data());
+
+        /* Draw a 10-pixel point in black, which will form a black border */
+        glColor3f(0, 0, 0);
+        glPointSize(10);
+        glDrawArrays(GL_POINTS, 0, p.num_vertices);
+
+        /* Draw an 8-pixel point in the intended color */
+        glEnable(GL_COLOR_ARRAY);
+        glColorPointer(
+            3, GL_UNSIGNED_BYTE, 0, p.vertex_colors.data());
+        glPointSize(8);
+        glDrawArrays(GL_POINTS, 0, p.num_vertices);
+
+        glDisable(GL_COLOR_ARRAY);
+        glDisable(GL_VERTEX_ARRAY);
+        glEnable(GL_LIGHTING);
+    }
+}
+
+static const uint8_t depth_buffer_stipple_pattern[4 * 32] = {
     0b11111111, 0b11111111, 0b11111111, 0b11111111,
     0b01010101, 0b01010101, 0b01010101, 0b01010101,
     0b11111111, 0b11111111, 0b11111111, 0b11111111,
@@ -252,95 +308,44 @@ static const uint8_t polygon_stipple_pattern[4 * 32] = {
     0b01010101, 0b01010101, 0b01010101, 0b01010101,
 };
 
-static const uint16_t line_stipple_pattern =
-    0b1010101010101010;
+void GuiOpenglWidget::paint_stipple_to_depth_buffer() {
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-void GuiOpenglWidget::paint_primitives(
-    const GuiOpenglScene::Primitives &primitives,
-    const ComputedPrimitives &computed_primitives,
-    bool xray
-) {
-    const GuiOpenglScene::Primitives &p = primitives;
-    const ComputedPrimitives &cp = computed_primitives;
+    /* Disable both matrices, so that x=+1/-1 map directly to the left/right
+    sides of the viewport, and so on */
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
 
-    if (p.num_triangles != 0) {
-        glEnable(GL_VERTEX_ARRAY);
-        glEnable(GL_COLOR_ARRAY);
-        glEnable(GL_NORMAL_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.triangle_points.data());
-        glColorPointer(
-            3, GL_UNSIGNED_BYTE, 0, p.triangle_colors.data());
-        glNormalPointer(
-            GL_FLOAT, 0, cp.triangle_normals.data());
-        if (xray) {
-            glDisable(GL_CULL_FACE);
-            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-            glEnable(GL_POLYGON_STIPPLE);
-            glPolygonStipple(polygon_stipple_pattern);
-        }
-        glDrawArrays(GL_TRIANGLES, 0, 3 * p.num_triangles);
-        if (xray) {
-            glDisable(GL_POLYGON_STIPPLE);
-            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
-            glEnable(GL_CULL_FACE);
-        }
-        glDisable(GL_NORMAL_ARRAY);
-        glDisable(GL_COLOR_ARRAY);
-        glDisable(GL_VERTEX_ARRAY);
-    }
+    glDepthFunc(GL_ALWAYS);
 
-    if (p.num_lines != 0) {
-        glColor3f(0, 0, 0);
-        glEnable(GL_VERTEX_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.line_points.data());
-        if (xray) {
-            glEnable(GL_LINE_STIPPLE);
-            glLineStipple(1, line_stipple_pattern);
-        }
-        glDrawArrays(GL_LINES, 0, 2 * p.num_lines);
-        if (xray) {
-            glDisable(GL_LINE_STIPPLE);
-        }
-        glDisable(GL_VERTEX_ARRAY);
-    }
+    /* We only want to affect the depth buffer, not the color buffer */
+    glColorMask(false, false, false, false);
+    // glColor3f(1.0, 0.0, 0.0);
 
-    if (p.num_vertices != 0) {
-        glDisable(GL_LIGHTING);
-        glEnable(GL_VERTEX_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.vertex_points.data());
+    /* We only want to affect the depth buffer in a stipple pattern, not every
+    single pixel */
+    glEnable(GL_POLYGON_STIPPLE);
+    glPolygonStipple(depth_buffer_stipple_pattern);
 
-        if (xray) {
-            glEnable(GL_STENCIL_TEST);
-            glClear(GL_STENCIL_BUFFER_BIT);
-            glStencilFunc(GL_NEVER, 1, 0xFF);
-            glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-            glPointSize(6);
-            glDrawArrays(GL_POINTS, 0, p.num_vertices);
-        }
+    /* Draw a rectangle that covers the entire viewpoint with depth 1.0 */
+    glBegin(GL_QUADS);
+    glVertex3f(-1, -1, 1.0);
+    glVertex3f(+1, -1, 1.0);
+    glVertex3f(+1, +1, 1.0);
+    glVertex3f(-1, +1, 1.0);
+    glEnd();
 
-        /* Draw a 10-pixel point in black, which will form a black border */
-        glColor3f(0, 0, 0);
-        glPointSize(10);
-        glDrawArrays(GL_POINTS, 0, p.num_vertices);
+    /* Reset to the previous state */
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 
-        /* Draw an 8-pixel point in the intended color */
-        glEnable(GL_COLOR_ARRAY);
-        glColorPointer(
-            3, GL_UNSIGNED_BYTE, 0, p.vertex_colors.data());
-        glPointSize(8);
-        glDrawArrays(GL_POINTS, 0, p.num_vertices);
-
-        if (xray) {
-            glDisable(GL_STENCIL_TEST);
-        }
-
-        glDisable(GL_COLOR_ARRAY);
-        glDisable(GL_VERTEX_ARRAY);
-        glEnable(GL_LIGHTING);
-    }
+    glPopAttrib();
 }
 
 void GuiOpenglWidget::paintGL() {
@@ -350,7 +355,7 @@ void GuiOpenglWidget::paintGL() {
 
     compute_fov();
     float z_near = approx_scale / 1e3;
-    float z_far = camera_dist + approx_scale;
+    float z_far = camera_dist + 2*approx_scale;
 
     glFrustum(
         -fov_slope_x * z_near, fov_slope_x * z_near,
@@ -378,24 +383,22 @@ void GuiOpenglWidget::paintGL() {
             scene->xray_primitives,
             &computed_xray_primitives);
 
-        /* First, draw primitives and xray_primitives both normally. */
-        paint_primitives(
-            scene->primitives,
-            computed_primitives,
-            false);
-        paint_primitives(
-            scene->xray_primitives,
-            computed_xray_primitives,
-            false);
+        /* First, draw non-xray primitives normally. */
+        glCullFace(GL_BACK);
+        paint_primitives(scene->primitives, computed_primitives);
 
-        /* Now, clear the depth buffer and re-draw xray primitives in xray
-        mode. So if an xray primitive was occluded by a regular primitive, then
-        the version drawn in xray mode will "show through". */
-        glClear(GL_DEPTH_BUFFER_BIT);
-        paint_primitives(
-            scene->xray_primitives,
-            computed_xray_primitives,
-            true);
+        /* On alternate pixels, reset the depth buffer to max depth; this
+        ensures that xray primitives will be drawn over non-xray primitives on
+        those pixels. */
+        paint_stipple_to_depth_buffer();
+
+        /* Now draw x-ray primitives. x-ray primitives can be seen from any
+        direction, so disable face culling. */
+        glDisable(GL_CULL_FACE);
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+        paint_primitives(scene->xray_primitives, computed_xray_primitives);
+        glEnable(GL_CULL_FACE);
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
     }
 
     glFlush();

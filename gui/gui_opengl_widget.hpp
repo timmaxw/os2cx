@@ -83,8 +83,8 @@ private:
     void resizeGL(int viewport_width, int viewport_height);
     void paint_primitives(
         const GuiOpenglScene::Primitives &primitives,
-        const ComputedPrimitives &computed_primitives,
-        bool xray);
+        const ComputedPrimitives &computed_primitives);
+    void paint_stipple_to_depth_buffer();
     void paintGL();
 
     void timerEvent(QTimerEvent *);
