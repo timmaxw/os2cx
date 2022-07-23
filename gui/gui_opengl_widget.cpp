@@ -198,18 +198,32 @@ void GuiOpenglWidget::initializeGL() {
 
     GLfloat light_ambient[4] = {0, 0, 0, 1};
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    GLfloat light_diffuse[4] = {1, 1, 1, 1};
+    GLfloat light_diffuse[4] = {1.0, 1.0, 1.0, 1};
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     GLfloat light_specular[4] = {0, 0, 0, 1};
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    GLfloat light_model_ambient[4] = {0.3, 0.3, 0.3, 1.0};
+    GLfloat light_model_ambient[4] = {0.6, 0.6, 0.6, 1.0};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light_model_ambient);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     GLfloat material_specular[4] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
 
+    /* Make faraway objects ever-so-slightly darker */
+    glEnable(GL_FOG);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+    GLfloat fog_color[4] = {0, 0, 0, 1};
+    glFogfv(GL_FOG_COLOR, fog_color);
+
+    /* Back-face culling for performance */
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
+    /* Prevent z-fighting between triangles and lines */
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(0, 5);
+
+    /* Lines are drawn partially transparent, so we need to init glBlendFunc */
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void GuiOpenglWidget::resizeGL(int viewport_width, int viewport_height) {
@@ -228,12 +242,9 @@ void GuiOpenglWidget::paint_primitives(
         glEnable(GL_VERTEX_ARRAY);
         glEnable(GL_COLOR_ARRAY);
         glEnable(GL_NORMAL_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.triangle_points.data());
-        glColorPointer(
-            3, GL_UNSIGNED_BYTE, 0, p.triangle_colors.data());
-        glNormalPointer(
-            GL_FLOAT, 0, cp.triangle_normals.data());
+        glVertexPointer(3, GL_FLOAT, 0, cp.triangle_points.data());
+        glColorPointer(3, GL_UNSIGNED_BYTE, 0, p.triangle_colors.data());
+        glNormalPointer(GL_FLOAT, 0, cp.triangle_normals.data());
         glDrawArrays(GL_TRIANGLES, 0, 3 * p.num_triangles);
         glDisable(GL_NORMAL_ARRAY);
         glDisable(GL_COLOR_ARRAY);
@@ -241,19 +252,22 @@ void GuiOpenglWidget::paint_primitives(
     }
 
     if (p.num_lines != 0) {
-        glColor3f(0, 0, 0);
+        /* Draw lines in translucent black */
+        glEnable(GL_BLEND);
+        glColor4f(0, 0, 0, 0.2);
+
         glEnable(GL_VERTEX_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.line_points.data());
+        glVertexPointer(3, GL_FLOAT, 0, cp.line_points.data());
         glDrawArrays(GL_LINES, 0, 2 * p.num_lines);
         glDisable(GL_VERTEX_ARRAY);
+
+        glDisable(GL_BLEND);
     }
 
     if (p.num_vertices != 0) {
         glDisable(GL_LIGHTING);
         glEnable(GL_VERTEX_ARRAY);
-        glVertexPointer(
-            3, GL_FLOAT, 0, cp.vertex_points.data());
+        glVertexPointer(3, GL_FLOAT, 0, cp.vertex_points.data());
 
         /* Draw a 10-pixel point in black, which will form a black border */
         glColor3f(0, 0, 0);
@@ -262,8 +276,7 @@ void GuiOpenglWidget::paint_primitives(
 
         /* Draw an 8-pixel point in the intended color */
         glEnable(GL_COLOR_ARRAY);
-        glColorPointer(
-            3, GL_UNSIGNED_BYTE, 0, p.vertex_colors.data());
+        glColorPointer(3, GL_UNSIGNED_BYTE, 0, p.vertex_colors.data());
         glPointSize(8);
         glDrawArrays(GL_POINTS, 0, p.num_vertices);
 
@@ -320,11 +333,12 @@ void GuiOpenglWidget::paint_stipple_to_depth_buffer() {
     glPushMatrix();
     glLoadIdentity();
 
+    /* Disable depth testing. (We can't glDisable(GL_DEPTH_TEST) because that
+    would also prevent _writing to_ the depth buffer.) */
     glDepthFunc(GL_ALWAYS);
 
     /* We only want to affect the depth buffer, not the color buffer */
     glColorMask(false, false, false, false);
-    // glColor3f(1.0, 0.0, 0.0);
 
     /* We only want to affect the depth buffer in a stipple pattern, not every
     single pixel */
@@ -365,8 +379,11 @@ void GuiOpenglWidget::paintGL() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    GLfloat light_dir[4] = {0.0, 1.0, 1.0, 0.0};
+    GLfloat light_dir[4] = {0.0, 0.6, 1.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, light_dir);
+
+    glFogf(GL_FOG_START, camera_dist - approx_scale);
+    glFogf(GL_FOG_END, camera_dist + approx_scale * 5);
 
     glTranslatef(0, 0, -camera_dist);
     glRotatef(-90 + pitch, 1.0f, 0.0f, 0.0f);

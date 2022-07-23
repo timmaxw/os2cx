@@ -75,7 +75,7 @@ void GuiModeProgress::calculate_surface_attributes(
 ) const {
     (void)mesh_object_name;
     (void)surface_id;
-    *color_out = QColor(0x80, 0x80, 0x80);
+    *color_out = QColor(0xAA, 0xAA, 0xAA);
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
@@ -83,7 +83,7 @@ void GuiModeProgress::calculate_vertex_attributes(
     QColor *color_out
 ) const {
     (void)node_object_name;
-    *color_out = QColor(0x70, 0x70, 0x70);
+    *color_out = QColor(0x99, 0x99, 0x99);
 }
 
 void GuiModeProgress::calculate_xrays(
@@ -103,7 +103,7 @@ void GuiModeProgress::calculate_face_attributes(
     (void)face_id,
     (void)node_id;
     *displacement_out = ComplexVector::zero();
-    *color_out = QColor(0x80, 0x80, 0x80);
+    *color_out = QColor(0xAA, 0xAA, 0xAA);
 }
 
 void GuiModeProgress::calculate_vertex_attributes(
@@ -113,7 +113,7 @@ void GuiModeProgress::calculate_vertex_attributes(
 ) const {
     (void)node_object_name;
     *displacement_out = ComplexVector::zero();
-    *color_out = QColor(0x70, 0x70, 0x70);
+    *color_out = QColor(0x99, 0x99, 0x99);
 }
 
 std::shared_ptr<const GuiOpenglScene> GuiModeProgress::make_scene() {
