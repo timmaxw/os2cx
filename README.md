@@ -114,7 +114,6 @@ Dependencies:
 * CGAL 5.4 (`sudo apt install libcgal-dev`)
 * tetgen 1.5.0 (as a library, not an executable)
   (`sudo apt install libtet1.5-dev`)
-* GLU (`sudo apt install libglu-dev`)
 * Google Test (`sudo apt-get install libgtest-dev`)
 
 Development notes:

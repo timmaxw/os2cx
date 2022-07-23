@@ -4,7 +4,6 @@ CONFIG += c++14 console
 CONFIG -= app_bundle
 
 LIBS += -lgmp -lmpfr
-LIBS += -lGLU
 LIBS += -ltet
 
 # The following define makes your compiler emit warnings if you use
