@@ -73,7 +73,7 @@ public:
         char const *backtrack = input;
         try {
             range_out->start = parse_double();
-        } catch (OpenscadValue::ParseError) {
+        } catch (const OpenscadValue::ParseError &) {
             input = backtrack;
             return false;
         }

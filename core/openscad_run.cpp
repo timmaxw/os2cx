@@ -21,7 +21,7 @@ OpenscadRun::OpenscadRun(
     args.push_back("-o");
     assert(geometry_path.substr(geometry_path.size() - 4) == ".off");
     args.push_back(geometry_path.c_str());
-    for (const std::pair<std::string, OpenscadValue> &pair : defines) {
+    for (const auto &pair : defines) {
         std::stringstream stream;
         stream << "-D" << pair.first << "=" << pair.second;
         args.push_back(stream.str().c_str());

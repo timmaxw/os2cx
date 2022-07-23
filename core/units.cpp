@@ -114,7 +114,7 @@ bool parse_unit_power(
     Unit base;
     try {
         base = Unit::from_name(type, base_name);
-    } catch (UnitParseError) {
+    } catch (const UnitParseError &) {
         return false;
     }
     double unit_in_si = pow(base.unit_in_si, power);
@@ -136,7 +136,7 @@ bool parse_unit_ratio(
     try {
         num = Unit::from_name(num_type, num_name);
         denom = Unit::from_name(denom_type, denom_name);
-    } catch (UnitParseError) {
+    } catch (const UnitParseError &) {
         return false;
     }
     double unit_in_si = num.unit_in_si / denom.unit_in_si;
@@ -262,14 +262,14 @@ UnitSystem::UnitSystem(
         units_in_si[UnitType::Mass] = mass_unit.unit_in_si;
         units_in_si[UnitType::Force] = mass_unit.unit_in_si
             * length_unit.unit_in_si / pow(time_unit.unit_in_si, 2);
-    } catch (UnitParseError) {
+    } catch (const UnitParseError &) {
         try {
             Unit force_unit = Unit::from_name(
                 UnitType::Force, mass_or_force_name);
             units_in_si[UnitType::Force] = force_unit.unit_in_si;
             units_in_si[UnitType::Mass] = force_unit.unit_in_si
                 / length_unit.unit_in_si * pow(time_unit.unit_in_si, 2);
-        } catch (UnitParseError) {
+        } catch (const UnitParseError &) {
             /* This error message should ideally give a list of the valid
             units... */
             throw UnitParseError("'" + mass_or_force_name + "' is not a " \

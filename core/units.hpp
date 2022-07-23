@@ -72,6 +72,7 @@ public:
     WithUnit() { }
     WithUnit(const WithUnit &) = default;
     WithUnit(T viu, const Unit &u) : value_in_unit(viu), unit(u) { }
+    WithUnit &operator=(const WithUnit &) = default;
 
     /* 'x.value_in_unit' is in units of 'unit'. If you actually want the value
     in the project's unit system, instead call 'unit_system->unit_to_system(x)'.

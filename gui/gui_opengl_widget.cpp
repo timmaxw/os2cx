@@ -481,7 +481,7 @@ void GuiOpenglWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void GuiOpenglWidget::wheelEvent(QWheelEvent *event) {
-    zoom *= pow(2, -event->delta() / (360.0 * 8.0));
+    zoom *= pow(2, -event->angleDelta().y() / (360.0 * 8.0));
     if (zoom < 1) zoom = 1;
     if (zoom > 100) zoom = 100;
     update();

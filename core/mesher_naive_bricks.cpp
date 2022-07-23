@@ -664,7 +664,7 @@ void update_node_attrs(const Plc3 &plc, Mesh3 *mesh) {
         }
     };
     std::map<Point, Plc3::VertexId, LessPoint> vertices_by_point;
-    for (Plc3::VertexId vid = 0; vid < plc.vertices.size(); ++vid) {
+    for (Plc3::VertexId vid = 0; vid < (int)plc.vertices.size(); ++vid) {
         auto res = vertices_by_point.insert(
             std::make_pair(plc.vertices[vid].point, vid));
         assert(res.second);

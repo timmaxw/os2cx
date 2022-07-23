@@ -23,7 +23,7 @@ std::unique_ptr<OpenscadRun> call_openscad(
         defines
     ));
     run->run();
-    return std::move(run);
+    return run;
 }
 
 void check_arg_count(

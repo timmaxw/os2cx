@@ -91,17 +91,16 @@ public:
         }
     }
     struct dirent *next() {
-        struct dirent *result;
-        int res = readdir_r(dir, &buffer, &result);
-        if (res != 0) {
+        errno = 0;
+        struct dirent *result = readdir(dir);
+        if (errno != 0) {
             throw std::runtime_error(
-                "readdir_r() failed: " + std::string(strerror(errno)));
+                "readdir() failed: " + std::string(strerror(errno)));
         }
         return result;
     }
 private:
     DIR *dir;
-    struct dirent buffer;
 };
 
 void TempDir::cleanup() {

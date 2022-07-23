@@ -17,11 +17,11 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     /* If scad_path="/foo/bar.scad", then project_name="bar" */
     p->project_name = p->scad_path;
     int last_slash_pos = p->project_name.rfind("/");
-    if (last_slash_pos != std::string::npos) {
+    if (last_slash_pos != (int)std::string::npos) {
         p->project_name = p->project_name.substr(last_slash_pos + 1);
     }
     int last_dot_pos = p->project_name.rfind(".");
-    if (last_dot_pos != std::string::npos) {
+    if (last_dot_pos != (int)std::string::npos) {
         p->project_name = p->project_name.substr(0, last_dot_pos);
     }
     assert(!p->project_name.empty());

@@ -56,7 +56,7 @@ Poly3 read_poly3_off(std::istream &stream) {
     if (!(stream >> poly3.i->p)) {
         throw PolyIoError("OFF file read failed");
     }
-    return std::move(poly3);
+    return poly3;
 }
 
 void write_poly3_off(std::ostream &stream, const Poly3 &poly) {

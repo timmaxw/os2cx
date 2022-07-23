@@ -106,7 +106,7 @@ void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
     for (NodeId nid = mesh->nodes.key_begin();
             nid < mesh->nodes.key_end(); ++nid) {
         Node3 *node = &mesh->nodes[nid];
-        if (nid.to_int() < plc.vertices.size()) {
+        if (nid.to_int() < (int)plc.vertices.size()) {
             /* This node corresponds directly to the Plc3 vertex with the same
             numerical ID. */
             Plc3::VertexId vid = nid.to_int();
