@@ -117,7 +117,7 @@ void compute_plc_nef_select_surface_internal(
     double direction_angle_tolerance,
     AttrBitIndex attr_bit_mask
 ) {
-    /* If direction_angle_tolerance > 90, then compute_face_set_from_attr_bit()
+    /* If direction_angle_tolerance >= 90, then compute_face_set_from_attr_bit()
     won't be able to distinguish between the two sides of the surface */
     assert(direction_angle_tolerance < 90);
 
@@ -175,6 +175,23 @@ void compute_plc_nef_select_node(
         }
         return bs;
     });
+}
+
+MaxElementSize suggest_max_element_size(const Plc3 &plc) {
+    Volume approx_volume = pow(2 * plc.compute_approx_scale(), 3);
+
+    /* Simulating 10,000 elements typically takes a few seconds of CPU time and
+    less than a gigabyte of RAM, which makes it a safe default. */
+    static const int max_elements = 10000;
+
+    /* Choose max_element_volume such that at most max_elements can fit in
+    approx_volume. */
+    Volume max_element_volume = approx_volume / max_elements;
+
+    /* Convert to a roughly equivalent element size */
+    MaxElementSize max_element_size = pow(max_element_volume, 1 / 3.0);
+
+    return max_element_size;
 }
 
 ElementSet compute_element_set_from_range(ElementId begin, ElementId end) {

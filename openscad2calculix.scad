@@ -233,7 +233,8 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
 module os2cx_mesh(name, mesher="tetgen", max_element_size=undef) {
     assert(is_string(name));
     assert(is_string(mesher));
-    assert(is_undef(max_element_size) || is_num(max_element_size));
+    assert(is_undef(max_element_size) ||
+        (is_num(max_element_size) && max_element_size > 0));
     assert($children > 0);
 
     if (__openscad2calculix_mode == ["preview"]) {
@@ -403,6 +404,20 @@ module os2cx_material_elastic_simple(
     if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "material_elastic_simple_directive",
             name, youngs_modulus, poissons_ratio, density);
+    }
+}
+
+module os2cx_override_max_element_size(
+    volume, max_element_size
+) {
+    assert(is_string(volume));
+    assert(is_num(max_element_size));
+    assert(max_element_size > 0);
+    assert($children == 0);
+
+    if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "override_max_element_size_directive",
+            volume, max_element_size);
     }
 }
 

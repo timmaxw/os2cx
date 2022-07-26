@@ -9,14 +9,21 @@
 
 namespace os2cx {
 
-void convert_input(const Plc3 &plc, tetgenio *tetgen) {
+void convert_input(
+    const Plc3 &plc,
+    MaxElementSize max_element_size_default,
+    const AttrOverrides<MaxElementSize> &max_element_size_overrides,
+    tetgenio *tetgen
+) {
     tetgen->numberofpoints = plc.vertices.size();
     tetgen->pointlist = new REAL[tetgen->numberofpoints * 3];
-    for (Plc3::VertexId vid = 0;
-            vid < static_cast<int>(plc.vertices.size()); ++vid) {
+    tetgen->numberofpointmtrs = 1;
+    tetgen->pointmtrlist = new REAL[tetgen->numberofpoints];
+    for (Plc3::VertexId vid = 0; vid < (int)plc.vertices.size(); ++vid) {
         tetgen->pointlist[3 * vid + 0] = plc.vertices[vid].point.x;
         tetgen->pointlist[3 * vid + 1] = plc.vertices[vid].point.y;
         tetgen->pointlist[3 * vid + 2] = plc.vertices[vid].point.z;
+        tetgen->pointmtrlist[vid] = std::numeric_limits<double>::infinity();
     }
 
     tetgen->numberoffacets = 0;
@@ -29,14 +36,44 @@ void convert_input(const Plc3 &plc, tetgenio *tetgen) {
     for (Plc3::SurfaceId sid = 0;
             sid < static_cast<int>(plc.surfaces.size()); ++sid) {
         const Plc3::Surface &surface = plc.surfaces[sid];
+
         int facetmarker;
-        if (surface.volumes[0] == plc.volume_outside ||
-                surface.volumes[1] == plc.volume_outside) {
+        MaxElementSize max_element_size;
+        if (surface.volumes[0] == plc.volume_outside) {
             facetmarker = sid + 1;
+            max_element_size = max_element_size_overrides.lookup(
+                plc.volumes[surface.volumes[1]].attrs,
+                max_element_size_default);
+
+        } else if (surface.volumes[1] == plc.volume_outside) {
+            facetmarker = sid + 1;
+            max_element_size = max_element_size_overrides.lookup(
+                plc.volumes[surface.volumes[0]].attrs,
+                max_element_size_default);
+
         } else {
-            /* TODO: How to denote features on internal faces? */
+            /* TODO: This may behave strangely if the Plc3 has complex internal
+            surfaces. E.g. imagine using os2cx_select_surface_internal() to
+            select _half_ of the cross-section of a solid object, and then again
+            to select the other half. We would correctly generate facets for the
+            cross-section, so tetgen wouldn't generate any tetrahedra straddling
+            the cross-section. However, the facets for the two halves of the
+            cross-section would all have facetmarker 0, so tetgen might generate
+            tetrahedra that straddled the two halves of the cross-section. */
             facetmarker = 0;
+
+            /* This facet is between two volumes; use the smaller of the two
+            max_element_size values. */
+            max_element_size = std::min(
+                max_element_size_overrides.lookup(
+                    plc.volumes[surface.volumes[0]].attrs,
+                    max_element_size_default),
+                max_element_size_overrides.lookup(
+                    plc.volumes[surface.volumes[1]].attrs,
+                    max_element_size_default)
+            );
         }
+
         for (const Plc3::Surface::Triangle &tri : surface.triangles) {
             tetgenio::facet *facet = &tetgen->facetlist[facet_counter];
             facet->polygonlist = new tetgenio::polygon[1];
@@ -45,11 +82,29 @@ void convert_input(const Plc3 &plc, tetgenio *tetgen) {
             facet->numberofholes = 0;
             facet->polygonlist[0].numberofvertices = 3;
             facet->polygonlist[0].vertexlist = new int[3];
+
             for (int i = 0; i < 3; ++i) {
-                facet->polygonlist[0].vertexlist[i] = tri.vertices[i];
+                int vid = tri.vertices[i];
+                facet->polygonlist[0].vertexlist[i] = vid;
+                /* A vertex may be part of multiple surfaces, each with two
+                volumes; ultimately we want pointmtrlist[vid] to be the smallest
+                max_element_size of any volume touching the vertex. */
+                tetgen->pointmtrlist[vid] =
+                    std::min(tetgen->pointmtrlist[vid], max_element_size);
             }
+
             tetgen->facetmarkerlist[facet_counter] = facetmarker;
             ++facet_counter;
+        }
+    }
+
+    for (Plc3::VertexId vid = 0; vid < (int)plc.vertices.size(); ++vid) {
+        if (tetgen->pointmtrlist[vid] ==
+                std::numeric_limits<double>::infinity()) {
+            /* This vertex is not part of any surface, so its pointmtrlist
+            entry wasn't overridden in the loop above. Set the value to 0, which
+            tetgen interprets to mean "no effect". */
+            tetgen->pointmtrlist[vid] = 0;
         }
     }
 }
@@ -163,31 +218,30 @@ void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
 
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
-    double max_element_size
+    MaxElementSize max_element_size_default,
+    const AttrOverrides<MaxElementSize> &max_element_size_overrides
 ) {
     tetgenio tetgen_input;
-    convert_input(plc, &tetgen_input);
-
-    double bbox_volume = compute_bbox_volume(plc);
-
-    /* Tetgen doesn't let us limit tetrahedron length, but it does let us limit
-    tetrahedron volume. Convert max_element_size into a roughly equivalent
-    max_tet_volume. */
-    double max_tet_volume = pow(max_element_size, 3) / 6.0;
+    convert_input(
+        plc,
+        max_element_size_default,
+        max_element_size_overrides,
+        &tetgen_input);
 
     /* Tetgen always respects the PLC exactly. If the PLC is malformed such that
     it e.g. has two edges that are very close together, then Tetgen may try to
     generate an enormous number of tiny tetrahedra to model this accurately. Cap
     the number of Steiner points that Tetgen is allowed to insert, in order to
     force Tetgen to abort if this happens. */
-    int max_steiner_points = std::max(
-        3 * static_cast<int>(bbox_volume / max_tet_volume),
-        100);
+    Volume approx_volume = pow(2 * plc.compute_approx_scale(), 3);
+    Volume approx_tet_volume = pow(max_element_size_default, 3) / 6.0;
+    int approx_num_tets = approx_volume / approx_tet_volume;
+    int max_steiner_points = std::max(3 * approx_num_tets, 100);
 
     std::string flags;
     flags += "p";
     flags += "q1.414";
-    flags += "a" + std::to_string(max_tet_volume);
+    flags += "m";
     flags += "S" + std::to_string(max_steiner_points);
     flags += "o2";
     flags += "Q";
@@ -221,44 +275,6 @@ Mesh3 mesher_tetgen(
     transfer_attrs(plc, &mesh);
 
     return mesh;
-}
-
-double compute_bbox_volume(const Plc3 &plc) {
-    double xmin, xmax, ymin, ymax, zmin, zmax;
-    xmin = ymin = zmin = std::numeric_limits<double>::max();
-    xmax = ymax = zmax = std::numeric_limits<double>::min();
-    for (const Plc3::Vertex &v : plc.vertices) {
-        xmax = std::max(xmax, v.point.x);
-        xmin = std::min(xmin, v.point.x);
-        ymax = std::max(ymax, v.point.y);
-        ymin = std::min(ymin, v.point.y);
-        zmax = std::max(zmax, v.point.z);
-        zmin = std::min(zmin, v.point.z);
-    }
-    return (xmax - xmin) * (ymax - ymin) * (zmax - zmin);
-}
-
-double suggest_max_element_size(const Plc3 &plc) {
-    double bbox_volume = compute_bbox_volume(plc);
-
-    /* Simulating 10,000 second-order tetrahedra takes a few seconds of CPU
-    time and a less than a gigabyte of RAM, which makes it a safe default. */
-    static const int default_max_tets = 10000;
-
-    /* In practice, tetgen seems to produce tets with an average volume of about
-    half of max_tet_volume, in bulk. So apply a fudge factor. */
-    static constexpr double fudge_factor = 0.5;
-
-    /* Choose max_tet_volume such that at most default_max_tets can fit in the
-    bounding box. In practice the shape won't completely fill the bounding box,
-    so we'll end up with fewer than default_max_tets (often far fewer), but it's
-    an OK approximation. */
-    double max_tet_volume = bbox_volume / default_max_tets / fudge_factor;
-
-    /* Convert max_tet_volume into a roughly equivalent max_element_size */
-    double max_element_size = pow(max_tet_volume * 6.0, 1 / 3.0);
-
-    return max_element_size;
 }
 
 } /* namespace os2cx */

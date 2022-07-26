@@ -99,8 +99,8 @@ public:
         /* If max_element_size is set to the magic value
         SUGGEST_MAX_ELEMENT_SIZE, then we'll automatically choose a reasonable
         value for max_element_size by examining the PLC. */
-        static constexpr double SUGGEST_MAX_ELEMENT_SIZE = -1;
-        double max_element_size;
+        static constexpr MaxElementSize SUGGEST_MAX_ELEMENT_SIZE = -1;
+        MaxElementSize max_element_size;
 
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Plc3> plc;
@@ -177,6 +177,8 @@ public:
 
     std::map<CreateNodeObjectName, CreateNodeObject>
         create_node_objects;
+
+    AttrOverrides<MaxElementSize> max_element_size_overrides;
 
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */

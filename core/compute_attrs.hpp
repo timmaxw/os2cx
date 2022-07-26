@@ -37,6 +37,8 @@ void compute_plc_nef_select_node(
     Point point,
     AttrBitIndex attr_bit_mask);
 
+MaxElementSize suggest_max_element_size(const Plc3 &plc);
+
 class ElementSet {
 public:
     std::set<ElementId> elements;

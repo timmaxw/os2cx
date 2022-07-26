@@ -472,6 +472,35 @@ void do_material_elastic_simple_directive(
         check_number_with_unit(args[3], UnitType::Density);
 }
 
+void do_override_max_element_size_directive(
+    Project *project,
+    const std::vector<OpenscadValue> &args
+) {
+    check_arg_count(args, 2, "override_max_element_size");
+
+    Project::VolumeObjectName volume = check_name_existing(
+        args[0],
+        "volume",
+        project,
+        "override_max_element_size");
+    MaxElementSize max_element_size = check_number(args[1]);
+
+    if (project->mesh_objects.count(volume)) {
+        throw UsageError("Instead of using os2cx_override_max_element_size() " \
+            "on an entire mesh, pass max_element_size to os2cx_mesh().");
+    }
+
+    auto it = project->select_volume_objects.find(volume);
+    assert(it != project->select_volume_objects.end());
+    AttrBitIndex attr_index = it->second.bit_index;
+
+    if (project->max_element_size_overrides.overridden_attrs[attr_index]) {
+        throw UsageError("Can't call os2cx_override_max_element_size() " \
+            "on the same volume '" + std::string(volume) + "' more than once.");
+    }
+    project->max_element_size_overrides.add(attr_index, max_element_size);
+}
+
 void do_measure_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
@@ -539,6 +568,9 @@ void openscad_extract_inventory(Project *project) {
             } else if (echo[1].string_value ==
                     "material_elastic_simple_directive") {
                 do_material_elastic_simple_directive(project, args);
+            } else if (echo[1].string_value ==
+                    "override_max_element_size_directive") {
+                do_override_max_element_size_directive(project, args);
             } else if (echo[1].string_value == "measure_directive") {
                 do_measure_directive(project, args);
             } else {

@@ -151,11 +151,21 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
         case Project::MeshObject::Mesher::Tetgen: {
             partial_mesh = mesher_tetgen(
                 *pair.second.plc,
-                max_element_size
+                max_element_size,
+                p->max_element_size_overrides
             );
             break;
         }
         case Project::MeshObject::Mesher::NaiveBricks: {
+            for (const Plc3::Volume &v : pair.second.plc->volumes) {
+                MaxElementSize modified_max_element_size =
+                    p->max_element_size_overrides.lookup(
+                        v.attrs, max_element_size);
+                if (modified_max_element_size != max_element_size) {
+                    throw UsageError("naive_bricks mesher does not support "
+                        "os2cx_override_max_element_size().");
+                }
+            }
             partial_mesh = mesher_naive_bricks(
                 *pair.second.plc,
                 max_element_size,

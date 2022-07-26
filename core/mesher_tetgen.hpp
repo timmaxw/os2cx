@@ -13,13 +13,8 @@ public:
 
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
-    double max_element_size);
-
-void transfer_attrs(const Plc3 &plc, Mesh3 *mesh);
-
-double compute_bbox_volume(const Plc3 &plc);
-
-double suggest_max_element_size(const Plc3 &plc);
+    MaxElementSize max_element_size_default,
+    const AttrOverrides<MaxElementSize> &max_element_size_overrides);
 
 } /* namespace os2cx */
 

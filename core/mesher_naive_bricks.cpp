@@ -70,7 +70,7 @@ public:
 /* Given a grid (expressed as a map of X/Y/Z coordinates to lists of triangles)
 applies max_element_size and min_subdivision to that grid. */
 void subdivide_grid(
-    double max_element_size,
+    MaxElementSize max_element_size,
     int min_subdivision,
     std::map<double, std::vector<TriangleRef> > *grid
 ) {
@@ -103,7 +103,7 @@ X/Y/Z axes. Emits x/y/z_triangles_out, where keys are grid locations and values
 are the triangles in the given plane. */
 void setup_grid(
     const Plc3 &plc,
-    double max_element_size,
+    MaxElementSize max_element_size,
     double min_subdivision,
     std::map<double, std::vector<TriangleRef> > *x_triangles_out,
     std::map<double, std::vector<TriangleRef> > *y_triangles_out,
@@ -679,7 +679,7 @@ void update_node_attrs(const Plc3 &plc, Mesh3 *mesh) {
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_element_size,
+    MaxElementSize max_element_size,
     int min_subdivision,
     ElementType element_type
 ) {

@@ -18,7 +18,7 @@ public:
 
 Mesh3 mesher_naive_bricks(
     const Plc3 &plc,
-    double max_element_size,
+    MaxElementSize max_element_size,
     int min_subdivision,
     ElementType element_type);
 
