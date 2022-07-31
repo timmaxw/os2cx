@@ -17,13 +17,10 @@ void convert_input(
 ) {
     tetgen->numberofpoints = plc.vertices.size();
     tetgen->pointlist = new REAL[tetgen->numberofpoints * 3];
-    tetgen->numberofpointmtrs = 1;
-    tetgen->pointmtrlist = new REAL[tetgen->numberofpoints];
     for (Plc3::VertexId vid = 0; vid < (int)plc.vertices.size(); ++vid) {
         tetgen->pointlist[3 * vid + 0] = plc.vertices[vid].point.x;
         tetgen->pointlist[3 * vid + 1] = plc.vertices[vid].point.y;
         tetgen->pointlist[3 * vid + 2] = plc.vertices[vid].point.z;
-        tetgen->pointmtrlist[vid] = std::numeric_limits<double>::infinity();
     }
 
     tetgen->numberoffacets = 0;
@@ -32,6 +29,13 @@ void convert_input(
     }
     tetgen->facetlist = new tetgenio::facet[tetgen->numberoffacets];
     tetgen->facetmarkerlist = new int[tetgen->numberoffacets];
+
+    /* We'll have facet constraints on external surfaces, but not internal ones.
+    So plc.surfaces.size() is an upper bound on the number of facet constraints.
+    We'll calculate the true number as we go. */
+    tetgen->numberoffacetconstraints = 0;
+    tetgen->facetconstraintlist = new REAL[2 * plc.surfaces.size()];
+
     int facet_counter = 0;
     for (Plc3::SurfaceId sid = 0;
             sid < static_cast<int>(plc.surfaces.size()); ++sid) {
@@ -61,17 +65,16 @@ void convert_input(
             cross-section would all have facetmarker 0, so tetgen might generate
             tetrahedra that straddled the two halves of the cross-section. */
             facetmarker = 0;
+        }
 
-            /* This facet is between two volumes; use the smaller of the two
-            max_element_size values. */
-            max_element_size = std::min(
-                max_element_size_overrides.lookup(
-                    plc.volumes[surface.volumes[0]].attrs,
-                    max_element_size_default),
-                max_element_size_overrides.lookup(
-                    plc.volumes[surface.volumes[1]].attrs,
-                    max_element_size_default)
-            );
+        if (facetmarker != 0) {
+            /* Note, we have no way of applying max_element_size constraints
+            to internal surfaces. So e.g. a max_element_size_override on a
+            purely-internal volume would have no effect :( */
+            int fcid = tetgen->numberoffacetconstraints++;
+            tetgen->facetconstraintlist[2 * fcid] = facetmarker;
+            tetgen->facetconstraintlist[2 * fcid + 1] =
+                (max_element_size * max_element_size) / 2;
         }
 
         for (const Plc3::Surface::Triangle &tri : surface.triangles) {
@@ -86,25 +89,10 @@ void convert_input(
             for (int i = 0; i < 3; ++i) {
                 int vid = tri.vertices[i];
                 facet->polygonlist[0].vertexlist[i] = vid;
-                /* A vertex may be part of multiple surfaces, each with two
-                volumes; ultimately we want pointmtrlist[vid] to be the smallest
-                max_element_size of any volume touching the vertex. */
-                tetgen->pointmtrlist[vid] =
-                    std::min(tetgen->pointmtrlist[vid], max_element_size);
             }
 
             tetgen->facetmarkerlist[facet_counter] = facetmarker;
             ++facet_counter;
-        }
-    }
-
-    for (Plc3::VertexId vid = 0; vid < (int)plc.vertices.size(); ++vid) {
-        if (tetgen->pointmtrlist[vid] ==
-                std::numeric_limits<double>::infinity()) {
-            /* This vertex is not part of any surface, so its pointmtrlist
-            entry wasn't overridden in the loop above. Set the value to 0, which
-            tetgen interprets to mean "no effect". */
-            tetgen->pointmtrlist[vid] = 0;
         }
     }
 }
@@ -241,7 +229,6 @@ Mesh3 mesher_tetgen(
     std::string flags;
     flags += "p";
     flags += "q1.414";
-    flags += "m";
     flags += "S" + std::to_string(max_steiner_points);
     flags += "o2";
     flags += "Q";
