@@ -36,6 +36,7 @@ public:
 };
 
 typedef double MaxElementSize;
+typedef int MaterialId;
 
 } /* namespace os2cx */
 

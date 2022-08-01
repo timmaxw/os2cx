@@ -119,7 +119,7 @@ void write_calculix_cload(
     }
 }
 
-void write_calculix_material(
+void write_calculix_material_and_solid_section(
     std::ostream &stream,
     const std::string &name,
     const Project::MaterialObject &material,
@@ -131,6 +131,30 @@ void write_calculix_material(
         << ", " << material.poissons_ratio << '\n'
         << "*DENSITY\n"
         << project.unit_system.unit_to_system(material.density) << '\n';
+
+    bool any_element = false;
+    for (const auto &pair : project.mesh_objects) {
+        for (ElementId eid = pair.second.element_begin;
+                eid != pair.second.element_end; ++eid) {
+            MaterialId element_material = project.material_overrides.lookup(
+                project.mesh->elements[eid].attrs,
+                pair.second.material);
+            if (element_material != material.id) {
+                continue;
+            }
+            if (!any_element) {
+                stream << "*ELSET, ELSET=M" << name << '\n';
+                any_element = true;
+            }
+            stream << eid.to_int() << "\n";
+        }
+    }
+
+    if (any_element) {
+        stream << "*SOLID SECTION,"
+            << "MATERIAL=" << name << ','
+            << "ELSET=M" << name << '\n';
+    }
 }
 
 inline int dimension_to_int(Dimension d){
@@ -234,7 +258,7 @@ void write_calculix_job(
         }
 
         for (const auto &pair : project.material_objects) {
-            write_calculix_material(
+            write_calculix_material_and_solid_section(
                 geometry_stream, pair.first, pair.second, project);
         }
     }

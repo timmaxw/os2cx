@@ -13,9 +13,17 @@ module i_beam() {
 
 include <../openscad2calculix.scad>
 
+/* Declares a material object in OS2CX, called "steel". It has a Young's modulus
+of 209 gigapascals, and a Poisson's ratio of 0.3. */
+os2cx_material_elastic_simple(
+    "steel",
+    youngs_modulus=[209, "GPa"],
+    poissons_ratio=0.3,
+    density=[7600, "kg/m^3"]);
+
 /* Declares a new mesh object in OS2CX. Its name will be "i_beam", and its shape
 comes from the the OpenSCAD i_beam() module we defined above. */
-os2cx_mesh("i_beam") {
+os2cx_mesh("i_beam", material="steel") {
   i_beam();
 }
 
@@ -41,19 +49,10 @@ os2cx_load_volume(
     "loaded_end",
     force_total=[[0, 0, -gravity*weight], "N"]);
 
-/* Declares a material object in OS2CX, called "steel". It has a Young's modulus
-of 209 gigapascals, and a Poisson's ratio of 0.3. */
-os2cx_material_elastic_simple(
-    "steel",
-    youngs_modulus=[209, "GPa"],
-    poissons_ratio=0.3,
-    density=[7600, "kg/m^3"]);
 
 /* Tell OS2CX to do a simple static deflection analysis using the objects we
 just defined */
 os2cx_analysis_static_simple(
-    mesh="i_beam",
-    material="steel",
     fixed="anchored_end",
     load="car_weight",
     length_unit="m"

@@ -102,6 +102,8 @@ public:
         static constexpr MaxElementSize SUGGEST_MAX_ELEMENT_SIZE = -1;
         MaxElementSize max_element_size;
 
+        MaterialId material;
+
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Plc3> plc;
 
@@ -179,6 +181,7 @@ public:
         create_node_objects;
 
     AttrOverrides<MaxElementSize> max_element_size_overrides;
+    AttrOverrides<MaterialId> material_overrides;
 
     /* This mesh is formed by combining the meshes of all the individual mesh
     objects. */
@@ -205,6 +208,8 @@ public:
 
     class MaterialObject {
     public:
+        MaterialId id;
+
         WithUnit<double> youngs_modulus;
         double poissons_ratio;
         WithUnit<double> density;

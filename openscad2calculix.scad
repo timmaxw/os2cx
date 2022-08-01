@@ -86,14 +86,10 @@ attached to a fixed base. For example, the weight of a person standing on a
 footbridge. */
 
 module os2cx_analysis_static_simple(
-    mesh=undef,
-    material=undef,
     fixed=undef,
     load=undef,
     length_unit=undef
 ) {
-    assert(is_string(mesh));
-    assert(is_string(material));
     assert(is_string(fixed));
     assert(is_string(load));
     assert(is_string(length_unit));
@@ -101,7 +97,6 @@ module os2cx_analysis_static_simple(
 
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*STEP",
         "*STATIC",
         "*BOUNDARY",
@@ -121,8 +116,6 @@ a structure attached to a fixed base. The load is simulated at a range of
 frequencies. */
 
 module os2cx_analysis_steady_state_dynamics(
-    mesh=undef,
-    material=undef,
     fixed=undef,
     load=undef,
     length_unit=undef,
@@ -131,8 +124,6 @@ module os2cx_analysis_steady_state_dynamics(
     max_frequency=undef,
     damping_ratio=undef
 ) {
-    assert(is_string(mesh));
-    assert(is_string(material));
     assert(is_string(fixed));
     assert(is_string(load));
     assert(is_string(length_unit));
@@ -147,7 +138,6 @@ module os2cx_analysis_steady_state_dynamics(
 
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*BOUNDARY",
         [["nset", fixed], ",1,3"],
         "*STEP",
@@ -175,8 +165,6 @@ module os2cx_analysis_steady_state_dynamics(
 attached to an oscillating base. For example, a tower during an earthquake. */
 
 module os2cx_analysis_steady_state_dynamics_osc_boundary(
-    mesh=undef,
-    material=undef,
     boundary=undef,
     oscillation=undef,
     length_unit=undef,
@@ -186,8 +174,6 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     rayleigh_damping_alpha=undef,
     rayleigh_damping_beta=undef,
 ) {
-    assert(is_string(mesh));
-    assert(is_string(material));
     assert(is_string(boundary));
     assert(__os2cx_is_vector_3_with_unit(oscillation));
     assert(is_string(length_unit));
@@ -204,7 +190,6 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
 
     os2cx_analysis_custom([
         "*INCLUDE, INPUT=objects.inp",
-        ["*SOLID SECTION, Elset=", ["elset", mesh], ", Material=", material],
         "*BOUNDARY",
         [["nset", boundary], ",1,3"],
         "*STEP",
@@ -230,18 +215,24 @@ module os2cx_analysis_steady_state_dynamics_osc_boundary(
     ], unit_system=[length_unit, "kg", "s"]);
 }
 
-module os2cx_mesh(name, mesher="tetgen", max_element_size=undef) {
+module os2cx_mesh(
+    name,
+    mesher="tetgen",
+    max_element_size=undef,
+    material=undef
+) {
     assert(is_string(name));
     assert(is_string(mesher));
     assert(is_undef(max_element_size) ||
         (is_num(max_element_size) && max_element_size > 0));
+    assert(is_string(material));
     assert($children > 0);
 
     if (__openscad2calculix_mode == ["preview"]) {
         children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "mesh_directive",
-            name, mesher, max_element_size);
+            name, mesher, max_element_size, material);
     } else if (__openscad2calculix_mode == ["mesh", name]) {
         children();
     }
@@ -418,6 +409,19 @@ module os2cx_override_max_element_size(
     if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "override_max_element_size_directive",
             volume, max_element_size);
+    }
+}
+
+module os2cx_override_material(
+    volume, material
+) {
+    assert(is_string(volume));
+    assert(is_string(material));
+    assert($children == 0);
+
+    if (__openscad2calculix_mode == ["inventory"]) {
+        echo("__openscad2calculix", "override_material_directive",
+            volume, material);
     }
 }
 
