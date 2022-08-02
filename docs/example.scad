@@ -24,7 +24,7 @@ os2cx_material_elastic_simple(
 /* Declares a new mesh object in OS2CX. Its name will be "i_beam", and its shape
 comes from the the OpenSCAD i_beam() module we defined above. */
 os2cx_mesh("i_beam", material="steel") {
-  i_beam();
+    i_beam();
 }
 
 /* Declares two selection objects in OS2CX. A selection object refers to part of
