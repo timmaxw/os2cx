@@ -152,7 +152,8 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
             partial_mesh = mesher_tetgen(
                 *pair.second.plc,
                 max_element_size,
-                p->max_element_size_overrides
+                p->max_element_size_overrides,
+                pair.second.element_type
             );
             break;
         }
@@ -170,7 +171,7 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
                 *pair.second.plc,
                 max_element_size,
                 1,
-                ElementType::C3D20R
+                pair.second.element_type
             );
             break;
         }

@@ -683,6 +683,15 @@ Mesh3 mesher_naive_bricks(
     int min_subdivision,
     ElementType element_type
 ) {
+    if (element_type != ElementType::C3D8 &&
+            element_type != ElementType::C3D20 &&
+            element_type != ElementType::C3D20R &&
+            element_type != ElementType::C3D20RI
+    ) {
+        throw std::domain_error("naive_bricks mesher only supports "
+            "element_type C3D8, C3D20, C3D20R, or C3D20RI");
+    }
+
     std::map<double, std::vector<TriangleRef> >
         x_triangles, y_triangles, z_triangles;
     setup_grid(

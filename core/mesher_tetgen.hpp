@@ -14,7 +14,8 @@ public:
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
     MaxElementSize max_element_size_default,
-    const AttrOverrides<MaxElementSize> &max_element_size_overrides);
+    const AttrOverrides<MaxElementSize> &max_element_size_overrides,
+    ElementType element_type);
 
 } /* namespace os2cx */
 

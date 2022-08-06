@@ -254,7 +254,7 @@ void do_mesh_directive(
     Project *project,
     const std::vector<OpenscadValue> &args
 ) {
-    check_arg_count(args, 4, "mesh");
+    check_arg_count(args, 5, "mesh");
 
     Project::MeshObjectName name = check_name_new(args[0], "mesh", project);
 
@@ -263,8 +263,10 @@ void do_mesh_directive(
     std::string mesher_name = check_string(args[1]);
     if (mesher_name == "tetgen") {
         object.mesher = Project::MeshObject::Mesher::Tetgen;
+        object.element_type = ElementType::C3D10; /* default */
     } else if (mesher_name == "naive_bricks") {
         object.mesher = Project::MeshObject::Mesher::NaiveBricks;
+        object.element_type = ElementType::C3D20R; /* default */
     } else {
         throw UsageError("Invalid mesher name: '" + mesher_name +
             "'. Expected 'tetgen' or 'naive_bricks'.");
@@ -282,6 +284,15 @@ void do_mesh_directive(
     Project::MaterialObjectName material_name =
         check_name_existing(args[3], "material", project, "mesh");
     object.material = project->material_objects.at(material_name).id;
+
+    if (args[4].type != OpenscadValue::Type::Undefined) {
+        std::string element_type_name = check_string(args[4]);
+        try {
+            object.element_type = element_type_from_string(element_type_name);
+        } catch (const std::domain_error &) {
+            throw UsageError("unsupported element_type: " + element_type_name);
+        }
+    }
 
     project->mesh_objects.insert(std::make_pair(name, object));
 }

@@ -104,6 +104,8 @@ public:
 
         MaterialId material;
 
+        ElementType element_type;
+
         std::shared_ptr<const Poly3> solid;
         std::shared_ptr<const Plc3> plc;
 

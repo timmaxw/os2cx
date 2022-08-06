@@ -219,20 +219,22 @@ module os2cx_mesh(
     name,
     mesher="tetgen",
     max_element_size=undef,
-    material=undef
+    material=undef,
+    element_type=undef,
 ) {
     assert(is_string(name));
     assert(is_string(mesher));
     assert(is_undef(max_element_size) ||
         (is_num(max_element_size) && max_element_size > 0));
     assert(is_string(material));
+    assert(is_undef(element_type) || is_string(element_type));
     assert($children > 0);
 
     if (__openscad2calculix_mode == ["preview"]) {
         children();
     } else if (__openscad2calculix_mode == ["inventory"]) {
         echo("__openscad2calculix", "mesh_directive",
-            name, mesher, max_element_size, material);
+            name, mesher, max_element_size, material, element_type);
     } else if (__openscad2calculix_mode == ["mesh", name]) {
         children();
     }

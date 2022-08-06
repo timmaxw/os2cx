@@ -26,6 +26,7 @@ SOURCES = $$CORE_SOURCES \
 
 DISTFILES += \
     max_element_size_test.scad \
+    mesher_element_type_test.scad \
     multi_material_test.scad \
     slice_test.scad \
     steady_state_dynamics_test.scad \

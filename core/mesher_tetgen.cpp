@@ -207,7 +207,8 @@ void transfer_attrs(const Plc3 &plc, Mesh3 *mesh) {
 Mesh3 mesher_tetgen(
     const Plc3 &plc,
     MaxElementSize max_element_size_default,
-    const AttrOverrides<MaxElementSize> &max_element_size_overrides
+    const AttrOverrides<MaxElementSize> &max_element_size_overrides,
+    ElementType element_type
 ) {
     tetgenio tetgen_input;
     convert_input(
@@ -230,8 +231,16 @@ Mesh3 mesher_tetgen(
     flags += "p";
     flags += "q1.414";
     flags += "S" + std::to_string(max_steiner_points);
-    flags += "o2";
     flags += "Q";
+
+    if (element_type == ElementType::C3D4) {
+        (void)0;
+    } else if (element_type == ElementType::C3D10) {
+        flags += "o2";
+    } else {
+        throw TetgenError(
+            "tetgen mesher only supports element_type C3D4 or C3D10");
+    }
 
     tetgenio tetgen_output;
     try {
