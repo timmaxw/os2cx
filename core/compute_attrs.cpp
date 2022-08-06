@@ -359,12 +359,20 @@ ConcentratedLoad compute_load_from_face_set(
     for (FaceId face_id : face_set.faces) {
         const Element3 &element = mesh.elements[face_id.element_id];
         int num_nodes = element.num_nodes();
+        /* Note: For second-order rectangular faces, some oriented areas may
+        point in the opposite direction of the overall face! */
         Vector areas_for_nodes[ElementTypeShape::max_vertices_per_element];
         mesh.oriented_areas_for_nodes(element, face_id.face, areas_for_nodes);
+        Vector face_oriented_area = Vector::zero();
         for (int i = 0; i < num_nodes; ++i) {
-            total_area += areas_for_nodes[i].magnitude();
+            face_oriented_area += areas_for_nodes[i];
+        }
+        double face_area = face_oriented_area.magnitude();
+        total_area += face_area;
+        for (int i = 0; i < num_nodes; ++i) {
             load.loads[element.nodes[i]].force +=
-                areas_for_nodes[i].magnitude() * force_total_or_per_area;
+                areas_for_nodes[i].dot(face_oriented_area) / face_area
+                    * force_total_or_per_area;
         }
     }
     if (!force_is_per_area && total_area != 0) {

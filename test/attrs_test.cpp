@@ -1,20 +1,20 @@
 #include <gtest/gtest.h>
 
 #include "compute_attrs.hpp"
+#include "mesher_naive_bricks.hpp"
 #include "mesher_tetgen.hpp"
 #include "plc_nef_to_plc.hpp"
 
 namespace os2cx {
 
-TEST(AttrsTest, LoadVolume) {
+void do_load_volume_test(const std::function<Mesh3(const Plc3 &)> &mesher) {
     PlcNef3 solid_nef =
         compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
     AttrBitIndex bit_index_mask = attr_bit_solid() + 1;
     compute_plc_nef_select_volume(
         &solid_nef, Poly3::from_box(Box(0, 0, 1, 1, 1, 3)), bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
-    Mesh3 mesh = mesher_tetgen(
-        plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D10);
+    Mesh3 mesh = mesher(plc);
     ElementSet element_set = compute_element_set_from_attr_bit(
         mesh,
         mesh.elements.key_begin(),
@@ -35,7 +35,42 @@ TEST(AttrsTest, LoadVolume) {
     EXPECT_NEAR(expected_force, actual_force, 1e-6);
 }
 
-TEST(AttrsTest, LoadSurface) {
+TEST(AttrsTest, LoadVolumeC3D4) {
+    do_load_volume_test([](const Plc3 &plc) {
+        return mesher_tetgen(
+            plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D4);
+    });
+}
+
+TEST(AttrsTest, LoadVolumeC3D10) {
+    do_load_volume_test([](const Plc3 &plc) {
+        return mesher_tetgen(
+            plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D10);
+    });
+}
+
+TEST(AttrsTest, LoadVolumeC3D8) {
+    do_load_volume_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D8);
+    });
+}
+
+TEST(AttrsTest, LoadVolumeC3D20) {
+    do_load_volume_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D20);
+    });
+}
+
+TEST(AttrsTest, LoadVolumeC3D20R) {
+    do_load_volume_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D20R);
+    });
+}
+
+void do_load_surface_test(const std::function<Mesh3(const Plc3 &)> &mesher) {
     PlcNef3 solid_nef =
         compute_plc_nef_for_solid(Poly3::from_box(Box(0, 0, 0, 1, 1, 2)));
     AttrBitIndex bit_index_mask = attr_bit_solid() + 1;
@@ -46,8 +81,7 @@ TEST(AttrsTest, LoadSurface) {
         180,
         bit_index_mask);
     Plc3 plc = plc_nef_to_plc(solid_nef);
-    Mesh3 mesh = mesher_tetgen(
-        plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D10);
+    Mesh3 mesh = mesher(plc);
     FaceSet face_set = compute_face_set_from_attr_bit(
         mesh,
         mesh.elements.key_begin(),
@@ -69,6 +103,41 @@ TEST(AttrsTest, LoadSurface) {
     double expected_force = force_per_area.x * area;
     double actual_force = total_force.x;
     EXPECT_NEAR(expected_force, actual_force, 1e-6);
+}
+
+TEST(AttrsTest, LoadSurfaceC3D4) {
+    do_load_surface_test([](const Plc3 &plc) {
+        return mesher_tetgen(
+            plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D4);
+    });
+}
+
+TEST(AttrsTest, LoadSurfaceC3D10) {
+    do_load_surface_test([](const Plc3 &plc) {
+        return mesher_tetgen(
+            plc, 0.5, AttrOverrides<MaxElementSize>(), ElementType::C3D10);
+    });
+}
+
+TEST(AttrsTest, LoadSurfaceC3D8) {
+    do_load_surface_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D8);
+    });
+}
+
+TEST(AttrsTest, LoadSurfaceC3D20) {
+    do_load_surface_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D20);
+    });
+}
+
+TEST(AttrsTest, LoadSurfaceC3D20R) {
+    do_load_surface_test([](const Plc3 &plc) {
+        return mesher_naive_bricks(
+            plc, 0.5, 1, ElementType::C3D20R);
+    });
 }
 
 TEST(AttrsTest, ComputeSlice) {
