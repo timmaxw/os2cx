@@ -44,6 +44,9 @@ Unit unit_lbf() {
 Unit unit_Pa() {
     return Unit("Pa", UnitType::Pressure, 1, Unit::Metric);
 }
+Unit unit_psi() {
+    return Unit("psi", UnitType::Pressure, 6894.757, Unit::Imperial);
+}
 Unit unit_L() {
     return Unit("L", UnitType::Volume, 1e-3, Unit::Metric);
 }
@@ -164,7 +167,7 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
 
     case UnitType::Mass:
         if (parse_unit_si_prefixed(name, unit_g(), &output)) return output;
-        if (name == "lbm") return unit_lbm();
+        if (name == "lbm" || name == "lb") return unit_lbm();
         throw UnitParseError("'" + name + "' is not a valid mass unit. " \
             "Valid mass units are 'g' (with optional prefix) or 'lbm'.");
 
@@ -199,7 +202,7 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
 
     case UnitType::Force:
         if (parse_unit_si_prefixed(name, unit_N(), &output)) return output;
-        if (name == "lbf") return unit_lbf();
+        if (name == "lbf" || name == "lb") return unit_lbf();
         throw UnitParseError("'" + name + "' is not a valid force unit. " \
             "Valid force units are 'N' (with optional prefix) or 'lbf'.");
 
@@ -222,8 +225,9 @@ Unit Unit::from_name(UnitType type, const std::string &name) {
                 UnitType::Area,
                 UnitType::Pressure,
                 &output)) return output;
+        if (name == "psi") return unit_psi();
         throw UnitParseError("'" + name + "' is not a valid pressure unit. " \
-            "Valid pressure units are 'Pa' (with optional prefix), or " \
+            "Valid pressure units are 'Pa' (with optional prefix), 'psi', or " \
             "units of the form '<force>/<length>^2'.");
 
     case UnitType::Volume:
@@ -403,10 +407,7 @@ Unit UnitSystem::suggest_unit(
         if (style == Unit::Metric) {
             return suggest_unit_si_prefixed(unit_Pa(), si_value_for_scale);
         } else {
-            return unit_ratio(
-                unit_lbf(),
-                unit_power(unit_in(), 2, UnitType::Area),
-                UnitType::Pressure);
+            return unit_psi();
         }
     case UnitType::Volume:
         return unit_power(length_unit, 3, UnitType::Volume);
