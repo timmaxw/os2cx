@@ -22,18 +22,7 @@ public:
         const Results::Result *result);
 
 private:
-    enum class SubVariable {
-        ScalarValue,
-        VectorMagnitude, VectorX, VectorY, VectorZ,
-        ComplexVectorMagnitude,
-        MatrixVonMisesStress,
-        MatrixXX, MatrixYY, MatrixZZ, MatrixXY, MatrixYZ, MatrixZX
-    };
 
-    static double subvariable_value(
-        const Results::Dataset &dataset,
-        SubVariable subvar,
-        NodeId node_id);
 
     /* All the steps have the same datasets, so we often use the first step as
     a "prototypical step" to see which datasets exist. */

@@ -2,6 +2,41 @@
 
 namespace os2cx {
 
+double Results::Dataset::subvariable_value(
+    SubVariable subvar,
+    NodeId node_id
+) const {
+    switch (subvar) {
+    case SubVariable::ScalarValue:
+        return (*node_scalar)[node_id];
+    case SubVariable::VectorMagnitude:
+        return (*node_vector)[node_id].magnitude();
+    case SubVariable::VectorX:
+        return (*node_vector)[node_id].x;
+    case SubVariable::VectorY:
+        return (*node_vector)[node_id].y;
+    case SubVariable::VectorZ:
+        return (*node_vector)[node_id].z;
+    case SubVariable::ComplexVectorMagnitude:
+        return (*node_complex_vector)[node_id].magnitude();
+    case SubVariable::MatrixVonMisesStress:
+        return von_mises_stress((*node_matrix)[node_id]);
+    case SubVariable::MatrixXX:
+        return (*node_matrix)[node_id].cols[0].x;
+    case SubVariable::MatrixYY:
+        return (*node_matrix)[node_id].cols[1].y;
+    case SubVariable::MatrixZZ:
+        return (*node_matrix)[node_id].cols[2].z;
+    case SubVariable::MatrixXY:
+        return (*node_matrix)[node_id].cols[0].y;
+    case SubVariable::MatrixYZ:
+        return (*node_matrix)[node_id].cols[1].z;
+    case SubVariable::MatrixZX:
+        return (*node_matrix)[node_id].cols[2].x;
+    default: assert(false);
+    }
+}
+
 void result_var_from_frd_analysis(
     const FrdAnalysis &fa,
     std::map<std::string, Results::Dataset> *datasets

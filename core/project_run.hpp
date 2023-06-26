@@ -16,7 +16,10 @@ ProjectInterruptedException to cancel the computation. */
 
 class ProjectRunCallbacks {
 public:
-    virtual void project_run_log(const std::string &) { }
+    virtual void project_run_log(const std::string &msg) {
+        std::cerr << msg << std::endl;
+    }
+
     virtual void project_run_checkpoint() { }
 };
 

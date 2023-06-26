@@ -11,6 +11,14 @@
 
 namespace os2cx {
 
+enum class SubVariable {
+    ScalarValue,
+    VectorMagnitude, VectorX, VectorY, VectorZ,
+    ComplexVectorMagnitude,
+    MatrixVonMisesStress,
+    MatrixXX, MatrixYY, MatrixZZ, MatrixXY, MatrixYZ, MatrixZX
+};
+
 class Results {
 public:
     class Dataset {
@@ -36,6 +44,11 @@ public:
         std::unique_ptr<ContiguousMap<NodeId, ComplexVector> >
             node_complex_vector;
         std::unique_ptr<ContiguousMap<NodeId, Matrix> > node_matrix;
+
+        double subvariable_value(
+            SubVariable subvar,
+            NodeId node_id
+        ) const;
     };
 
     class Result {

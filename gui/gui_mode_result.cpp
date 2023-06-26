@@ -50,42 +50,6 @@ GuiModeResult::GuiModeResult(
     maybe_setup_measurements();
 }
 
-double GuiModeResult::subvariable_value(
-    const Results::Dataset &dataset,
-    SubVariable subvar,
-    NodeId node_id
-) {
-    switch (subvar) {
-    case SubVariable::ScalarValue:
-        return (*dataset.node_scalar)[node_id];
-    case SubVariable::VectorMagnitude:
-        return (*dataset.node_vector)[node_id].magnitude();
-    case SubVariable::VectorX:
-        return (*dataset.node_vector)[node_id].x;
-    case SubVariable::VectorY:
-        return (*dataset.node_vector)[node_id].y;
-    case SubVariable::VectorZ:
-        return (*dataset.node_vector)[node_id].z;
-    case SubVariable::ComplexVectorMagnitude:
-        return (*dataset.node_complex_vector)[node_id].magnitude();
-    case SubVariable::MatrixVonMisesStress:
-        return von_mises_stress((*dataset.node_matrix)[node_id]);
-    case SubVariable::MatrixXX:
-        return (*dataset.node_matrix)[node_id].cols[0].x;
-    case SubVariable::MatrixYY:
-        return (*dataset.node_matrix)[node_id].cols[1].y;
-    case SubVariable::MatrixZZ:
-        return (*dataset.node_matrix)[node_id].cols[2].z;
-    case SubVariable::MatrixXY:
-        return (*dataset.node_matrix)[node_id].cols[0].y;
-    case SubVariable::MatrixYZ:
-        return (*dataset.node_matrix)[node_id].cols[1].z;
-    case SubVariable::MatrixZX:
-        return (*dataset.node_matrix)[node_id].cols[2].x;
-    default: assert(false);
-    }
-}
-
 void GuiModeResult::maybe_setup_frequency() {
     if (result->type != Results::Result::Type::Eigenmode &&
             result->type != Results::Result::Type::ModalDynamic) {
@@ -363,7 +327,7 @@ void GuiModeResult::set_color_subvariable(SubVariable new_subvar) {
     for (const Results::Result::Step &step : result->steps) {
         const Results::Dataset &dataset = step.datasets.at(color_variable);
         for (NodeId ni = dataset.node_begin(); ni != dataset.node_end(); ++ni) {
-            double datum = subvariable_value(dataset, color_subvariable, ni);
+            double datum = dataset.subvariable_value(color_subvariable, ni);
             if (!isnan(datum)) {
                 min_datum = std::min(min_datum, datum);
                 max_datum = std::max(max_datum, datum);
@@ -427,53 +391,7 @@ void GuiModeResult::refresh_measurements() {
         measurement_table->setItem(row, 0, new QTableWidgetItem(
             QString(measure_pair.first.c_str())));
 
-        double max_datum;
-        auto dataset_it = step.datasets.find(measure_pair.second.dataset);
-        if (dataset_it == step.datasets.end()) {
-            max_datum = NAN;
-        } else {
-            max_datum = 0;
-            const Results::Dataset &dataset = dataset_it->second;
-            SubVariable measure_subvariable;
-            if (dataset.node_scalar) {
-                measure_subvariable = SubVariable::ScalarValue;
-            } else if (dataset.node_vector) {
-                measure_subvariable = SubVariable::VectorMagnitude;
-            } else if (dataset.node_complex_vector) {
-                measure_subvariable = SubVariable::ComplexVectorMagnitude;
-            } else if (dataset.node_matrix) {
-                measure_subvariable = SubVariable::MatrixVonMisesStress;
-            } else {
-                assert(false);
-            }
-
-            std::string subject = measure_pair.second.subject;
-            std::shared_ptr<const NodeSet> node_set;
-            const Project::VolumeObject *volume;
-            const Project::SurfaceObject *surface;
-            const Project::NodeObject *node;
-            if ((volume = project->find_volume_object(subject))) {
-                node_set = volume->node_set;
-            } else if ((surface = project->find_surface_object(subject))) {
-                node_set = surface->node_set;
-            } else if ((node = project->find_node_object(subject))) {
-                node_set.reset(new NodeSet(
-                    compute_node_set_singleton(node->node_id)));
-            }
-
-            for (NodeId node_id : node_set->nodes) {
-                double datum = subvariable_value(
-                    dataset,
-                    measure_subvariable,
-                    node_id);
-                if (isnan(datum)) {
-                    max_datum = NAN;
-                    break;
-                } else {
-                    max_datum = std::max(datum, max_datum);
-                }
-            }
-        }
+        double max_datum = measure_pair.second.measure(*project, step);
 
         if (isnan(max_datum)) {
             measurement_table->setItem(row, 1, new QTableWidgetItem(tr("N/A")));
@@ -531,8 +449,8 @@ void GuiModeResult::calculate_face_attributes(
         *displacement_out = ComplexVector::zero();
     }
 
-    double color_datum = subvariable_value(
-        step.datasets.at(color_variable), color_subvariable, node_id);
+    double color_datum = step.datasets.at(color_variable)
+        .subvariable_value(color_subvariable, node_id);
     if (isnan(color_datum)) {
         *color_out = QColor(30, 30, 30);
     } else {

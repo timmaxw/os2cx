@@ -5,6 +5,7 @@
 #include <string>
 
 #include "compute_attrs.hpp"
+#include "measure.hpp"
 #include "mesh.hpp"
 #include "mesh_index.hpp"
 #include "openscad_value.hpp"
@@ -219,13 +220,7 @@ public:
 
     std::map<MaterialObjectName, MaterialObject> material_objects;
 
-    class MeasureObject {
-    public:
-        std::string subject; /* volume, surface, or node object */
-        std::string dataset;
-    };
-
-    std::map<MeasureObjectName, MeasureObject> measure_objects;
+    std::map<MeasureObjectName, Measure> measure_objects;
 
     std::shared_ptr<const Results> results;
 

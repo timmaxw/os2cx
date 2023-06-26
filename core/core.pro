@@ -28,6 +28,7 @@ SOURCES += \
     calculix_inp_read.cpp \
     calculix_inp_write.cpp \
     calculix_run.cpp \
+    measure.cpp \
     mesh.cpp \
     mesher_tetgen.cpp \
     mesh_index.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     calculix_inp_read.hpp \
     calculix_inp_write.hpp \
     calculix_run.hpp \
+    measure.hpp \
     mesh.hpp \
     mesher_tetgen.hpp \
     mesh_index.hpp \
