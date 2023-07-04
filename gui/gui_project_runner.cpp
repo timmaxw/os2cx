@@ -24,6 +24,7 @@ void GuiProjectRunnerWorkerThread::run() {
 
 /* project_run() calls project_run_log() on the worker thread. */
 void GuiProjectRunnerWorkerThread::project_run_log(const std::string &msg) {
+    std::cerr << msg << std::endl;
     emit log_signal(QString::fromStdString(msg));
 }
 

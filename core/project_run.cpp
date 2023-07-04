@@ -13,7 +13,7 @@
 
 namespace os2cx {
 
-void project_run(Project *p, ProjectRunCallbacks *callbacks) {
+void project_run_inner(Project *p, ProjectRunCallbacks *callbacks) {
     /* If scad_path="/foo/bar.scad", then project_name="bar" */
     p->project_name = p->scad_path;
     int last_slash_pos = p->project_name.rfind("/");
@@ -406,6 +406,16 @@ void project_run(Project *p, ProjectRunCallbacks *callbacks) {
     p->results.reset(new Results(std::move(results)));
     p->progress = Project::Progress::ResultsDone;
     callbacks->project_run_log("Done.");
+}
+
+void project_run(Project *p, ProjectRunCallbacks *callbacks) {
+    try {
+        project_run_inner(p, callbacks);
+    } catch (const std::exception &error) {
+        callbacks->project_run_log("Internal exception: ");
+        callbacks->project_run_log(error.what());
+        p->errored = true;
+    }
 }
 
 } /* namespace os2cx */
