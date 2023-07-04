@@ -45,8 +45,8 @@ public:
 
 inline std::ostream &operator<<(std::ostream &stream, PlcNef3Mark marks) {
     stream << '[';
+    bool is_first = true;
     for (int i = 0; i < num_attr_bits; ++i) {
-        bool is_first = true;
         if (marks.attrs[i]) {
             if (is_first) is_first = false;
             else stream << ' ';

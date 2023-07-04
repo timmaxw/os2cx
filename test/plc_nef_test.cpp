@@ -33,6 +33,30 @@ TEST(PlcNefTest, FromPoly) {
     EXPECT_EQ(attrs_zero(), region_u.get_attrs(point_outside));
 }
 
+TEST(PlcNefTest, MultiPart) {
+    PlcNef3 two_boxes = PlcNef3::from_poly(Poly3::from_boxes(
+        {Box(0, 0, 0, 1, 1, 1), Box(2, 0, 0, 3, 1, 1)},
+        {false, false}
+    ));
+
+    EXPECT_EQ(attrs_one(), two_boxes.get_attrs(Point(0.5, 0.5, 0.5)));
+    EXPECT_EQ(attrs_zero(), two_boxes.get_attrs(Point(1.5, 0.5, 0.5)));
+    EXPECT_EQ(attrs_one(), two_boxes.get_attrs(Point(2.5, 0.5, 0.5)));
+    EXPECT_EQ(attrs_zero(), two_boxes.get_attrs(Point(3.5, 0.5, 0.5)));
+}
+
+TEST(PlcNefTest, Hole) {
+    PlcNef3 box_with_hole = PlcNef3::from_poly(Poly3::from_boxes(
+        {Box(0, 0, 0, 3, 3, 3), Box(1, 1, 1, 2, 2, 2)},
+        {false, true}
+    ));
+
+    EXPECT_EQ(attrs_one(), box_with_hole.get_attrs(Point(0.5, 0.5, 0.5)));
+    EXPECT_EQ(attrs_zero(), box_with_hole.get_attrs(Point(1.5, 1.5, 1.5)));
+    EXPECT_EQ(attrs_one(), box_with_hole.get_attrs(Point(2.5, 2.5, 2.5)));
+    EXPECT_EQ(attrs_zero(), box_with_hole.get_attrs(Point(3.5, 3.5, 3.5)));
+}
+
 TEST(PlcNefTest, Map) {
     AttrBitset attrs_volume, attrs_face, attrs_edge, attrs_vertex;
     attrs_volume.set(0);

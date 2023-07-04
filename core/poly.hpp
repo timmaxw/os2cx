@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "calc.hpp"
 
@@ -16,12 +17,20 @@ size that's good for simulation. */
 
 /* Poly3 is internally implemented as a CGAL::Polyhedron_3, but CGAL headers
 take a long time to compile, so the implementation is hidden in Poly3Internal.
-*/
+All of the facets are guaranteed to be triangles. */
 class Poly3Internal;
 
 class Poly3 {
 public:
+    /* Creates a box-shaped polyhedron. Mostly for testing. */
     static Poly3 from_box(const Box &box);
+
+    /* Creates a polyhedron from several box-shaped regions. "invert" must have
+    the same length as "boxes"; if "invert[i]" is true, then "boxes[i]" will be
+    treated as a hole. The boxes must not overlap, unless invert[i]=true, in
+    which case that box must be entirely contained within another box. This is
+    for testing handling of more complex polyhedra. */
+    static Poly3 from_boxes(const std::vector<Box> &boxes, const std::vector<bool> &invert);
 
     Poly3();
     Poly3(Poly3 &&other);

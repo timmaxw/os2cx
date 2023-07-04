@@ -93,7 +93,7 @@ TEST(UnitsTest, SuggestUnit) {
     expect_suggestion(imperial_system, UnitType::ForcePerVolume, 1.0, "lbf/in^3");
 
     expect_suggestion(metric_system, UnitType::Pressure, 1.0, "Pa");
-    expect_suggestion(imperial_system, UnitType::Pressure, 1.0, "lbf/in^2");
+    expect_suggestion(imperial_system, UnitType::Pressure, 1.0, "psi");
 
     expect_suggestion(metric_system, UnitType::Volume, 1.0, "m^3");
     expect_suggestion(imperial_system, UnitType::Volume, 1.0, "in^3");

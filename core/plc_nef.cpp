@@ -1,5 +1,9 @@
 #include "plc_nef.internal.hpp"
 
+#include <CGAL/Nef_nary_union_3.h>
+#include <CGAL/Polygon_mesh_processing/connected_components.h>
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+
 #include "poly.internal.hpp"
 
 namespace os2cx {
@@ -24,12 +28,34 @@ PlcNef3 PlcNef3::empty() {
 }
 
 PlcNef3 PlcNef3::from_poly(const Poly3 &poly) {
-    /* TODO: this doesn't work for polyhedra with multiple parts or internal
-    holes */
     CGAL::Polyhedron_3<KE> poly_exact;
     convert_polyhedron(poly.i->p, &poly_exact);
+
+    assert(poly_exact.is_valid());
+    assert(poly_exact.is_closed());
+    assert(poly_exact.is_pure_triangle());
+
+    /* Both CGAL::Polyhedron_3 and CGAL::Nef_polyhedron_3 can represent complex
+    shapes, including internal holes. However, the CGAL function that converts
+    between them doesn't correctly handle internal holes. So we split the
+    CGAL::Polyhedron_3 into its components; detect which components represent
+    the boundaries of a hole; and then subtract the holes at the end. */
+    std::vector<CGAL::Polyhedron_3<KE> > poly_components;
+    CGAL::Polygon_mesh_processing::split_connected_components(
+        poly_exact, poly_components);
+    CGAL::Nef_nary_union_3<CgalNef3Plc> nef_components, nef_hole_components;
+    for (CGAL::Polyhedron_3<KE> &component : poly_components) {
+        if (CGAL::Polygon_mesh_processing::is_outward_oriented(component)) {
+            nef_components.add_polyhedron(CgalNef3Plc(component));
+        } else {
+            nef_hole_components.add_polyhedron(CgalNef3Plc(component));
+        }
+    }
+
     PlcNef3 poly_bits;
-    poly_bits.i.reset(new PlcNef3Internal(poly_exact));
+    poly_bits.i.reset(new PlcNef3Internal(
+        nef_components.get_union().difference(
+            nef_hole_components.get_union())));
     return poly_bits;
 }
 
