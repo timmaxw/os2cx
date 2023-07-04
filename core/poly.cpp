@@ -1,5 +1,6 @@
 #include "poly.internal.hpp"
 
+#include <CGAL/Polygon_mesh_processing/repair_degeneracies.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 namespace os2cx {
@@ -85,6 +86,8 @@ Poly3 read_poly3_off(std::istream &stream) {
     if (!CGAL::Polygon_mesh_processing::triangulate_faces(poly3.i->p)) {
         throw PolyIoError("OFF file cannot triangulate faces");
     }
+
+    CGAL::Polygon_mesh_processing::remove_degenerate_faces(poly3.i->p);
 
     return poly3;
 }
