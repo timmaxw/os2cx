@@ -102,9 +102,7 @@ approximately 3.50 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 
-OS2CX has been tested on Linux (Ubuntu 22.04). The dependencies are all
-cross-platform, so in principle it should be easy to get it working on other
-operating systems, but no guarantees.
+Currently, the only way to install OS2CX is to compile it from source. (Sorry!)
 
 Dependencies:
 * OpenSCAD 2021.01 (`sudo apt install openscad`)
@@ -114,6 +112,10 @@ Dependencies:
 * tetgen 1.5.0 (as a library, not an executable)
   (`sudo apt install libtet1.5-dev`)
 * Google Test (`sudo apt-get install libgtest-dev`)
+
+OS2CX has been tested on Linux (Ubuntu 22.04). The dependencies are all
+cross-platform, so in principle it should be easy to get it working on other
+operating systems, but no guarantees.
 
 Development notes:
 * I develop OS2CX using Qt Creator.
