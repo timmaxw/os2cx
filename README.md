@@ -102,7 +102,7 @@ approximately 3.50 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 
-Currently, the only way to install OS2CX is to compile it from source. (Sorry!)
+Currently, the only way to install OS2CX is to compile it from source. (Sorry!) You'll need either Qt Creator (graphical IDE) or QMake (command-line tool) to compile it.
 
 Dependencies:
 * OpenSCAD 2021.01 (`sudo apt install openscad`)
