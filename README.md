@@ -102,20 +102,36 @@ approximately 3.50 millimeters. Theory predicts 3.48 millimeters; not bad!
 
 # Installing and running
 
-Currently, the only way to install OS2CX is to compile it from source. (Sorry!) You'll need either Qt Creator (graphical IDE) or QMake (command-line tool) to compile it.
+## Prebuilt releases (Linux only)
+
+On Linux, OS2CX is available as a prebuilt AppImage:
+1. Download `OpenSCAD2CalculiX-*.AppImage` from https://github.com/timmaxw/os2cx/releases/tag/latest
+2. Make the file executable with `chmod a+x OpenSCAD2CalculiX-*.AppImage`
+3. Run `./OpenSCAD2CalculiX-*.AppImage`
+
+## Compiling from source
+
+Alternatively, you can compile OS2CX from source.
+
+OS2CX has only been tested on Ubuntu 22.04. The dependencies are all
+cross-platform, so in principle it should be easy to get it working on other
+operating systems, but no guarantees.
 
 Dependencies:
 * OpenSCAD 2021.01 (`sudo apt install openscad`)
 * CalculiX 2.17 (`sudo apt install calculix-ccx`)
-* Qt 5.15
+* Qt 5.15 (`sudo apt install qtbase5-dev`)
 * CGAL 5.4 (`sudo apt install libcgal-dev`)
 * tetgen 1.5.0 (as a library, not an executable)
   (`sudo apt install libtet1.5-dev`)
 * Google Test (`sudo apt-get install libgtest-dev`)
 
-OS2CX has been tested on Linux (Ubuntu 22.04). The dependencies are all
-cross-platform, so in principle it should be easy to get it working on other
-operating systems, but no guarantees.
+Build instructions:
+```
+$ qmake
+$ make -j$(nproc)
+$ ./gui/OpenSCAD2CalculiX
+```
 
 Development notes:
 * I develop OS2CX using Qt Creator.
@@ -124,4 +140,5 @@ Development notes:
   application, and a `test` project that defines tests for `core`.
 * Only `gui` makes significant use of Qt. `core` and `test` use nothing from Qt
   except QProcess.
-* The test executable must be executed in the toplevel `os2cx/` directory.
+* You can run the tests with `./test/test`. The test executable must be executed
+  in the toplevel `os2cx/` directory.
