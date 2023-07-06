@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout
+      uses: actions/checkout@v3.5.3
+    
+    - name: Install dependencies
+      uses: awalsh128/cache-apt-pkgs-action@v1.3
+      with:
+        packages: |
+          build-essentials
+          openscad==2021.01
+          calculix-ccx==2.17
+          qtbase5-dev==5.15
+          libcgal-dev==5.4
+          libtet1.5-dev==1.5
+          libgtest-dev==1.11
+    
+    - name: Compile
+      run: |
+        qmake
+        make -j $(nproc)
+    
+    - name: Test
+      run: test/test
