@@ -24,6 +24,11 @@ jobs:
           libtet1.5-dev=1.5*
           libgtest-dev=1.11*
 
+    - name: Install linuxdeploy
+      uses: miurahr/install-linuxdeploy-action@v1
+      with:
+        plugins: qt appimage
+
     - name: Use ccache
       uses: hendrikmuhs/ccache-action@v1
 
@@ -34,3 +39,20 @@ jobs:
     
     - name: Test
       run: test/test
+
+    - name: Build AppImage
+      run: |
+        linuxdeploy-x86_64.AppImage \
+          --appdir AppDir \
+          --executable gui/OpenSCAD2CalculiX \
+          --icon-file gui/OpenSCAD2CalculiX.png \
+          --desktop-file gui/OpenSCAD2CalculiX.desktop \
+          --plugin=qt \
+          --output=appimage
+    
+    - uses: actions/upload-artifact@v3
+      with:
+        name: OpenSCAD2CalculiX-x86_64.AppImage
+        path: "*.AppImage"
+        if-no-files-found: error
+        
