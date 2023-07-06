@@ -47,14 +47,14 @@ jobs:
 
     - name: Build AppImage
       run: |
-        export APPIMAGE_EXTRACT_AND_RUN=1 \
+        export APPIMAGE_EXTRACT_AND_RUN=1
         linuxdeploy-x86_64.AppImage \
           --appdir AppDir \
           --executable gui/OpenSCAD2CalculiX \
           --icon-file gui/OpenSCAD2CalculiX.png \
           --desktop-file gui/OpenSCAD2CalculiX.desktop \
           --plugin=qt \
-          --output=appimage \
+          --output=appimage
         mv OpenSCAD2CalculiX*.AppImage OpenSCAD2CalculiX-x86_64.AppImage
           
     - uses: actions/upload-artifact@v3
