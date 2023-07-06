@@ -11,6 +11,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3.5.3
     
+    - name: Use ccache
+      uses: hendrikmuhs/ccache-action@v1
+    
     - name: Install dependencies
       uses: awalsh128/cache-apt-pkgs-action@v1
       with:
@@ -26,7 +29,7 @@ jobs:
     - name: Compile
       run: |
         qmake
-        make -j $(nproc)
+        make -j $(nproc) CC="ccache gcc" CXX="ccache g++" 
     
     - name: Test
       run: test/test
