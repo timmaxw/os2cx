@@ -16,6 +16,8 @@ GuiMainWindow::GuiMainWindow(const std::string &scad_path_) :
     scad_path(scad_path_),
     current_mode(nullptr)
 {
+    setWindowTitle(scad_path_.c_str());
+
     QMenu *file_menu = menuBar()->addMenu(tr("File"));
     file_menu->addAction(tr("Open"),
         this, &GuiMainWindow::menu_file_open,

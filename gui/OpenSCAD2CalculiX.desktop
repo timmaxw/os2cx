@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=OpenSCAD2CalculiX
+Exec=OpenSCAD2CalculiX %f
+Icon=OpenSCAD2CalculiX
+MimeType=application/x-openscad;
+Categories=Engineering;
+

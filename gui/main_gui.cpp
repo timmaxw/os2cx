@@ -6,6 +6,7 @@
 int main(int argc, char *argv[])
 {
     QApplication application(argc, argv);
+    application.setWindowIcon(QIcon(":/OpenSCAD2CalculiX.png"));
 
     std::string scad_path;
     if (argc == 1) {

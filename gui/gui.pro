@@ -33,3 +33,11 @@ SOURCES = $$CORE_SOURCES \
     gui_opengl_mesh.cpp \
     gui_opengl_poly3.cpp \
     gui_mode_inspect.cpp
+
+DISTFILES += \
+    OpenSCAD2CalculiX.desktop \
+    OpenSCAD2CalculiX.png
+
+resources.files = OpenSCAD2CalculiX.png
+resources.prefix = /
+RESOURCES = resources
