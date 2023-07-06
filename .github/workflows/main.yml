@@ -55,6 +55,7 @@ jobs:
           --desktop-file gui/OpenSCAD2CalculiX.desktop \
           --plugin=qt \
           --output=appimage
+        mv OpenSCAD2CalculiX-*-x86_64.AppImage OpenSCAD2CalculiX-latest-x86_64.AppImage
 
     - name: Tag latest
       uses: richardsimko/update-tag@v1
@@ -67,4 +68,4 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: latest
-        files: OpenSCAD2CalculiX*.AppImage
+        files: OpenSCAD2CalculiX-latest-x86_64.AppImage
