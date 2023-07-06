@@ -55,9 +55,9 @@ jobs:
           --desktop-file gui/OpenSCAD2CalculiX.desktop \
           --plugin=qt \
           --output=appimage
-        mv OpenSCAD2CalculiX*.AppImage OpenSCAD2CalculiX-x86_64.AppImage
-          
-    - uses: actions/upload-artifact@v3
+
+    - name: Release latest
+      uses: softprops/action-gh-release@v1
       with:
-        name: OpenSCAD2CalculiX-x86_64.AppImage
-        path: OpenSCAD2CalculiX-x86_64.AppImage        
+        name: Latest
+        files: OpenSCAD2CalculiX*.AppImage
