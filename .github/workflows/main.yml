@@ -15,7 +15,7 @@ jobs:
       uses: awalsh128/cache-apt-pkgs-action@v1
       with:
         packages: |
-          build-essentials
+          build-essential
           openscad==2021.01
           calculix-ccx==2.17
           qtbase5-dev==5.15
