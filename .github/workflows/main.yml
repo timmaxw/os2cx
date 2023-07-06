@@ -56,6 +56,13 @@ jobs:
           --plugin=qt \
           --output=appimage
 
+    - name: Tag latest
+      uses: richardsimko/update-tag@v1
+      with:
+        tag_name: latest
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
     - name: Release latest
       uses: softprops/action-gh-release@v1
       with:
