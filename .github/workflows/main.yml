@@ -26,7 +26,7 @@ jobs:
       # There's some kind of subtle bug where when awalsh128/cache-apt-pkgs-action
       # installs the boost header files from the cache, the compiler can't find them.
       # Work around it by reinstalling libboost-dev manually.
-      run: apt-get install libboost-dev=1.74*
+      run: sudo apt-get install libboost-dev=1.74*
 
     - name: Install linuxdeploy
       uses: miurahr/install-linuxdeploy-action@v1
