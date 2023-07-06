@@ -11,7 +11,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3.5.3
     
-    - name: Install dependencies
+    - name: Install dependencies (1)
       uses: awalsh128/cache-apt-pkgs-action@v1
       with:
         packages: |
@@ -21,6 +21,12 @@ jobs:
           libcgal-dev=5.4*
           libtet1.5-dev=1.5*
           libgtest-dev=1.11*
+
+    - name: Install dependencies (2)
+      # There's some kind of subtle bug where when awalsh128/cache-apt-pkgs-action
+      # installs the boost header files from the cache, the compiler can't find them.
+      # Work around it by reinstalling libboost-dev manually.
+      run: apt-get install libboost-dev=1.74*
 
     - name: Install linuxdeploy
       uses: miurahr/install-linuxdeploy-action@v1
